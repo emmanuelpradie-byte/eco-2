@@ -13,11 +13,13 @@ python3 source/publier.py
 committer : GitHub Pages met le site à jour en 1–2 minutes, et les
 utilisateurs voient le bandeau « Nouvelle version disponible ».
 
-⚠️ Si le site utilise l'appli **préconfigurée** (adresse du serveur intégrée),
-remettre l'adresse et la clé publique dans `index.html` après construction :
-`window.ECO_SERVER={url:"https://fbwuhejcphsjhhkfkjku.supabase.co",key:"<clé publique>"}`
-(la clé publique `sb_publishable_…` n'est pas secrète ; ne jamais mettre la
-clé *secret* / *service_role*).
+Le serveur Supabase est **intégré à chaque version** grâce à
+`uni/server.json` (adresse + clé *publique* `sb_publishable_…`, qui n'est pas
+secrète). Personne n'a donc à reconfigurer le serveur après une mise à jour.
+Ne jamais y mettre la clé *secret* / *service_role*.
+
+Pour les tests (faux serveur local), construire sans serveur intégré :
+`ECO_NOSERVER=1 python3 build.py` — sinon les tests viseraient le vrai serveur.
 
 ## Organisation
 - `uni/m.js` : base de l'appli (bons, recettes, catalogue, import).

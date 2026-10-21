@@ -48,6 +48,10 @@ body=open('body.html',encoding='utf-8').read()
 body=re.sub(r'\{\{ic:([a-z\-]+)\}\}', lambda m: svg(m.group(1)), body)
 loader=open('loader.js',encoding='utf-8').read()
 import hashlib
+# serveur intégré à chaque version (adresse + clé PUBLIQUE uniquement, jamais la clé secrète)
+SERVER={'url':'','key':''}
+if os.path.exists('server.json') and not os.environ.get('ECO_NOSERVER'):
+    _s=json.load(open('server.json',encoding='utf-8')); SERVER={'url':_s.get('url',''),'key':_s.get('key','')}
 BUILD=hashlib.sha1((css+body+loader+app).encode('utf-8')).hexdigest()[:10]
 O=os.environ.get('ECO_OUT','/mnt/user-data/outputs/')
 def head(manifest=None, icon=None):
@@ -61,7 +65,7 @@ def head(manifest=None, icon=None):
     if icon: h.append('<link rel="apple-touch-icon" href="%s">'%icon)
     h.append('<title>Économat Pro</title>')
     h.append('<style>'+css+'</style>')
-    h.append('<script>window.ECO_SERVER={url:"",key:""};window.ECO_BUILD="'+BUILD+'";</script>')   # serveur intégré (rempli par « Télécharger l’appli préconfigurée »)
+    h.append('<script>window.ECO_SERVER='+json.dumps(SERVER)+';window.ECO_BUILD="'+BUILD+'";</script>')   # serveur intégré (rempli par « Télécharger l’appli préconfigurée »)
     h.append('<script>'+open('theme.js',encoding='utf-8').read()+'</script>')
     h.append('</head>')
     return '\n'.join(h)

@@ -631,7 +631,7 @@ function clForgot(){
 // ── Démarrage ──
 function cloudInit(){
   CLOUD.cfg=clLoad('v4_cloud_cfg',null);
-  if(!CLOUD.cfg&&window.ECO_SERVER&&ECO_SERVER.url&&ECO_SERVER.key) CLOUD.cfg={url:clNormUrl(ECO_SERVER.url),key:ECO_SERVER.key,builtin:true}; CLOUD.sess=clLoad('v4_cloud_sess',null);
+  if(!CLOUD.cfg&&window.ECO_SERVER&&ECO_SERVER.url&&ECO_SERVER.key){ CLOUD.cfg={url:clNormUrl(ECO_SERVER.url),key:ECO_SERVER.key,builtin:true}; clSave('v4_cloud_cfg',CLOUD.cfg); }   /* gardé : une future version sans serveur intégré le retrouve */ CLOUD.sess=clLoad('v4_cloud_sess',null);
   CLOUD.st=clLoad('v4_cloud_state',null)||clFreshState();
   ['pub','attUp','attDel'].forEach(function(k){ if(!CLOUD.st[k]) CLOUD.st[k]={}; });
   if(!CLOUD.st.since) CLOUD.st.since={user:null,shared:null};
