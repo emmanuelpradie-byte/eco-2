@@ -1,0 +1,4935 @@
+
+
+// ── DATA ──────────────────────────────────────────────────────
+var DB={load:function(k,d){try{return JSON.parse(localStorage.getItem(k)||'null')||d;}catch(e){return d;}},save:function(k,v){localStorage.setItem(k,JSON.stringify(v));}};
+var ingredients=DB.load('v4_ing',[]);
+var recipes=DB.load('v4_rec',[]);
+var orders=DB.load('v4_ord',[]);
+var _lastSafety=0;
+function persist(){
+  DB.save('v4_ing',ingredients);DB.save('v4_rec',recipes);DB.save('v4_ord',orders);
+  // Copie de sécurité au plus une fois par heure, pour ne pas saturer
+  try{
+    if(Date.now()-_lastSafety > 3600000){ _lastSafety=Date.now(); pushAutosave('enregistrement'); }
+  }catch(e){}
+}
+function uid(){return Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4);}
+function now(){return new Date().toISOString();}
+function today(){return new Date().toISOString().split('T')[0];}
+function rnd(n){return Math.round(n*10000)/10000;}
+
+// ── UNITÉS → tout en kg ──────────────────────────────────────
+var UNITS={kg:1,g:0.001,mg:0.000001,L:1,l:1,ml:0.001,cl:0.01,dl:0.1};
+var COUNTABLE=['unité','pièce','boîte','sac','carton','sachet','bouteille','bidon','plaque','botte'];
+var ALLUNITS=['kg','g','L','ml','cl','unité','pièce','boîte','sac','carton','sachet','bouteille','bidon'];
+function isCountable(u){return COUNTABLE.indexOf(String(u||'').trim())>=0;}
+// Facteur de conversion vers le kg. Pour les unités comptables, on utilise
+// le poids unitaire renseigné sur l'ingrédient (unitWeight, en kg).
+function unitFactor(unit,ing){
+  var u=String(unit||'').trim();
+  if(isCountable(u)) return (ing&&ing.unitWeight>0)?ing.unitWeight:1;
+  return UNITS[u]!==undefined?UNITS[u]:(UNITS[u.toLowerCase()]!==undefined?UNITS[u.toLowerCase()]:1);
+}
+function toKg(qty,unit,ing){return rnd((parseFloat(qty)||0)*unitFactor(unit,ing));}
+function unitLabel(ing){
+  if(!ing)return'kg';
+  var u=ing.unit||'kg';
+  if(isCountable(u)&&ing.unitWeight>0) return u+' ('+fQ(ing.unitWeight)+' kg)';
+  return u;
+}
+// Prix tel que saisi par l'utilisateur (par unité d'achat), jamais le prix
+// interne au kg utilisé pour les calculs de recettes/bons — pour ne pas
+// donner l'impression que le prix a été « multiplié ».
+function dispPrice(ing){
+  if(!ing)return fEur(0);
+  var bp=(ing.buyPrice!=null?ing.buyPrice:ing.price);
+  return fEur(bp)+' TTC/'+(ing.unit||'kg');
+}
+// ── Image / emoji d'un ingrédient (catalogue) ─────────────────
+var curIngImg=null;
+function handleIngImg(pfx,input){
+  var f=input.files&&input.files[0]; if(!f)return;
+  var r=new FileReader();
+  r.onload=function(e){
+    curIngImg=e.target.result;
+    var t=document.getElementById(pfx+'-img'); if(t){t.value='';t.disabled=true;}
+    showIngImgPrev(pfx);
+  };
+  r.readAsDataURL(f);
+}
+function removeIngImg(pfx){
+  curIngImg=null;
+  var fi=document.getElementById(pfx+'-img-file'); if(fi)fi.value='';
+  var t=document.getElementById(pfx+'-img'); if(t)t.disabled=false;
+  showIngImgPrev(pfx);
+}
+function clearIngImgFile(pfx){
+  if(curIngImg){ curIngImg=null; var fi=document.getElementById(pfx+'-img-file'); if(fi)fi.value=''; showIngImgPrev(pfx); }
+}
+function showIngImgPrev(pfx){
+  var box=document.getElementById(pfx+'-img-prev'); if(!box)return;
+  if(curIngImg){ box.style.display='flex'; document.getElementById(pfx+'-img-prev-i').src=curIngImg; }
+  else box.style.display='none';
+}
+function resetIngImgUI(pfx){
+  curIngImg=null;
+  var t=document.getElementById(pfx+'-img'); if(t){t.value='';t.disabled=false;}
+  var fi=document.getElementById(pfx+'-img-file'); if(fi)fi.value='';
+  showIngImgPrev(pfx);
+}
+// ── Image / emoji d'une recette ───────────────────────────────
+var curRecImg=null;
+function handleRecImg(input){
+  var f=input.files&&input.files[0]; if(!f)return;
+  var r=new FileReader();
+  r.onload=function(e){
+    curRecImg=e.target.result;
+    var t=document.getElementById('r-img'); if(t){t.value='';t.disabled=true;}
+    showRecImgPrev();
+  };
+  r.readAsDataURL(f);
+}
+function removeRecImg(){
+  curRecImg=null;
+  var fi=document.getElementById('r-img-file'); if(fi)fi.value='';
+  var t=document.getElementById('r-img'); if(t)t.disabled=false;
+  showRecImgPrev();
+}
+function clearRecImgFile(){
+  if(curRecImg){ curRecImg=null; var fi=document.getElementById('r-img-file'); if(fi)fi.value=''; showRecImgPrev(); }
+}
+function showRecImgPrev(){
+  var box=document.getElementById('r-img-prev'); if(!box)return;
+  if(curRecImg){ box.style.display='flex'; document.getElementById('r-img-prev-i').src=curRecImg; }
+  else box.style.display='none';
+}
+
+// ── MOTEUR RECETTES ───────────────────────────────────────────
+function flatten(recId,mult,vis){
+  mult=mult||1;vis=vis||{};
+  if(vis[recId])return[];vis[recId]=true;
+  var rec=recipes.find(function(r){return r.id===recId;});if(!rec)return[];
+  var out=[];
+  rec.items.forEach(function(item){
+    if(item.type==='ingredient'){var _ing=ingredients.find(function(x){return x.id===item.refId;});
+      out.push({ingId:item.refId,qty:rnd(toKg(item.qty,item.unit,_ing)*mult),from:rec.name});}
+    else{var sub=flatten(item.refId,item.qty*mult,Object.assign({},vis));out=out.concat(sub);}
+  });
+  return out;
+}
+function recWeight(id){return flatten(id).reduce(function(s,i){return s+i.qty;},0);}
+function recCost(id){return flatten(id).reduce(function(s,i){var ing=ingredients.find(function(x){return x.id===i.ingId;});return s+(ing?ing.price*i.qty:0);},0);}
+function addRecToOrder(recId,order,mult){
+  var flat=flatten(recId,mult);var rec=recipes.find(function(r){return r.id===recId;});
+  var added=0,merged=0;
+  flat.forEach(function(fi){
+    var ing=ingredients.find(function(i){return i.id===fi.ingId;});
+    var ex=order.items.find(function(oi){return oi.ingId===fi.ingId;});
+    if(ex){ex.qty=rnd(ex.qty+fi.qty);ex.cost=rnd(ex.qty*(ing?ing.price:0));bonAddUse(ex,fi.from,fi.qty);merged++;}
+    else{order.items.push({id:uid(),ingId:fi.ingId,qty:fi.qty,cost:rnd(fi.qty*(ing?ing.price:0)),uses:[{n:fi.from,q:fi.qty}]});added++;}
+  });
+  if(rec&&order.recipesUsed.indexOf(rec.name)<0)order.recipesUsed.push(rec.name);
+  return{added:added,merged:merged};
+}
+function prevRec(recId,order,mult){
+  return flatten(recId,mult).map(function(fi){
+    var ing=ingredients.find(function(i){return i.id===fi.ingId;});
+    var ex=order.items.find(function(oi){return oi.ingId===fi.ingId;});
+    return{name:ing?ing.name:'?',qty:ex?rnd(ex.qty+fi.qty):fi.qty,status:ex?'merge':'new'};
+  });
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────
+var CUR='home';
+var ALLP=['home','bons','edit','recettes','rec-edit','catalogue','backup'];
+var NAVP=['home','bons','recettes','catalogue'];
+
+function goPage(p){
+  CUR=p;
+  ALLP.forEach(function(id){var el=document.getElementById('p-'+id);if(el)el.style.display=id===p?'block':'none';});
+  document.getElementById('scroll').scrollTop=0;
+  NAVP.forEach(function(id){var el=document.getElementById('nav-'+id);if(el)el.classList.toggle('on',id===p||(p==='edit'&&id==='bons')||(p==='rec-edit'&&id==='recettes'));});
+  var isDeep=p==='edit'||p==='rec-edit';
+  var back=document.getElementById('tb-back');back.className=isDeep?'show':'';
+  var bc=document.getElementById('tb-bc');bc.style.display=isDeep?'none':'block';
+  var title=document.getElementById('tb-title');title.style.display=isDeep?'block':'none';
+  var labels={home:'Accueil',bons:'Bons',recettes:'Recettes',catalogue:'Catalogue',backup:'Sauvegarde'};
+  bc.textContent=labels[p]||p;
+  var act=document.getElementById('tb-act');act.innerHTML='';
+  if(p==='bons')act.innerHTML='';
+  if(p==='recettes')act.innerHTML='<button class="tbtn gold" onclick="openNewRec()">＋ Créer</button>';
+  if(p==='catalogue')act.innerHTML='<button class="tbtn gold" onclick="openMod(\'m-addcat\')">＋ Ajouter</button>';
+  if(p==='home')renderHome();
+  if(p==='bons')renderBons();
+  if(p==='recettes')renderRec();
+  if(p==='catalogue')renderCat();
+  if(p==='backup')renderBackup();
+}
+function goBack(){if(CUR==='edit')goPage('bons');else if(CUR==='rec-edit')goPage('recettes');else goPage('home');}
+
+// ── BON ───────────────────────────────────────────────────────
+var curBon=null,curBonNew=false,curImg=null;
+function mkOrder(){return{id:uid(),name:'Bon du '+fDate(today()),image:'',status:'draft',date:today(),notes:'',items:[],recipesUsed:[],history:[{ts:now(),desc:'Bon créé'}],createdAt:now(),updatedAt:now()};}
+function openNewBon(){curBon=mkOrder();curBonNew=true;curImg=null;renderEd();goPage('edit');}
+function openEditBon(id){var b=orders.find(function(o){return o.id===id;});if(!b)return;curBon=JSON.parse(JSON.stringify(b));curBonNew=false;curImg=b.image||null;renderEd();goPage('edit');}
+function renderEd(){
+  document.getElementById('tb-title').textContent=curBon.name;
+  document.getElementById('e-name').value=curBon.name;
+  document.getElementById('e-date').value=curBon.date;
+  document.getElementById('e-notes').value=curBon.notes||'';
+  document.getElementById('e-status').innerHTML=curBon.status==='validated'?'<span class="badge bd-ok">✓ Validé</span>':'<span class="badge bd-d">Brouillon</span>';
+  renderItems();renderMlog();livePreview();
+}
+function syncTitle(){document.getElementById('tb-title').textContent=document.getElementById('e-name').value||curBon.name;}
+function renderItems(){
+  var wrap=document.getElementById('e-items'),emp=document.getElementById('e-items-empty');
+  if(!curBon.items.length){wrap.innerHTML='';emp.style.display='block';calcTots();livePreview();return;}
+  emp.style.display='none';
+  var html='<div class="ilist"><div class="ihd"><span>Ingrédient</span><span style="text-align:right">Qté</span><span>kg</span><span></span></div>';
+  curBon.items.forEach(function(item){
+    var ing=ingredients.find(function(x){return x.id===item.ingId;});
+    html+='<div class="ir"><div><div class="ir-n">'+esc(ing?ing.name:'?')+'</div><div class="ir-c">'+esc(ing?ing.cat:'')+'</div></div>'
+      +'<input class="iq" type="number" value="'+item.qty+'" min="0" step="any" onchange="updQ(\''+item.id+'\',this.value)">'
+      +'<div class="iu">kg</div><button class="idel" onclick="remItem(\''+item.id+'\')">✕</button></div>';
+  });
+  html+='</div>';wrap.innerHTML=html;calcTots();livePreview();
+}
+function updQ(id,val){var item=curBon.items.find(function(i){return i.id===id;});if(!item)return;var ing=ingredients.find(function(i){return i.id===item.ingId;});item.qty=rnd(parseFloat(val)||0);item.cost=rnd(item.qty*(ing?ing.price:0));addLog('Qté: '+(ing?ing.name:'?')+' → '+item.qty+' kg');calcTots();livePreview();}
+function remItem(id){var ing=ingredients.find(function(i){return i.id===(curBon.items.find(function(x){return x.id===id;})||{}).ingId;});curBon.items=curBon.items.filter(function(i){return i.id!==id;});addLog('Supprimé: '+(ing?ing.name:'?'));renderItems();}
+function calcTots(){var n=curBon.items.length,w=curBon.items.reduce(function(s,i){return s+i.qty;},0),c=curBon.items.reduce(function(s,i){return s+i.cost;},0);document.getElementById('t-l').textContent=n;document.getElementById('t-w').textContent=fQup(w);document.getElementById('t-c').textContent=fEur(c);}
+function addLog(desc){if(!curBon)return;curBon.history.push({ts:now(),desc:desc});renderMlog();}
+function renderMlog(){var log=document.getElementById('e-mlog');if(!curBon||!curBon.history.length){log.innerHTML='<div class="empty-s" style="padding:5px 0">Aucune modification</div>';return;}log.innerHTML=curBon.history.slice().reverse().slice(0,10).map(function(e){return'<div class="me"><span class="mt">'+fTs(e.ts)+'</span> — '+esc(e.desc)+'</div>';}).join('');}
+function handleImg(input){var f=input.files[0];if(!f)return;var r=new FileReader();r.onload=function(e){curImg=e.target.result;addLog('Image ajoutée');livePreview();};r.readAsDataURL(f);}
+function saveBon(){if(!curBon)return;curBon.name=document.getElementById('e-name').value.trim()||curBon.name;curBon.date=document.getElementById('e-date').value;curBon.notes=document.getElementById('e-notes').value.trim();curBon.image=curImg||'';curBon.updatedAt=now();if(curBonNew){orders.unshift(curBon);curBonNew=false;}else{var i=orders.findIndex(function(o){return o.id===curBon.id;});if(i>=0)orders[i]=curBon;else orders.unshift(curBon);}persist();addLog('Sauvegardé');updBadges();syncTitle();toast('💾 Bon sauvegardé','ok');}
+function validateBon(){saveBon();curBon.status='validated';curBon.updatedAt=now();addLog('Validé');var i=orders.findIndex(function(o){return o.id===curBon.id;});if(i>=0)orders[i]=curBon;persist();document.getElementById('e-status').innerHTML='<span class="badge bd-ok">✓ Validé</span>';toast('✓ Bon validé !','ok');}
+function dupBon(){if(!curBon)return;saveBon();var c=JSON.parse(JSON.stringify(curBon));c.id=uid();c.name='Copie — '+curBon.name;c.status='draft';c.createdAt=now();c.updatedAt=now();c.history=[{ts:now(),desc:'Dupliqué'}];c.items=c.items.map(function(i){return Object.assign({},i,{id:uid()});});orders.unshift(c);persist();updBadges();openEditBon(c.id);toast('⧉ Dupliqué','ok');}
+function dupBonById(id){var o=orders.find(function(x){return x.id===id;});if(!o)return;var c=JSON.parse(JSON.stringify(o));c.id=uid();c.name='Copie — '+o.name;c.status='draft';c.createdAt=now();c.updatedAt=now();c.history=[{ts:now(),desc:'Dupliqué'}];c.items=c.items.map(function(i){return Object.assign({},i,{id:uid()});});orders.unshift(c);persist();updBadges();renderBons();renderHome();toast('⧉ Bon dupliqué','ok');}
+function exportCSV(){
+  if(!curBon||!curBon.items.length){toast('Aucun article','err');return;}
+  var full=curBon.items.map(function(item){var ing=ingredients.find(function(i){return i.id===item.ingId;});return{name:ing?ing.name:'?',cat:ing?ing.cat:'',qty:item.qty,cost:item.cost,price:ing?ing.price:0,ing:ing||null,uses:item.uses||[]};});
+  var rows=[['Désignation','Quantité','Utilisé dans','Prix unit. TTC','Coût d’util. TTC']];
+  groupItemsByCat(full).forEach(function(g){
+    rows.push([g.cat.toUpperCase(),'','','','']);
+    g.items.forEach(function(item){ rows.push([item.name,bonQtyLabel(item),bonUsesText(item),bonPriceLabel(item),item.qty>0?fQ(item.cost):'']); });
+  });
+  rows.push(['TOTAL TTC','','','',fQ(full.reduce(function(s,i){return s+i.cost;},0))]);
+  var csv=rows.map(function(r){return r.map(function(v){return'"'+String(v).replace(/"/g,'""')+'"';}).join(';');}).join('\n');
+  var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=(curBon.name||'bon').replace(/[^a-z0-9]/gi,'_')+'.csv';a.click();URL.revokeObjectURL(a.href);
+  toast('📊 CSV exporté','ok');
+}
+
+// ── Ressources du bon d'économat (intégrées : fonctionne hors ligne) ──
+// Police Poppins (sous-ensemble latin) et emblèmes du compagnonnage.
+var BON_FONTS={regular:'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AAAAAAH0AAABCwAAASoAWAEkACMDSAAhAm4APAL3ACoC4wAlAJ8AIwHGAGwBxgAhAeYAPQKrAFcAxv/+AicAOgDSACwB3AA1AnQAPgFAACYCPwAzAk0AMQJ1ACgCdABJAnsASQIiACECdwA8AnYASQDVACwBCAAXAisAVALTAGUCGwBeAgwAJQP1AEgCogAhAmUATQMEACsCwwBNAgEATQH4AE0DCgArArQATQD2AE0CEgApAlcATQGwAE0DXQBNAr8ATQMSACsCQwBNAxQAKwJgAE0CSwA5Ah0AIgKjAEsCpAAWA9AAFwJtAC0CSAATAh0ALgGnAIUCkgCDAacAbgJ1ACUC3QBpAQEAEQKkACsCpABNAl8AKwKkACsCbAArAUkAFwKkACsCgABNAPYAPgD4/+UCAwBNAPYATQQGAE0CgABNAoAAKwKkAE0CpAArAXUATQIKAC8BbAAaAoAASAIxAAwDNAAMAd8ADQIzAAwBxwApAc4AaQEjAGQBzgBEAgcAJQELAAABKgBYApkAQQJsACwCGQA/AlMAGQEjAGQCPwAuAToAFwMYADEBwgAhAc0ALQKKACkCJwA6Af0ANAGDABEBmgAcAq4AWAFKAB4BTAAXAPcAEQKFAE0CVAAfANQALwEQABEAxAAZAbQAIQHNADICgAAmAqMAJALFACMCBwAuAqIAIQKiACECogAhAqIAIQKiACECogAhA4QADAMEACsCAQBNAgEATQIBAE0CAQBNAPYABwD2AAcA9v/wAPb/9QLVAAkCvwBNAxIAKwMSACsDEgArAxIAKwMSACsCgwBnAxIAIwKjAEsCowBLAqMASwKjAEsCSAATAkMATQKpADwCpAArAqQAKwKkACsCpAArAqQAKwKkACsESQArAl8AKwJsACsCbAArAmwAKwJsACsA9gAHAPYABwD2//AA9v/1An4AKwKAAE0CgAArAoAAKwKAACsCgAArAoAAKwKRAE4CgAAmAoAASAKAAEgCgABIAoAASAIzAAwCpABNAjMADAD2AE0EPgArBDgAKwJIABMBNwARAPMADwFZABECpQBMA3UATADbABgA2wAgAXwAGAF8ACABnABTAkUALAMrABkCJwBMAAEAAAQa/qIAZAnt/e35bgoHAAEAAAAAAAAAAAAAAAAAAADRAAQDUwGQAAUAAAKKAlgAAABLAooCWAAAAV4AMgFIAAAAAAUAAAAAAAAAAAAABwAAAAAAAAAAAAAAAElURk8AwAAgIKwEGv6iAGQEbwJzAAAAAQAAAAACJAK6AAAAIAAEAAAAAgAAAAMAAAAUAAMAAQAAABQABABoAAAAFgAQAAMABgB+AP8BUwF4IBQgGSAdICIgJiCs//8AAAAgAKABUgF4IBMgGCAcICIgJiCs////4f/A/2//S+C04LHgr+Cr4KjgIwABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcAWgADAAEECQAAAKIAAAADAAEECQABAA4AogADAAEECQACAA4AsAADAAEECQADADwAvgADAAEECQAEAB4A+gADAAEECQAFAAoBGAADAAEECQAGAB4BIgBDAG8AcAB5AHIAaQBnAGgAdAAgADIAMAAyADAAIABUAGgAZQAgAFAAbwBwAHAAaQBuAHMAIABQAHIAbwBqAGUAYwB0ACAAQQB1AHQAaABvAHIAcwAgACgAaAB0AHQAcABzADoALwAvAGcAaQB0AGgAdQBiAC4AYwBvAG0ALwBpAHQAZgBvAHUAbgBkAHIAeQAvAFAAbwBwAHAAaQBuAHMAKQBQAG8AcABwAGkAbgBzAFIAZQBnAHUAbABhAHIASQBUAEYATwA7ACAAUABvAHAAcABpAG4AcwAgAFIAZQBnAHUAbABhAHIAOwAgADQALgAwADAANABiADgAUABvAHAAcABpAG4AcwAgAFIAZQBnAHUAbABhAHIANAAuADAAMAA0AFAAbwBwAHAAaQBuAHMALQBSAGUAZwB1AGwAYQByAAAAAwAAAAAAAP+1ADIAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAACgAcAB4AAURGTFQACAAEAAAAAP//AAAAAAAAAAEAAAAKACwALgADREZMVAAUZGV2MgAeZGV2YQAeAAQAAAAA//8AAAAAAAAAAAAA',medium:'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AooAPAMaACoC+QAjAKwAIgHsAHwB7AAbAfgAPwLKAGYA4QAFAkkAVwDxADACAgA9AoEAPAFeAC0CQQAyAlIAMAKHAC4CfwBKAoIASgIwACgCfgA9AnsATQD1ADABMAAgAmQAYgMGAHkCTgBwAhoAKAQBAEYCuQAiAnYASwMFACUCxQBLAgwASwIDAEsDBQAlAsEASwEIAEsCNAAsAnkASwG8AEsDcgBLAtEASwMQACUCUwBLAxMAJQJ4AEsCXAA6AjQAJwKyAEoCtgATA+cAEwKUADICXQAPAi4AMgHlAJQCzQCkAeQAgAKOACQDHgB+AP4ACgKmACUCpgBLAlgAJQKmACUCaQAlAUwAGAKmACUCiQBLAQgAPAEI/+QCKgBLAQgASwQPAEsCiQBLAn4AJgKmAEsCpgAlAYAASwIWAC0BdAAcAokARgJAAAoDOQAKAfMACgJGAAoB1wAsAgQAfgFEAGkCBABaAikAJAEEAAABQQBYArIAQgKGACoCJAA8Al0ADwFEAGkCQgApATgACgMVAC4ByAAfAekALQKJACUCSQBXAgUAMgGCAAoBqwAcAs0AaAFUABsBVgASAPEACgKOAEsCdgAjAPQANAEXAAoA0QAUAbwAHwHpADICqgAiAr0AIgLmACECGgAzArkAIgK5ACICuQAiArkAIgK5ACICuQAiA5kADAMFACUCDABLAgwASwIMAEsCDABLAQgADgEIAA4BCP/1AQj/8gLQAAkC0QBLAxAAJQMQACUDEAAlAxAAJQMQACUCuwB7AxAAGgKyAEoCsgBKArIASgKyAEoCXQAPAlMASwK7ADYCpgAlAqYAJQKmACUCpgAlAqYAJQKmACUEPQAlAlgAJQJpACUCaQAlAmkAJQJpACUBCAAOAQgADgEI//UBCP/yAnwAJQKJAEsCfgAmAn4AJgJ+ACYCfgAmAn4AJgKnAFoCfgAcAokARgKJAEYCiQBGAokARgJGAAoCpgBLAkYACgEIAEsENwAlBCYAJQJdAA8BMgAKAO4ABwFkAAoCxABXA5wAVwDyABkA8gAgAaYAGQGmACABzgBkAn4AMAMiABoCSQBXAAEAAAQa/qIAZAnW/ef5VQnsAAEAAAAAAAAAAAAAAAAAAADRAAQDWwH0AAUAAAKKAlgAAABLAooCWAAAAV4AMgFKAAAAAAYAAAAAAAAAAAAABwAAAAAAAAAAAAAAAElURk8AwAAgIKwEGv6iAGQEbwJzAAAAAQAAAAACJwK5AAAAIAAEAAAAAgAAAAMAAAAUAAMAAQAAABQABABoAAAAFgAQAAMABgB+AP8BUwF4IBQgGSAdICIgJiCs//8AAAAgAKABUgF4IBMgGCAcICIgJiCs////4f/A/2//S+C04LHgr+Cr4KjgIwABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcAWgADAAEECQAAAKIAAAADAAEECQABABwAogADAAEECQACAA4AvgADAAEECQADADoAzAADAAEECQAEABwAogADAAEECQAFAAoBBgADAAEECQAGABwBEABDAG8AcAB5AHIAaQBnAGgAdAAgADIAMAAyADAAIABUAGgAZQAgAFAAbwBwAHAAaQBuAHMAIABQAHIAbwBqAGUAYwB0ACAAQQB1AHQAaABvAHIAcwAgACgAaAB0AHQAcABzADoALwAvAGcAaQB0AGgAdQBiAC4AYwBvAG0ALwBpAHQAZgBvAHUAbgBkAHIAeQAvAFAAbwBwAHAAaQBuAHMAKQBQAG8AcABwAGkAbgBzACAATQBlAGQAaQB1AG0AUgBlAGcAdQBsAGEAcgBJAFQARgBPADsAIABQAG8AcABwAGkAbgBzACAATQBlAGQAaQB1AG0AOwAgADQALgAwADAANABiADgANAAuADAAMAA0AFAAbwBwAHAAaQBuAHMALQBNAGUAZABpAHUAbQAAAAMAAAAAAAD/tQAyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAoAHAAeAAFERkxUAAgABAAAAAD//wAAAAAAAAABAAAACgAsAC4AA0RGTFQAFGRldjIAHmRldmEAHgAEAAAAAP//AAAAAAAAAAAAAA==',bold:'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',italic:'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'};
+var BON_CREST='data:image/png;base64,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';
+var BON_CMARK='data:image/png;base64,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';
+
+// ── Bon d'économat : quantités, prix et « Utilisé dans » ──────
+var BON_VOL={L:1,ml:1,cl:1};
+function bonIsCount(ing){ return !!(ing && ing.unit && !/^(kg|g|L|ml|cl)$/.test(ing.unit) && ing.unitWeight>0); }
+// 5,145 kg · 852 g · 0,5 g
+function bonKg(q){
+  q=q||0;
+  if(q>=1) return String(+q.toFixed(3)).replace('.',',')+' kg';
+  return String(+(q*1000).toFixed(1)).replace('.',',')+' g';
+}
+function bonQtyLabel(it){
+  var hasQS=(it.uses||[]).some(function(u){ return !(u.q>0); });
+  if(!(it.qty>0)) return 'Q.S.';
+  var s;
+  if(bonIsCount(it.ing)){
+    var n=+(it.qty/it.ing.unitWeight).toFixed(2), u=it.ing.unit;
+    s=String(n).replace('.',',')+' '+u+(n>1 && !/s$/.test(u)?'s':'');
+  } else s=bonKg(it.qty);
+  return hasQS ? s+' + Q.S.' : s;
+}
+function bonPriceLabel(it){
+  var ing=it.ing; if(!ing || !(it.qty>0)) return '—';
+  if(bonIsCount(ing)) return fEur(ing.buyPrice!=null?ing.buyPrice:ing.price*ing.unitWeight)+' / '+ing.unit;
+  return fEur(ing.price)+' / '+(BON_VOL[ing.unit]?'L':'kg');
+}
+// « Viennois (920 g) · Feuilletée (250 g) » — le détail n'est donné que
+// lorsque l'ingrédient sert à plusieurs recettes.
+function bonUsesText(it){
+  var us=it.uses||[]; if(!us.length) return '';
+  if(us.length===1) return us[0].n;
+  return us.map(function(u){ return u.q>0 ? u.n+' ('+bonKg(u.q)+')' : u.n; }).join(' · ');
+}
+function bonAddUse(it, name, q){
+  it.uses=it.uses||[];
+  var u=it.uses.filter(function(x){ return x.n===name; })[0];
+  if(u) u.q=rnd((u.q||0)+(q||0)); else it.uses.push({n:name, q:q||0});
+}
+
+// ── Mise en forme écran (même dessin que le PDF) ─────────────
+(function(){
+  try{
+    var css=
+    '@font-face{font-family:"PoppinsBon";font-weight:400;src:url(data:font/ttf;base64,'+BON_FONTS.regular+') format("truetype");}'+
+    '@font-face{font-family:"PoppinsBon";font-weight:500;src:url(data:font/ttf;base64,'+BON_FONTS.medium+') format("truetype");}'+
+    '@font-face{font-family:"PoppinsBon";font-weight:700;src:url(data:font/ttf;base64,'+BON_FONTS.bold+') format("truetype");}'+
+    '@font-face{font-family:"PoppinsBon";font-style:italic;font-weight:400;src:url(data:font/ttf;base64,'+BON_FONTS.italic+') format("truetype");}'+
+    '.bx{position:relative;background:#fff;font-family:"PoppinsBon",Poppins,system-ui,sans-serif;color:#231F20;padding:20px 50px 24px 14px;min-height:420px;}'+
+    '.bx-band{position:absolute;top:0;right:0;bottom:0;width:38px;background:#F2DCBA;display:flex;flex-direction:column;align-items:center;padding-top:9px;gap:5px;}'+
+    '.bx-band img.c1{width:30px;height:auto;}.bx-band img.c2{width:22px;height:auto;}'+
+    '.bx-vt{position:absolute;right:4px;top:50%;transform:translateY(-50%) rotate(180deg);writing-mode:vertical-rl;font-weight:700;font-size:26px;line-height:1;letter-spacing:.5px;color:#231F20;}'+
+    '.bx-h{display:flex;align-items:flex-end;gap:10px;}'+
+    '.bx-t{font-weight:700;font-size:24px;line-height:1.1;flex:1;letter-spacing:-.3px;}'+
+    '.bx-ph{width:44px;height:44px;border-radius:4px;object-fit:cover;}'+
+    '.bx-rule{height:2px;background:#231F20;margin:8px 0 7px;}'+
+    '.bx-sub{font-style:italic;font-size:10px;color:#8C8C8C;line-height:1.45;margin-bottom:10px;}'+
+    '.bx-tb{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed;}'+
+    '.bx-tb td{overflow-wrap:anywhere;}'+
+    '.bx-tb th{background:#231F20;color:#fff;font-weight:700;font-size:8px;text-align:left;padding:5px 3px;line-height:1.2;letter-spacing:-.1px;}'+
+    '.bx-tb th.r,.bx-tb td.r{text-align:right;}'+
+    '.bx-tb td{padding:4px 5px;vertical-align:top;}'+
+    '.bx-tb tr.ct td{background:#F2DCBA;font-weight:700;font-size:9.5px;text-transform:uppercase;padding:5px 5px;}'+
+    '.bx-tb tr.al td{background:#FAF4EA;}'+
+    '.bx-tb td{padding:4px 4px;}'+
+    '.bx-tb td.q{font-weight:700;overflow-wrap:normal;}'+
+    '.bx-tb td.u{font-size:8px;color:#9A9A9A;line-height:1.35;}'+
+    '.bx-tb td.p{border-left:1px solid #E4DCCF;font-size:9px;overflow-wrap:normal;}'+
+    '.bx-tb td.k{border-left:1px solid #E4DCCF;font-weight:700;font-size:9px;overflow-wrap:normal;}'+
+    '.bx-tb tr.tt td{background:#231F20;color:#fff;font-weight:700;padding:6px 5px;}'+
+    '.bx-ft{font-style:italic;font-size:9px;color:#8C8C8C;margin-top:6px;}'+
+    '.bx-h3{font-weight:700;font-size:12px;margin:12px 0 2px;}'+
+    '.bx-p{font-size:10px;color:#8C8C8C;line-height:1.45;}'+
+    '.bx-empty{font-size:11px;color:#9A9A9A;padding:20px 0;text-align:center;}';
+    var st=document.createElement('style'); st.textContent=css; document.head.appendChild(st);
+  }catch(e){}
+})();
+
+// ── PREVIEW + PDF ─────────────────────────────────────────────
+
+// Regroupe les articles d'un bon par catégorie d'ingrédient. Les catégories
+// sont triées alphabétiquement ; celles sans catégorie passent en dernier.
+function groupItemsByCat(items){
+  var groups={}, order=[];
+  items.forEach(function(it){
+    var cat=it.cat||'Sans catégorie';
+    if(!groups[cat]){ groups[cat]=[]; order.push(cat); }
+    groups[cat].push(it);
+  });
+  // Ordre des catégories du catalogue (Farines, Épicerie, Crèmerie…), puis alphabétique
+  var ord=[]; try{ ord=loadCats('ing')||[]; }catch(e){}
+  order.sort(function(a,b){
+    if(a==='Sans catégorie') return 1;
+    if(b==='Sans catégorie') return -1;
+    var ia=ord.indexOf(a), ib=ord.indexOf(b);
+    if(ia>=0&&ib>=0) return ia-ib;
+    if(ia>=0) return -1; if(ib>=0) return 1;
+    return a.localeCompare(b,'fr');
+  });
+  return order.map(function(cat){ return {cat:cat, items:groups[cat]}; });
+}
+
+function buildData(){
+  var name=document.getElementById('e-name').value.trim()||curBon.name;
+  var date=document.getElementById('e-date').value||curBon.date;
+  var notes=document.getElementById('e-notes').value.trim()||'';
+  var items=curBon.items.map(function(item){var ing=ingredients.find(function(x){return x.id===item.ingId;});return{name:ing?ing.name:'?',cat:ing?ing.cat:'',qty:item.qty,cost:item.cost,price:ing?ing.price:0,ing:ing||null,uses:item.uses||[]};});
+  var totalCost=items.reduce(function(s,i){return s+i.cost;},0);
+  var totalWeight=items.reduce(function(s,i){return s+i.qty;},0);
+  return{id:curBon.id,name:name,date:date,notes:notes,status:curBon.status,recipesUsed:curBon.recipesUsed||[],image:curImg||'',items:items,totalCost:totalCost,totalWeight:totalWeight};
+}
+function bonSubtitle(d){
+  return (d.name||'Bon')+' — '+fDate(d.date)+' · '+(d.status==='validated'?'Validé':'Brouillon')+' · N° '+d.id.slice(-6).toUpperCase()+
+    (d.notes?'. '+d.notes:'');
+}
+function bonHasQS(it){ return !(it.qty>0) || (it.uses||[]).some(function(u){ return !(u.q>0); }); }
+
+function livePreview(){
+  if(!curBon)return;
+  var d=buildData();
+  var top=document.getElementById('pd-top'); if(top) top.style.display='none';
+  var body=document.getElementById('pd-body'); body.style.padding='0';
+  var hasQS=false;
+  var rows=groupItemsByCat(d.items).map(function(g){
+    return '<tr class="ct"><td colspan="5">'+esc(g.cat)+'</td></tr>'+
+      g.items.map(function(it,i){
+        if(bonHasQS(it)) hasQS=true;
+        return '<tr'+(i%2?' class="al"':'')+'><td>'+esc(it.name)+'</td><td class="r q">'+esc(bonQtyLabel(it))+'</td>'+
+          '<td class="u">'+esc(bonUsesText(it))+'</td><td class="p">'+esc(bonPriceLabel(it))+'</td>'+
+          '<td class="k">'+(it.qty>0?fEur(it.cost):'—')+'</td></tr>';
+      }).join('');
+  }).join('');
+  body.innerHTML='<div class="bx">'+
+    '<div class="bx-band"><img class="c1" src="'+BON_CREST+'" alt=""><img class="c2" src="'+BON_CMARK+'" alt=""><div class="bx-vt">ÉCONOMAT</div></div>'+
+    '<div class="bx-h"><div class="bx-t">Bon d’économat</div>'+(d.image?'<img class="bx-ph" src="'+d.image+'" alt="">':'')+'</div>'+
+    '<div class="bx-rule"></div>'+
+    '<div class="bx-sub">'+esc(bonSubtitle(d))+'</div>'+
+    (d.items.length
+      ? '<table class="bx-tb"><colgroup><col style="width:27%"><col style="width:17%"><col style="width:23%"><col style="width:17%"><col style="width:16%"></colgroup><thead><tr><th>Désignation</th><th class="r">Quantité</th><th>Utilisé dans</th><th>Prix unit. TTC</th><th>Coût d’util. TTC</th></tr></thead><tbody>'+rows+
+        '<tr class="tt"><td colspan="4">TOTAL TTC'+(hasQS?' (hors Q.S.)':'')+'</td><td>'+fEur(d.totalCost)+'</td></tr></tbody></table>'+
+        '<div class="bx-ft">Prix indicatifs TTC, calculés à partir des prix du catalogue.</div>'+
+        (d.recipesUsed.length?'<div class="bx-h3">Recettes incluses :</div><div class="bx-p">'+esc(d.recipesUsed.join(', '))+'.</div>':'')
+      : '<div class="bx-empty">Aucun article</div>')+
+  '</div>';
+}
+
+function bonPdfFonts(doc){
+  try{
+    [['regular','normal'],['medium','medium'],['bold','bold'],['italic','italic']].forEach(function(f){
+      doc.addFileToVFS('Poppins-'+f[0]+'.ttf', BON_FONTS[f[0]]);
+      doc.addFont('Poppins-'+f[0]+'.ttf','Poppins',f[1]);
+    });
+    doc.setFont('Poppins','normal');
+    return 'Poppins';
+  }catch(e){ return 'helvetica'; }
+}
+
+function doPDF(d){
+  try{
+    var doc=new window.jspdf.jsPDF({orientation:'portrait',unit:'pt',format:'a4'});
+    var F=bonPdfFonts(doc);
+    var PW=595.28, PH=841.89, L=40, R=513, BAND=539, BOTTOM=792;
+    var X={name:44, qtyR:218, use:226, useW:100, price:336, cost:424, sep1:331, sep2:419};
+    var INK=[35,31,32], GREY=[140,140,140], LGREY=[150,150,150], BEIGE=[242,220,186], ALT=[250,244,234], SEP=[228,220,207];
+    var page=1, y=0, hasQS=false;
+    function rgb(fn,c){ doc[fn](c[0],c[1],c[2]); }
+    // Bandeau beige à droite : emblèmes et « ÉCONOMAT » vertical, numéro de page
+    function chrome(){
+      rgb('setFillColor',BEIGE); doc.rect(BAND,0,PW-BAND,PH,'F');
+      try{ doc.addImage(BON_CREST,'PNG',BAND+(PW-BAND-44)/2,18,44,44*219/260,'bonCrest','FAST'); }catch(e){}
+      try{ doc.addImage(BON_CMARK,'PNG',BAND+(PW-BAND-36)/2,63,36,36,'bonCmark','FAST'); }catch(e){}
+      doc.setFont(F,'bold'); doc.setFontSize(40); rgb('setTextColor',INK);
+      var tw=doc.getTextWidth('ÉCONOMAT');
+      doc.text('ÉCONOMAT', 581.7, PH/2+tw/2, {angle:90});
+      doc.setFont(F,'normal'); doc.setFontSize(10); rgb('setTextColor',GREY);
+      doc.text(String(page), 514, 815, {align:'right'});
+    }
+    function header(){
+      rgb('setFillColor',INK); doc.rect(L,y,R-L,19,'F');
+      doc.setFont(F,'bold'); doc.setFontSize(8.5); doc.setTextColor(255,255,255);
+      doc.text('Désignation',X.name,y+12.5);
+      doc.text('Quantité',X.qtyR,y+12.5,{align:'right'});
+      doc.text('Utilisé dans',X.use,y+12.5);
+      doc.text('Prix unit. TTC',X.price+10,y+12.5);
+      doc.text('Coût d’util. TTC',X.cost+8,y+12.5);
+      y+=19;
+    }
+    function ensure(h){
+      if(y+h<=BOTTOM) return false;
+      doc.addPage(); page++; chrome(); y=46; header(); return true;
+    }
+    function catBand(label){
+      rgb('setFillColor',BEIGE); doc.rect(L,y,R-L,20,'F');
+      doc.setFont(F,'bold'); doc.setFontSize(8.5); rgb('setTextColor',INK);
+      doc.text(String(label).toUpperCase(),X.name,y+13.3);
+      y+=20;
+    }
+
+    // ── Page 1 : titre, filet, sous-titre ──
+    chrome();
+    doc.setFont(F,'bold'); doc.setFontSize(26); rgb('setTextColor',INK);
+    doc.text('Bon d’économat', L, 70);
+    if(d.image){ try{ doc.addImage(d.image,'JPEG',R-42,36,42,42,undefined,'FAST'); }catch(e){} }
+    rgb('setDrawColor',INK); doc.setLineWidth(1.5); doc.line(L,86,R,86);
+    doc.setFont(F,'italic'); doc.setFontSize(8.5); rgb('setTextColor',GREY);
+    var sub=doc.splitTextToSize(bonSubtitle(d), R-L);
+    doc.text(sub, L, 108.5, {lineHeightFactor:1.45});
+    y=108.5+12.3*(sub.length-1)+5;
+    header();
+
+    // ── Tableau par catégorie ──
+    groupItemsByCat(d.items).forEach(function(g){
+      if(ensure(20+17)){} catBand(g.cat);
+      g.items.forEach(function(it,i){
+        if(bonHasQS(it)) hasQS=true;
+        var qtxt=bonQtyLabel(it);
+        doc.setFont(F,'bold'); doc.setFontSize(9.5);
+        var qw=doc.getTextWidth(qtxt);
+        doc.setFont(F,'normal');
+        var nameW=Math.max(60, X.qtyR-qw-8-X.name);
+        var nl=doc.splitTextToSize(it.name, nameW);
+        doc.setFontSize(7.5);
+        var ut=bonUsesText(it), ul=ut?doc.splitTextToSize(ut, X.useW):[];
+        var lines=Math.max(1, nl.length, ul.length);
+        var rh=Math.max(16.7, 6.5+lines*10.4);
+        if(ensure(rh)) catBand(g.cat+' (suite)');
+        if(i%2===1){ rgb('setFillColor',ALT); doc.rect(L,y,R-L,rh,'F'); }
+        rgb('setDrawColor',SEP); doc.setLineWidth(0.6);
+        doc.line(X.sep1,y+2,X.sep1,y+rh-2); doc.line(X.sep2,y+2,X.sep2,y+rh-2);
+        var by=y+12;
+        doc.setFont(F,'normal'); doc.setFontSize(9.5); rgb('setTextColor',INK);
+        doc.text(nl, X.name, by, {lineHeightFactor:1.15});
+        doc.setFont(F,'bold'); doc.text(qtxt, X.qtyR, by, {align:'right'});
+        if(ul.length){ doc.setFont(F,'normal'); doc.setFontSize(7.5); rgb('setTextColor',LGREY); doc.text(ul, X.use, by-0.5, {lineHeightFactor:1.4}); }
+        doc.setFont(F,'normal'); doc.setFontSize(8.5); rgb('setTextColor',INK);
+        doc.text(bonPriceLabel(it), X.price, by);
+        doc.setFont(F,'bold'); doc.text(it.qty>0?fEur(it.cost):'—', X.cost, by);
+        y+=rh;
+      });
+    });
+
+    // ── Total ──
+    ensure(21);
+    rgb('setFillColor',INK); doc.rect(L,y,R-L,21,'F');
+    doc.setFont(F,'bold'); doc.setFontSize(9.5); doc.setTextColor(255,255,255);
+    doc.text('TOTAL TTC'+(hasQS?' (hors Q.S.)':''), X.name, y+14);
+    doc.text(fEur(d.totalCost), X.cost, y+14);
+    y+=21;
+    ensure(30);
+    y+=11; doc.setFont(F,'italic'); doc.setFontSize(7.5); rgb('setTextColor',GREY);
+    doc.text('Prix indicatifs TTC, calculés à partir des prix du catalogue.', L, y);
+    if(d.recipesUsed && d.recipesUsed.length){
+      doc.setFont(F,'normal'); doc.setFontSize(8.5);
+      var rl=doc.splitTextToSize(d.recipesUsed.join(', ')+'.', R-L);
+      if(ensure(32+rl.length*12.3)) y+=4;
+      y+=21; doc.setFont(F,'bold'); doc.setFontSize(10); rgb('setTextColor',INK);
+      doc.text('Recettes incluses :', L, y);
+      y+=13; doc.setFont(F,'normal'); doc.setFontSize(8.5); rgb('setTextColor',GREY);
+      doc.text(rl, L, y, {lineHeightFactor:1.45});
+    }
+    doc.save((d.name||'bon').replace(/[^a-z0-9]/gi,'_')+'.pdf');toast('📄 PDF téléchargé !','ok');
+  }catch(e){console.error(e);toast('Erreur PDF','err');}
+}
+
+function printBon(){
+  saveBon();if(!curBon||!curBon.items.length){toast('Aucun article','err');return;}
+  toast('⏳ Génération PDF…','info');
+  var d=buildData();
+  if(window.jspdf){doPDF(d);return;}
+  var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';s.onload=function(){doPDF(d);};s.onerror=function(){toast('Erreur PDF','err');};document.head.appendChild(s);
+}
+
+// ── MODAL ING (bon) ───────────────────────────────────────────
+var selIng=null;
+function filterIng(){var s=document.getElementById('ing-s').value.toLowerCase();var f=ingredients.filter(function(i){return!s||i.name.toLowerCase().indexOf(s)>=0||i.cat.toLowerCase().indexOf(s)>=0;});var list=document.getElementById('ing-list'),emp=document.getElementById('ing-empty');if(!f.length){list.innerHTML='';emp.style.display='block';return;}emp.style.display='none';list.innerHTML=f.map(function(i){return'<div class="pi2'+(selIng&&selIng.id===i.id?' sel':'')+'" onclick="pickIng(\''+i.id+'\')"><div><div class="pi2-n">'+esc(i.name)+'</div><div class="pi2-m">'+i.cat+' · '+unitLabel(i)+' · '+dispPrice(i)+'</div></div><span class="badge bd-g">'+i.unit+'</span></div>';}).join('');}
+function pickIng(id){selIng=ingredients.find(function(i){return i.id===id;});filterIng();document.getElementById('ing-qty').style.display='block';var u=document.getElementById('ing-u');u.innerHTML=ALLUNITS.map(function(x){return'<option>'+x+'</option>';}).join('');for(var j=0;j<u.options.length;j++){if(u.options[j].value===selIng.unit){u.selectedIndex=j;break;}}document.getElementById('ing-q').focus();}
+function confirmIng(){if(!selIng){toast('Sélectionnez un ingrédient','err');return;}var qty=parseFloat(document.getElementById('ing-q').value)||0,unit=document.getElementById('ing-u').value;if(!qty){toast('Quantité requise','err');return;}var kgQty=toKg(qty,unit,selIng);var ex=curBon.items.find(function(oi){return oi.ingId===selIng.id;});if(ex){ex.qty=rnd(ex.qty+kgQty);ex.cost=rnd(ex.qty*selIng.price);bonAddUse(ex,'Ajout direct',kgQty);addLog('Mis à jour: '+selIng.name);}else{curBon.items.push({id:uid(),ingId:selIng.id,qty:kgQty,cost:rnd(kgQty*selIng.price),uses:[{n:'Ajout direct',q:kgQty}]});addLog('Ajouté: '+selIng.name);}closeMod('m-ing');renderItems();toast('✓ '+selIng.name+' ajouté','ok');}
+
+// ── MODAL RECETTE (bon) ───────────────────────────────────────
+var selRec=null,curMult=1;
+function initRecMod(){selRec=null;curMult=1;document.getElementById('mult-custom').value=1;var ks=document.getElementById('rec-kg-custom');if(ks)ks.value='';var ss=document.getElementById('rec-mod-s');if(ss)ss.value='';document.querySelectorAll('.mb').forEach(function(b,i){b.classList.toggle('on',i===0);});document.getElementById('rec-prev-w').style.display='none';if(!recipes.length){document.getElementById('m-rec-no').style.display='block';document.getElementById('m-rec-ok').style.display='none';}else{document.getElementById('m-rec-no').style.display='none';document.getElementById('m-rec-ok').style.display='block';buildRecList();}}
+function buildRecList(){var s=(document.getElementById('rec-mod-s')&&document.getElementById('rec-mod-s').value||'').toLowerCase();var list=recipes.filter(function(r){return!s||r.name.toLowerCase().indexOf(s)>=0||(r.cat||'').toLowerCase().indexOf(s)>=0;});document.getElementById('rec-list-m').innerHTML=list.length?list.map(function(r){return'<div class="rpi'+(selRec&&selRec.id===r.id?' sel':'')+'" onclick="pickRec(\''+r.id+'\')"><div class="rpe">'+(r.image&&r.image.length<=4?r.image:'📖')+'</div><div><div class="rpn">'+esc(r.name)+'</div><div class="rpm">'+r.cat+' · '+fEur(recCost(r.id))+' TTC</div></div></div>';}).join(''):'<div class="empty-s" style="padding:8px 2px">Aucune recette trouvée</div>';}
+function pickRec(id){selRec=recipes.find(function(r){return r.id===id;});buildRecList();var ks=document.getElementById('rec-kg-custom');if(ks&&selRec)ks.value=fQ(recWeight(selRec.id)*curMult);refreshRecPrev();}
+function setMult(v,btn){curMult=parseFloat(v)||1;document.getElementById('mult-custom').value=curMult;var ks=document.getElementById('rec-kg-custom');if(ks&&selRec)ks.value=fQ(recWeight(selRec.id)*curMult);document.querySelectorAll('.mb').forEach(function(b){b.classList.remove('on');});btn.classList.add('on');refreshRecPrev();}
+function setMultC(v){curMult=parseFloat(v)||1;var ks=document.getElementById('rec-kg-custom');if(ks&&selRec)ks.value=fQ(recWeight(selRec.id)*curMult);document.querySelectorAll('.mb').forEach(function(b){b.classList.remove('on');});refreshRecPrev();}
+function setRecKg(v){if(!selRec){toast('Sélectionnez une recette','err');return;}var base=recWeight(selRec.id);var kg=parseFloat(v)||0;if(!base){toast('Poids de base inconnu pour cette recette','err');return;}curMult=kg>0?(kg/base):1;document.getElementById('mult-custom').value=fQ(curMult);document.querySelectorAll('.mb').forEach(function(b){b.classList.remove('on');});refreshRecPrev();}
+function refreshRecPrev(){if(!selRec||!curBon)return;var items=prevRec(selRec.id,curBon,curMult);document.getElementById('rec-prev-w').style.display='block';document.getElementById('rec-prev-b').innerHTML=items.map(function(item){return'<div class="pbr"><span>'+esc(item.name)+'</span><div class="pbr-r"><span class="pq">'+fQ(item.qty)+' kg</span>'+(item.status==='merge'?'<span class="tm">FUSION</span>':'<span class="tn">NOUVEAU</span>')+'</div></div>';}).join('')||'<div class="empty-s">Aucun composant</div>';}
+function confirmRec(){if(!selRec){toast('Sélectionnez une recette','err');return;}addRecToOrder(selRec.id,curBon,curMult);addLog('Recette: '+selRec.name+' ×'+curMult);closeMod('m-rec');renderItems();toast('⊛ '+selRec.name+' ×'+curMult+' ajouté','ok');}
+
+// ── BONS LIST ─────────────────────────────────────────────────
+function renderBons(){var s=(document.getElementById('bon-srch').value||'').toLowerCase();var total=orders.length,drafts=orders.filter(function(o){return o.status==='draft';}).length,valid=orders.filter(function(o){return o.status==='validated';}).length,amt=orders.reduce(function(s,o){return s+o.items.reduce(function(ss,i){return ss+i.cost;},0);},0);document.getElementById('bons-sbar').innerHTML='<div class="sb2"><span class="sb2-v">'+total+'</span><div class="sb2-l">Bons</div></div><div class="sb2"><span class="sb2-v" style="color:var(--i4)">'+drafts+'</span><div class="sb2-l">Brouillons</div></div><div class="sb2"><span class="sb2-v" style="color:var(--gr2)">'+valid+'</span><div class="sb2-l">Validés</div></div><div class="sb2"><span class="sb2-v" style="font-size:16px">'+fEur(amt)+'</span><div class="sb2-l">Total TTC</div></div>';var filtered=orders.filter(function(o){return!s||o.name.toLowerCase().indexOf(s)>=0;});var list=document.getElementById('bons-list'),emp=document.getElementById('bons-empty');if(!filtered.length){list.innerHTML='';emp.style.display='block';return;}emp.style.display='none';list.innerHTML=filtered.map(function(o){var cost=o.items.reduce(function(s,i){return s+i.cost;},0);var imgC=o.image?'<img src="'+o.image+'" alt="">':'<span>'+(o.status==='validated'?'✅':'📋')+'</span>';return'<div class="bc" onclick="openEditBon(\''+o.id+'\')" ><div class="bc-img">'+imgC+'</div><div class="bc-body"><div class="bc-name">'+esc(o.name)+'</div><div class="bc-meta">'+fDate(o.date)+' · '+o.items.length+' art.'+(o.recipesUsed&&o.recipesUsed.length?' · ⊛'+o.recipesUsed.length:'')+'</div><div class="bc-row"><span class="badge '+(o.status==='validated'?'bd-ok':'bd-d')+'">'+(o.status==='validated'?'✓ Validé':'Brouillon')+'</span><div class="bc-btns" onclick="event.stopPropagation()"><button class="btn btn-ghost btn-xs" onclick="openEditBon(\''+o.id+'\')">✎ Éditer</button><button class="btn btn-ghost btn-xs" onclick="dupBonById(\''+o.id+'\')">⧉</button><button class="btn btn-red btn-xs" onclick="askDel(\'order\',\''+o.id+'\',\''+escJS(o.name)+'\')">✕</button></div></div><div class="bc-cost">'+fEur(cost)+'</div></div></div>';}).join('');}
+
+// ── HOME ──────────────────────────────────────────────────────
+function renderHome(){var d=new Date();document.getElementById('h-date').textContent=d.toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}).toUpperCase();document.getElementById('sb-date').textContent=d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}).toUpperCase()+' · '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});document.getElementById('qs-rec').textContent=recipes.length+' recette'+(recipes.length!==1?'s':'');document.getElementById('qs-bon').textContent=orders.length+' bon'+(orders.length!==1?'s':'');document.getElementById('qs-cat').textContent=ingredients.length+' ingrédient'+(ingredients.length!==1?'s':'');var amt=orders.reduce(function(s,o){return s+o.items.reduce(function(ss,i){return ss+i.cost;},0);},0);document.getElementById('h-stats').innerHTML='<div class="hstat"><span class="hstat-v">'+orders.length+'</span><div class="hstat-l">Bons créés</div></div><div class="hstat"><span class="hstat-v">'+recipes.length+'</span><div class="hstat-l">Recettes</div></div><div class="hstat"><span class="hstat-v">'+ingredients.length+'</span><div class="hstat-l">Ingrédients</div></div><div class="hstat"><span class="hstat-v" style="font-size:18px">'+fEur(amt)+'</span><div class="hstat-l">Total TTC</div></div>';var rec=orders.slice(0,4);document.getElementById('h-recents').innerHTML=rec.length?rec.map(function(o){var cost=o.items.reduce(function(s,i){return s+i.cost;},0);var imgC=o.image?'<img src="'+o.image+'" alt="">':'<span>'+(o.status==='validated'?'✅':'📋')+'</span>';return'<div class="bc" onclick="openEditBon(\''+o.id+'\')" ><div class="bc-img">'+imgC+'</div><div class="bc-body"><div class="bc-name">'+esc(o.name)+'</div><div class="bc-meta">'+fDate(o.date)+' · '+o.items.length+' art.</div><div class="bc-row"><span class="badge '+(o.status==='validated'?'bd-ok':'bd-d')+'">'+(o.status==='validated'?'✓ Validé':'Brouillon')+'</span><span class="bc-cost">'+fEur(cost)+'</span></div></div></div>';}).join(''):'<div class="empty-s" style="text-align:center;padding:20px">Aucun bon récent</div>';}
+
+// ── RECETTES ──────────────────────────────────────────────────
+var editRecId=null,activeCat='',activeSub='',recItems=[];
+var activeIngCat='',activeIngSub='';
+var selRIng=null,selSubRec=null;
+
+function openNewRec(){editRecId=null;recItems=[];fillCatSelect('r-cat','rec',loadCats('rec')[0]);fillSubSelect('r-sub','rec',loadCats('rec')[0],'');document.getElementById('r-name').value='';document.getElementById('r-img').value='';document.getElementById('r-img').disabled=false;curRecImg=null;var _rf=document.getElementById('r-img-file');if(_rf)_rf.value='';showRecImgPrev();document.getElementById('r-notes').value='';document.getElementById('r-items').innerHTML='';document.getElementById('r-items-empty').style.display='none';document.getElementById('tb-title').textContent='Nouvelle recette';calcRecTots();goPage('rec-edit');}
+function openEditRec(id){var r=recipes.find(function(x){return x.id===id;});if(!r)return;editRecId=id;recItems=r.items.map(function(i){return Object.assign({},i);});document.getElementById('r-name').value=r.name;fillCatSelect('r-cat','rec',r.cat);fillSubSelect('r-sub','rec',r.cat,r.sub||'');var _isImg=r.image&&r.image.length>4;curRecImg=_isImg?r.image:null;document.getElementById('r-img').value=_isImg?'':(r.image||'');document.getElementById('r-img').disabled=!!_isImg;showRecImgPrev();document.getElementById('r-notes').value=r.notes||'';document.getElementById('tb-title').textContent=r.name;goPage('rec-edit');renderRItems();calcRecTots();}
+function renderRItems(){var wrap=document.getElementById('r-items'),emp=document.getElementById('r-items-empty');if(!recItems.length){wrap.innerHTML='';emp.style.display='block';calcRecTots();return;}emp.style.display='none';var html='<div class="ilist"><div class="ihd"><span>Composant</span><span style="text-align:right">Qté</span><span>Unt</span><span></span></div>';recItems.forEach(function(item,idx){if(item.type==='ingredient'){var ing=ingredients.find(function(i){return i.id===item.refId;});html+='<div class="ir"><div><div class="ir-n">'+esc(ing?ing.name:'?')+'</div><div class="ir-c">Ingrédient</div></div><input class="iq" type="number" value="'+item.qty+'" min="0" step="any" onchange="updRI('+idx+',this.value)"><div class="iu">'+item.unit+'</div><button class="idel" onclick="remRI('+idx+')">✕</button></div>';}else{var rec=recipes.find(function(r){return r.id===item.refId;});html+='<div class="ir" style="border-left:2px solid var(--bl)"><div><div class="ir-n" style="color:var(--bl)">⊛ '+esc(rec?rec.name:'?')+'</div><div class="ir-c">Sous-recette</div></div><input class="iq" type="number" value="'+item.qty+'" min="0" step="0.01" onchange="updRI('+idx+',this.value)"><div class="iu">×</div><button class="idel" onclick="remRI('+idx+')">✕</button></div>';}});html+='</div>';wrap.innerHTML=html;calcRecTots();}
+function updRI(idx,val){if(recItems[idx])recItems[idx].qty=parseFloat(val)||0;calcRecTots();}
+function remRI(idx){recItems.splice(idx,1);renderRItems();}
+function calcRecTots(){var tmp={id:'__tmp__',name:'',cat:'',image:'',notes:'',items:recItems};var orig=recipes;recipes=orig.concat([tmp]);var w=recWeight('__tmp__'),c=recCost('__tmp__');recipes=orig;document.getElementById('r-w').textContent=fQ(w)+' kg';document.getElementById('r-c').textContent=fEur(c);}
+function saveRecipe(){var name=document.getElementById('r-name').value.trim();if(!name){toast('Nom requis','err');return;}if(!recItems.length){toast('Ajoutez au moins un ingrédient','err');return;}var rec={id:editRecId||uid(),name:name,cat:document.getElementById('r-cat').value,sub:(document.getElementById('r-sub')||{}).value||'',image:curRecImg||document.getElementById('r-img').value.trim(),notes:document.getElementById('r-notes').value.trim(),items:recItems.map(function(i){return Object.assign({},i,{id:i.id||uid()});}),createdAt:editRecId?(function(){var r=recipes.find(function(x){return x.id===editRecId;});return r?r.createdAt:now();})():now()};if(editRecId){var i=recipes.findIndex(function(r){return r.id===editRecId;});if(i>=0)recipes[i]=rec;else recipes.unshift(rec);}else recipes.unshift(rec);persist();updBadges();toast('✓ Recette enregistrée','ok');goPage('recettes');}
+function renderRec(){var cats=[...new Set(recipes.map(function(r){return r.cat;}))];document.getElementById('rec-chips').innerHTML='<div class="chip'+(activeCat===''&&!activeSub?' on':'')+'" onclick="filterCat(\'\')">Tout</div>'+cats.map(function(c){return'<div class="chip'+(activeCat===c&&!activeSub?' on':'')+'" onclick="filterCat(\''+esc(c)+'\')">'+esc(c)+'</div>';}).join('');var subChips='';
+  // Les sous-catégories sont des filtres globaux : cliquer sur « Essai » doit
+  // faire remonter TOUTES les recettes de cette sous-catégorie, quelle que
+  // soit leur catégorie — donc la liste des puces n'est plus limitée à la
+  // catégorie active, et ne dépend pas d'elle.
+  var usedIds=Array.from(new Set(recipes.filter(function(r){return r.sub;}).map(function(r){return r.sub;})));
+  var sl=usedIds.map(function(id){return subById('rec',id);}).filter(Boolean).sort(function(a,b){return a.name.localeCompare(b.name,'fr');});
+  if(sl.length) subChips=sl.map(function(s){ return '<div class="chip'+(activeSub===s.id?' on':'')+'" onclick="filterSub(\''+s.id+'\')">⊛ '+esc(s.name)+'</div>'; }).join('');
+  var subBox=document.getElementById('rec-subchips');
+  if(subBox){ subBox.innerHTML=subChips; subBox.style.display=subChips?'':'none'; }
+  // Une sous-catégorie active prime sur la catégorie : on veut toutes les
+  // recettes de cette sous-catégorie, peu importe leur catégorie.
+  var list=activeSub?recipes.filter(function(r){return r.sub===activeSub;}):(activeCat?recipes.filter(function(r){return r.cat===activeCat;}):recipes);
+  var grid=document.getElementById('rec-grid'),emp=document.getElementById('rec-empty');if(!list.length){grid.innerHTML='';emp.style.display='block';return;}emp.style.display='none';grid.innerHTML=list.map(function(r){var w=recWeight(r.id),cost=recCost(r.id),sub=r.items.filter(function(i){return i.type==='recipe';}).length;var isEm=r.image&&r.image.length<=4;return'<div class="rc"><div class="rc-top">'+(r.image&&!isEm?'<img src="'+esc(r.image)+'" alt="">':'<span style="font-size:32px;">'+(r.image||'📖')+'</span>')+'<div class="rc-ov"></div></div><div class="rc-body"><div class="rc-name">'+esc(r.name)+'</div><div class="rc-cat">'+r.cat+(sub?' · ⊛'+sub:'')+'</div><div class="rc-stats"><div class="rs"><span class="rs-v">'+fQ(w)+' kg</span><div class="rs-l">Poids</div></div><div class="rs"><span class="rs-v">'+fEur(cost)+'</span><div class="rs-l">Coût TTC</div></div><div class="rs"><span class="rs-v">'+r.items.length+'</span><div class="rs-l">Compos.</div></div></div></div><div class="rc-foot"><button class="btn btn-ghost btn-sm" style="flex:1" onclick="quickAddRec(\''+r.id+'\')">＋ Bon</button><button class="btn btn-ghost btn-sm" onclick="openEditRec(\''+r.id+'\')">✎</button><button class="btn btn-ghost btn-sm" onclick="dupRecette(\''+r.id+'\')">⧉</button><button class="btn btn-red btn-sm" onclick="askDel(\'recipe\',\''+r.id+'\',\''+escJS(r.name)+'\')">✕</button></div></div>';}).join('');}
+function filterCat(c){activeCat=c;activeSub='';renderRec();}
+function filterSub(s){activeSub=(activeSub===s?'':s);activeCat='';renderRec();}
+function filterIngCat(c){activeIngCat=c;activeIngSub='';renderCat();}
+function filterIngSub(s){activeIngSub=(activeIngSub===s?'':s);activeIngCat='';renderCat();}
+function quickAddRec(recId){if(!curBon){curBon=mkOrder();curBonNew=true;curImg=null;}addRecToOrder(recId,curBon,1);persist();updBadges();renderEd();toast('⊛ Recette ajoutée','ok');goPage('edit');}
+function dupRecette(id){var r=recipes.find(function(x){return x.id===id;});if(!r)return;var c=JSON.parse(JSON.stringify(r));c.id=uid();c.name='Copie — '+r.name;c.createdAt=now();c.items=c.items.map(function(i){return Object.assign({},i,{id:uid()});});recipes.unshift(c);persist();updBadges();renderRec();toast('⧉ Recette dupliquée','ok');}
+
+// ── MODAL ING (recette) ───────────────────────────────────────
+function filterRIng(){var s=document.getElementById('ring-s').value.toLowerCase();var f=ingredients.filter(function(i){return!s||i.name.toLowerCase().indexOf(s)>=0;});document.getElementById('ring-list').innerHTML=f.map(function(i){return'<div class="pi2'+(selRIng&&selRIng.id===i.id?' sel':'')+'" onclick="pickRIng(\''+i.id+'\')" ><div><div class="pi2-n">'+esc(i.name)+'</div><div class="pi2-m">'+i.cat+' · '+unitLabel(i)+'</div></div></div>';}).join('');}
+function pickRIng(id){selRIng=ingredients.find(function(i){return i.id===id;});filterRIng();document.getElementById('ring-qty').style.display='block';var u=document.getElementById('ring-u');u.innerHTML=ALLUNITS.map(function(x){return'<option>'+x+'</option>';}).join('');for(var j=0;j<u.options.length;j++){if(u.options[j].value===selRIng.unit){u.selectedIndex=j;break;}}}
+function confirmRIng(){if(!selRIng){toast('Sélectionnez','err');return;}var qty=parseFloat(document.getElementById('ring-q').value)||0;if(!qty){toast('Quantité requise','err');return;}recItems.push({id:uid(),type:'ingredient',refId:selRIng.id,qty:qty,unit:document.getElementById('ring-u').value});closeMod('m-ring');renderRItems();toast('✓ '+selRIng.name+' ajouté','ok');}
+var subRecMode='mult';
+function initSubRec(){
+  selSubRec=null; subRecMode='mult';
+  var avail=recipes.filter(function(r){return r.id!==editRecId;});
+  if(!avail.length){toast('Aucune autre recette','info');return false;}
+  document.getElementById('subrec-mult').value=1;
+  document.getElementById('subrec-kg').value='';
+  document.getElementById('subrec-qty').style.display='none';
+  setSubRecMode('mult');
+  document.getElementById('subrec-list-m').innerHTML=avail.map(function(r){return'<div class="rpi'+(selSubRec&&selSubRec.id===r.id?' sel':'')+'" onclick="pickSubRec(\''+r.id+'\')" ><div class="rpe">'+(r.image&&r.image.length<=4?r.image:'📖')+'</div><div><div class="rpn">'+esc(r.name)+'</div><div class="rpm">'+r.cat+'</div></div></div>';}).join('');
+  return true;
+}
+function pickSubRec(id){
+  selSubRec=recipes.find(function(r){return r.id===id;});
+  document.querySelectorAll('#subrec-list-m .rpi').forEach(function(el){el.classList.toggle('sel',el.querySelector('.rpn').textContent===selSubRec.name);});
+  document.getElementById('subrec-qty').style.display='block';
+  // Le poids de base (×1) sert de référence aux deux modes.
+  if(subRecMode==='kg') syncSubRecKgFromMult(); else onSubRecMultInput();
+}
+function setSubRecMode(mode){
+  subRecMode=mode;
+  document.getElementById('subrec-mode-mult').classList.toggle('on',mode==='mult');
+  document.getElementById('subrec-mode-kg').classList.toggle('on',mode==='kg');
+  document.getElementById('subrec-mult-wrap').style.display = mode==='mult' ? 'block' : 'none';
+  document.getElementById('subrec-kg-wrap').style.display = mode==='kg' ? 'block' : 'none';
+  if(!selSubRec) return;
+  if(mode==='kg') syncSubRecKgFromMult(); else onSubRecMultInput();
+}
+function syncSubRecKgFromMult(){
+  if(!selSubRec) return;
+  var base=recWeight(selSubRec.id);
+  var mult=parseFloat(document.getElementById('subrec-mult').value)||1;
+  document.getElementById('subrec-kg').value = base>0 ? rnd(base*mult) : '';
+  updSubRecHint();
+}
+function onSubRecMultInput(){ updSubRecHint(); }
+function onSubRecKgInput(){
+  if(!selSubRec) return;
+  var base=recWeight(selSubRec.id);
+  var kg=parseFloat(document.getElementById('subrec-kg').value)||0;
+  if(base>0) document.getElementById('subrec-mult').value = rnd(kg/base);
+  updSubRecHint();
+}
+function updSubRecHint(){
+  var h=document.getElementById('subrec-hint');
+  if(!selSubRec||!h) return;
+  var base=recWeight(selSubRec.id), baseCost=recCost(selSubRec.id);
+  var mult=parseFloat(document.getElementById('subrec-mult').value)||0;
+  if(base<=0){ h.textContent='ℹ️ Cette recette n\'a pas encore de poids calculé.'; return; }
+  h.textContent='ℹ️ Poids de base : '+fQ(base)+' kg · avec ce réglage → '+fQ(base*mult)+' kg, '+fEur(baseCost*mult)+' TTC';
+}
+function confirmSubRec(){
+  if(!selSubRec){toast('Sélectionnez','err');return;}
+  var m=parseFloat(document.getElementById('subrec-mult').value)||1;
+  recItems.push({id:uid(),type:'recipe',refId:selSubRec.id,qty:m,unit:'x'});
+  closeMod('m-subrec');renderRItems();
+  toast('⊛ '+selSubRec.name+' ajouté ('+fQ(recWeight(selSubRec.id)*m)+' kg)','ok');
+}
+
+// ── CATALOGUE ─────────────────────────────────────────────────
+// Fenêtre de saisie interne : prompt() est bloqué dans le navigateur intégré
+// de l'iPhone, il faut donc notre propre boîte de dialogue.
+function askText(title, placeholder, cb){
+  var ov=document.getElementById('m-ask');
+  if(!ov){
+    ov=document.createElement('div');
+    ov.className='ov'; ov.id='m-ask';
+    ov.innerHTML='<div class="modal" style="max-width:380px">'+
+      '<div class="m-hdr"><h3 id="ask-title">Saisie</h3>'+
+      '<button class="m-x" onclick="closeAsk(false)">✕</button></div>'+
+      '<div class="m-body"><div class="field" style="margin-bottom:0">'+
+      '<input class="fi" type="text" id="ask-input" placeholder=""></div></div>'+
+      '<div class="m-foot"><button class="btn btn-ghost" onclick="closeAsk(false)">Annuler</button>'+
+      '<button class="btn btn-gold" onclick="closeAsk(true)">Valider</button></div></div>';
+    document.body.appendChild(ov);
+    ov.addEventListener('click',function(e){ if(e.target===ov) closeAsk(false); });
+  }
+  document.getElementById('ask-title').textContent=title||'Saisie';
+  var inp=document.getElementById('ask-input');
+  inp.value=''; inp.placeholder=placeholder||'';
+  inp.onkeydown=function(e){ if(e.key==='Enter') closeAsk(true); };
+  window.__askCb=cb;
+  ov.classList.add('show');
+  setTimeout(function(){ try{ inp.focus(); }catch(e){} },50);
+}
+function closeAsk(ok){
+  var ov=document.getElementById('m-ask');
+  var val=ok ? (document.getElementById('ask-input').value||'').trim() : null;
+  if(ov) ov.classList.remove('show');
+  var cb=window.__askCb; window.__askCb=null;
+  if(cb) cb(val);
+}
+
+// ── CATÉGORIES PERSONNALISABLES (recettes & catalogue) ─────────
+var DEFAULT_ING_CATS=['Farines & Céréales','Beurres & MG','Sucres','Levures','Œufs & Laitages','Sel & Épices','Fruits & Garnitures','Emballages','Autre'];
+var DEFAULT_REC_CATS=['Boulangerie','Viennoiseries','Pâtisseries','Brioches','Tartes','Snacking','Autre'];
+function loadCats(kind){
+  var key = kind==='rec' ? 'v4_reccats' : 'v4_ingcats';
+  var def = kind==='rec' ? DEFAULT_REC_CATS : DEFAULT_ING_CATS;
+  try{
+    var stored=JSON.parse(localStorage.getItem(key)||'null');
+    if(Array.isArray(stored)&&stored.length) return stored;
+  }catch(e){}
+  return def.slice();
+}
+function saveCats(kind, arr){ try{ localStorage.setItem(kind==='rec'?'v4_reccats':'v4_ingcats', JSON.stringify(arr)); }catch(e){} }
+// Ajoute une catégorie si elle n'existe pas déjà (insensible à la casse) et renvoie son nom normalisé
+function addCatIfNew(kind, name){
+  name=String(name||'').trim();
+  if(!name) return '';
+  var list=loadCats(kind);
+  var found=list.find(function(c){return c.toLowerCase()===name.toLowerCase();});
+  if(found) return found;
+  list.push(name); saveCats(kind,list);
+  return name;
+}
+// Génère les <option> d'une liste de catégories, avec le choix « + Nouvelle catégorie… »
+function catOptions(kind, selected){
+  var list=loadCats(kind);
+  if(selected && !list.some(function(c){return c===selected;})) list=list.concat([selected]);
+  return list.map(function(c){return '<option value="'+esc(c)+'"'+(c===selected?' selected':'')+'>'+esc(c)+'</option>';}).join('')
+    +'<option value="__new__">＋ Nouvelle catégorie…</option>';
+}
+function fillCatSelect(id, kind, selected){ var el=document.getElementById(id); if(el) el.innerHTML=catOptions(kind, selected); }
+// Gère le choix « + Nouvelle catégorie… » sur un <select> catégorie classique (formulaires principaux)
+function handleCatChange(sel, kind){
+  // Le menu des sous-catégories suit toujours la catégorie choisie
+  var subMap={'r-cat':['r-sub','rec'],'cat-c':['cat-s','ing'],'edit-cat-c':['edit-cat-s','ing']};
+  var link=subMap[sel.id];
+  if(link && sel.value!=='__new__') fillSubSelect(link[0], link[1], sel.value, '');
+  if(sel.value!=='__new__') return;
+  var previous = sel.getAttribute('data-prev') || (loadCats(kind)[0]||'');
+  sel.value = previous;   // on rétablit tout de suite, la saisie est asynchrone
+  askText('Nouvelle catégorie','Ex: Chocolats, Snacking salé…',function(name){
+    if(!name) return;
+    var added=addCatIfNew(kind, name);
+    sel.innerHTML=catOptions(kind, added);
+    sel.value=added;
+    if(link) fillSubSelect(link[0], link[1], added, '');
+    toast('✓ Catégorie « '+added+' » ajoutée','ok');
+  });
+}
+
+
+
+// ── SOUS-CATÉGORIES ───────────────────────────────────────────
+// Les catégories existantes sont de simples chaînes de caractères, sans
+// identifiant : les ingrédients et recettes y sont rattachés par leur nom.
+// On ne refond pas cet existant. Les sous-catégories, elles, ont un vrai
+// identifiant unique, et c'est LUI que portent les ingrédients et recettes.
+// Conséquence voulue : « Fruits → Secs » et « Chocolats → Secs » sont deux
+// entités distinctes, avec deux identifiants différents.
+function subsKey(kind){ return kind==='rec' ? 'v4_recsubs' : 'v4_ingsubs'; }
+function loadSubs(kind){
+  try{ var a=JSON.parse(localStorage.getItem(subsKey(kind))||'[]'); return Array.isArray(a)?a:[]; }
+  catch(e){ return []; }
+}
+function saveSubs(kind, arr){ try{ localStorage.setItem(subsKey(kind), JSON.stringify(arr)); }catch(e){} }
+
+// Sous-catégories d'une catégorie parente donnée, triées par nom
+function subsOf(kind, parent){
+  return loadSubs(kind).filter(function(s){ return s.parent===parent; })
+    .sort(function(a,b){ return a.name.localeCompare(b.name,'fr'); });
+}
+function subById(kind, id){
+  if(!id) return null;
+  return loadSubs(kind).find(function(s){ return s.id===id; })||null;
+}
+function subLabel(kind, id){ var s=subById(kind,id); return s?s.name:''; }
+
+// Création : le doublon n'est refusé QUE dans la même catégorie parente
+function addSub(kind, parent, name){
+  name=String(name||'').trim();
+  parent=String(parent||'').trim();
+  if(!name||!parent) return null;
+  var all=loadSubs(kind);
+  var exist=all.find(function(s){
+    return s.parent===parent && s.name.toLowerCase()===name.toLowerCase();
+  });
+  if(exist) return exist;                      // déjà là dans CETTE catégorie
+  var s={ id:uid(), parent:parent, name:name, kind:kind };
+  all.push(s); saveSubs(kind,all);
+  return s;
+}
+function renameSub(kind, id, name){
+  name=String(name||'').trim(); if(!name) return false;
+  var all=loadSubs(kind);
+  var s=all.find(function(x){ return x.id===id; }); if(!s) return false;
+  var clash=all.find(function(x){
+    return x.id!==id && x.parent===s.parent && x.name.toLowerCase()===name.toLowerCase();
+  });
+  if(clash) return false;
+  s.name=name; saveSubs(kind,all); return true;
+}
+// Déplacement vers une autre catégorie parente
+function moveSub(kind, id, newParent){
+  var all=loadSubs(kind);
+  var s=all.find(function(x){ return x.id===id; }); if(!s) return false;
+  var clash=all.find(function(x){
+    return x.id!==id && x.parent===newParent && x.name.toLowerCase()===s.name.toLowerCase();
+  });
+  if(clash) return false;
+  s.parent=newParent; saveSubs(kind,all);
+  // Les éléments suivent leur sous-catégorie
+  var arr = kind==='rec' ? recipes : ingredients;
+  arr.forEach(function(x){ if(x.sub===id) x.cat=newParent; });
+  persist();
+  return true;
+}
+// Suppression : les éléments retournent à leur catégorie parente, jamais perdus
+function deleteSub(kind, id){
+  var all=loadSubs(kind).filter(function(s){ return s.id!==id; });
+  saveSubs(kind,all);
+  var arr = kind==='rec' ? recipes : ingredients;
+  var n=0;
+  arr.forEach(function(x){ if(x.sub===id){ x.sub=''; n++; } });
+  persist();
+  return n;
+}
+// Nombre d'éléments rattachés à une sous-catégorie
+function subCount(kind, id){
+  var arr = kind==='rec' ? recipes : ingredients;
+  return arr.filter(function(x){ return x.sub===id; }).length;
+}
+
+// Remplit un menu de sous-catégories selon la catégorie parente choisie.
+// Sans sous-catégorie définie, le menu reste masqué : le fonctionnement
+// actuel est conservé à l'identique.
+// Sous-catégories : regroupées par catégorie d'origine pour la lisibilité,
+// mais toutes sélectionnables quelle que soit la catégorie actuelle de
+// l'élément — une sous-catégorie créée sous « Boulangerie » (ex: « Essai »)
+// reste utilisable par une recette classée dans une autre catégorie.
+function fillSubSelect(selId, kind, parent, selected){
+  var el=document.getElementById(selId); if(!el) return;
+  var all=loadSubs(kind);
+  var byParent={}, parents=[];
+  all.forEach(function(s){
+    if(!byParent[s.parent]){ byParent[s.parent]=[]; parents.push(s.parent); }
+    byParent[s.parent].push(s);
+  });
+  parents.sort(function(a,b){ return a.localeCompare(b,'fr'); });
+  var html='<option value="">— Aucune —</option>';
+  parents.forEach(function(p){
+    var subs=byParent[p].slice().sort(function(a,b){ return a.name.localeCompare(b.name,'fr'); });
+    html+='<optgroup label="'+esc(p)+'">'+subs.map(function(s){
+      return '<option value="'+s.id+'"'+(s.id===selected?' selected':'')+'>'+esc(s.name)+'</option>';
+    }).join('')+'</optgroup>';
+  });
+  html+='<option value="__newsub__">＋ Nouvelle sous-catégorie…</option>';
+  el.innerHTML=html;
+  var wrap=el.closest?el.closest('.field'):null;
+  if(wrap) wrap.style.display='';
+}
+// Gère le choix « ＋ Nouvelle sous-catégorie… »
+function handleSubChange(sel, kind, parentSelId){
+  if(sel.value!=='__newsub__') return;
+  var parent=(document.getElementById(parentSelId)||{}).value||'';
+  sel.value='';
+  if(!parent){ toast('Choisissez d\'abord une catégorie','err'); return; }
+  askText('Nouvelle sous-catégorie','Dans « '+parent+' »',function(name){
+    if(!name) return;
+    var s=addSub(kind,parent,name);
+    if(!s){ toast('Nom invalide','err'); return; }
+    fillSubSelect(sel.id, kind, parent, s.id);
+    toast('✓ « '+s.name+' » ajoutée dans '+parent,'ok');
+  });
+}
+
+
+// ── ÉCRAN DE GESTION DE LA HIÉRARCHIE ─────────────────────────
+var subMgrKind='ing', subMgrOpen={};
+function openSubMgr(kind){
+  subMgrKind=kind||'ing';
+  renderSubMgr();
+  openMod('m-submgr');
+}
+function renderSubMgr(){
+  var box=document.getElementById('submgr-body'); if(!box) return;
+  var kind=subMgrKind;
+  var cats=loadCats(kind).slice();
+  // Une sous-catégorie dont la catégorie parente n'est plus dans la liste
+  // resterait invisible : on l'affiche quand même pour pouvoir la corriger.
+  loadSubs(kind).forEach(function(s){
+    if(cats.indexOf(s.parent)<0) cats.push(s.parent);
+  });
+  document.getElementById('submgr-tab-ing').classList.toggle('on',kind==='ing');
+  document.getElementById('submgr-tab-rec').classList.toggle('on',kind==='rec');
+  box.innerHTML=cats.map(function(cat){
+    var subs=subsOf(kind,cat);
+    var open=subMgrOpen[kind+'|'+cat]!==false;
+    var icon=(kind==='ing'?(CATI[cat]||'🗂'):'📁');
+    return '<div style="margin-bottom:8px;border:1px solid var(--bd);border-radius:8px;overflow:hidden">'+
+      '<div style="display:flex;align-items:center;gap:8px;padding:9px 10px;background:var(--p2);cursor:pointer" '+
+        'onclick="toggleSubMgr(\''+esc(cat).replace(/'/g,"\\'")+'\')">'+
+        '<span style="font-size:11px;color:var(--i4)">'+(open?'▾':'▸')+'</span>'+
+        '<span style="flex:1;font-weight:600;font-size:13px">'+icon+' '+esc(cat)+'</span>'+
+        '<span style="font-size:11px;color:var(--i4)">'+subs.length+'</span>'+
+      '</div>'+
+      (open?'<div style="padding:6px 10px 10px">'+
+        (subs.length?subs.map(function(s){
+          return '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px dashed var(--bd)">'+
+            '<span style="color:var(--i4);font-size:11px">└</span>'+
+            '<span style="flex:1;font-size:13px">'+esc(s.name)+'</span>'+
+            '<span style="font-size:11px;color:var(--i4)">'+subCount(kind,s.id)+'</span>'+
+            '<button class="cat-d cat-edit" onclick="renameSubUI(\''+s.id+'\')">✎</button>'+
+            '<button class="cat-d cat-dup" onclick="moveSubUI(\''+s.id+'\')">⇄</button>'+
+            '<button class="cat-d cat-del" onclick="deleteSubUI(\''+s.id+'\')">✕</button>'+
+          '</div>';
+        }).join(''):'<div style="font-size:12px;color:var(--i4);padding:4px 0">Aucune sous-catégorie</div>')+
+        '<button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" '+
+          'onclick="addSubUI(\''+esc(cat).replace(/'/g,"\\'")+'\')">＋ Sous-catégorie</button>'+
+      '</div>':'')+
+    '</div>';
+  }).join('');
+}
+function toggleSubMgr(cat){
+  var k=subMgrKind+'|'+cat;
+  subMgrOpen[k]=(subMgrOpen[k]===false);
+  renderSubMgr();
+}
+function addSubUI(cat){
+  askText('Nouvelle sous-catégorie','Dans « '+cat+' »',function(name){
+    if(!name) return;
+    var s=addSub(subMgrKind,cat,name);
+    renderSubMgr(); renderCat(); renderRec();
+    toast(s?('✓ « '+s.name+' » ajoutée'):'Nom invalide', s?'ok':'err');
+  });
+}
+function renameSubUI(id){
+  var s=subById(subMgrKind,id); if(!s) return;
+  askText('Renommer','Actuellement « '+s.name+' »',function(name){
+    if(!name) return;
+    if(!renameSub(subMgrKind,id,name)){ toast('« '+name+' » existe déjà dans cette catégorie','err'); return; }
+    renderSubMgr(); renderCat(); renderRec();
+    toast('✓ Renommée','ok');
+  });
+}
+function moveSubUI(id){
+  var s=subById(subMgrKind,id); if(!s) return;
+  var cats=loadCats(subMgrKind).filter(function(c){ return c!==s.parent; });
+  if(!cats.length){ toast('Aucune autre catégorie','info'); return; }
+  askText('Déplacer vers','Catégories : '+cats.join(', '),function(target){
+    if(!target) return;
+    var match=cats.find(function(c){ return c.toLowerCase()===target.toLowerCase(); });
+    if(!match){ toast('Catégorie « '+target+' » introuvable','err'); return; }
+    if(!moveSub(subMgrKind,id,match)){ toast('« '+s.name+' » existe déjà dans '+match,'err'); return; }
+    renderSubMgr(); renderCat(); renderRec();
+    toast('✓ Déplacée vers '+match,'ok');
+  });
+}
+function deleteSubUI(id){
+  var s=subById(subMgrKind,id); if(!s) return;
+  var n=subCount(subMgrKind,id);
+  if(!confirm('Supprimer la sous-catégorie « '+s.name+' » ?'+
+    (n?('\n\n'+n+' élément(s) y sont rattachés. Ils resteront dans « '+s.parent+' », rien ne sera supprimé.'):''))) return;
+  deleteSub(subMgrKind,id);
+  renderSubMgr(); renderCat(); renderRec();
+  toast('Sous-catégorie supprimée','ok');
+}
+function switchSubMgr(kind){ subMgrKind=kind; renderSubMgr(); }
+
+
+// ── SAUVEGARDE ET RESTAURATION ────────────────────────────────
+// Les données sont déjà enregistrées automatiquement sur l'appareil à chaque
+// modification. Ce module sert à en garder une copie hors de l'appareil :
+// un fichier que l'on peut ranger, envoyer, ou recharger sur un autre
+// téléphone — et qui protège d'un effacement du navigateur.
+var SAFETY_KEY='v4_safety';
+
+// Tout ce qui constitue les données de l'utilisateur
+function collectData(){
+  return {
+    format:'economat-pro', version:1, date:new Date().toISOString(),
+    ingredients: ingredients, recipes: recipes, orders: orders,
+    ingCats: loadCats('ing'), recCats: loadCats('rec'),
+    ingSubs: loadSubs('ing'), recSubs: loadSubs('rec'),
+    ocrFix: (function(){ try{ return JSON.parse(localStorage.getItem('v4_ocrfix')||'{}'); }catch(e){ return {}; } })()
+  };
+}
+
+// Filet de sécurité : on garde les 5 derniers états, au cas où
+function pushAutosave(motif){
+  try{
+    var hist=JSON.parse(localStorage.getItem(SAFETY_KEY)||'[]');
+    hist.push({ts:Date.now(), motif:motif||'', data:collectData()});
+    while(hist.length>5) hist.shift();
+    localStorage.setItem(SAFETY_KEY, JSON.stringify(hist));
+  }catch(e){}
+}
+
+function exportBackup(){
+  var d=collectData();
+  var blob=new Blob([JSON.stringify(d,null,1)],{type:'application/json'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  var st=new Date(); var pad=function(n){return n<10?'0'+n:''+n;};
+  a.download='economat-'+st.getFullYear()+pad(st.getMonth()+1)+pad(st.getDate())+'-'+pad(st.getHours())+pad(st.getMinutes())+'.json';
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('💾 Sauvegarde enregistrée ('+d.recipes.length+' recettes, '+d.ingredients.length+' ingrédients)','ok');
+}
+
+// Restauration : rien n'est écrasé sans confirmation, et l'état actuel
+// est mis de côté avant tout remplacement.
+function applyBackup(d, mode){
+  if(!d||d.format!=='economat-pro') { toast('Fichier non reconnu','err'); return false; }
+  pushAutosave('avant restauration');
+  // Comparaison autonome : le module d'import n'est pas accessible ici
+  var same=function(a,b){
+    return String(a||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'')
+       === String(b||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'');
+  };
+  if(mode==='merge'){
+    (d.ingredients||[]).forEach(function(x){
+      if(!ingredients.some(function(y){ return same(y.name,x.name); })) ingredients.push(x);
+    });
+    (d.recipes||[]).forEach(function(x){
+      if(!recipes.some(function(y){ return same(y.name,x.name); })) recipes.push(x);
+    });
+    (d.orders||[]).forEach(function(x){
+      if(!orders.some(function(y){ return y.id===x.id; })) orders.push(x);
+    });
+  } else {
+    ingredients.length=0; (d.ingredients||[]).forEach(function(x){ ingredients.push(x); });
+    recipes.length=0;     (d.recipes||[]).forEach(function(x){ recipes.push(x); });
+    orders.length=0;      (d.orders||[]).forEach(function(x){ orders.push(x); });
+  }
+  // Catégories et sous-catégories : fusionnées en mode « Ajouter », jamais
+  // écrasées. Une sauvegarde plus ancienne, sans certaines catégories créées
+  // depuis, ne doit pas les faire disparaître.
+  function mergeCatList(kind, incoming){
+    if(!incoming||!incoming.length) return;
+    var cur=loadCats(kind);
+    incoming.forEach(function(c){
+      if(!cur.some(function(x){ return x.toLowerCase()===String(c).toLowerCase(); })) cur.push(c);
+    });
+    saveCats(kind, cur);
+  }
+  function mergeSubList(kind, incoming){
+    if(!incoming||!incoming.length) return;
+    var cur=loadSubs(kind);
+    incoming.forEach(function(s){
+      var dup=cur.some(function(x){ return x.parent===s.parent && x.name.toLowerCase()===String(s.name).toLowerCase(); });
+      if(!dup) cur.push(Object.assign({},s,{id:s.id||uid()}));
+    });
+    saveSubs(kind, cur);
+  }
+  if(mode==='merge'){
+    mergeCatList('ing', d.ingCats); mergeCatList('rec', d.recCats);
+    mergeSubList('ing', d.ingSubs); mergeSubList('rec', d.recSubs);
+  } else {
+    if(d.ingCats) saveCats('ing', d.ingCats);
+    if(d.recCats) saveCats('rec', d.recCats);
+    if(d.ingSubs) saveSubs('ing', d.ingSubs);
+    if(d.recSubs) saveSubs('rec', d.recSubs);
+  }
+  if(d.ocrFix){ try{ localStorage.setItem('v4_ocrfix', JSON.stringify(d.ocrFix)); }catch(e){} }
+  persist(); updBadges(); renderCat(); renderRec(); renderHome(); renderBackup();
+  toast('✓ Restauration terminée — '+recipes.length+' recettes, '+ingredients.length+' ingrédients','ok');
+  return true;
+}
+
+function importBackupFile(input, mode){
+  var f=input.files&&input.files[0];
+  if(!f) return;
+  var r=new FileReader();
+  r.onload=function(e){
+    var d=null;
+    try{ d=JSON.parse(e.target.result); }
+    catch(err){ toast('Fichier illisible','err'); return; }
+    var msg = (mode==='replace')
+      ? 'REMPLACER toutes vos données par ce fichier ?\n\n'+
+        'Actuellement : '+recipes.length+' recettes, '+ingredients.length+' ingrédients\n'+
+        'Dans le fichier : '+((d.recipes||[]).length)+' recettes, '+((d.ingredients||[]).length)+' ingrédients\n\n'+
+        'Une copie de sécurité de l\'état actuel sera conservée.'
+      : 'Ajouter le contenu de ce fichier à vos données ?\n\n'+
+        'Les doublons seront ignorés, rien ne sera écrasé.';
+    if(!confirm(msg)) return;
+    applyBackup(d, mode);
+  };
+  r.readAsText(f);
+  input.value='';
+}
+
+// Restauration depuis le filet de sécurité interne
+function restoreSafety(i){
+  var hist=[];
+  try{ hist=JSON.parse(localStorage.getItem(SAFETY_KEY)||'[]'); }catch(e){}
+  var s=hist[i]; if(!s) return;
+  if(!confirm('Revenir à l\'état du '+new Date(s.ts).toLocaleString('fr-FR')+' ?\n\n'+
+    'Vos données actuelles seront remplacées. Une copie de sécurité sera conservée.')) return;
+  applyBackup(s.data,'replace');
+}
+
+function renderBackup(){
+  var box=document.getElementById('bk-body'); if(!box) return;
+  var hist=[];
+  try{ hist=JSON.parse(localStorage.getItem(SAFETY_KEY)||'[]'); }catch(e){}
+  box.innerHTML=
+    '<div class="cw"><div class="cw-t">Vos données</div>'+
+      '<div style="font-size:13px;color:var(--i2);line-height:1.7">'+
+        recipes.length+' recette(s)<br>'+ingredients.length+' ingrédient(s)<br>'+orders.length+' bon(s)</div>'+
+      '<div style="font-size:11px;color:var(--i4);margin-top:8px;line-height:1.5">'+
+        'Elles sont enregistrées automatiquement sur cet appareil à chaque modification, '+
+        'et rechargées au démarrage. La sauvegarde ci-dessous en crée une copie que vous '+
+        'gardez en dehors de l\'application.</div></div>'+
+    '<div class="cw"><div class="cw-t">Sauvegarder</div>'+
+      '<button class="btn btn-gold btn-full" onclick="exportBackup()">💾 Enregistrer une sauvegarde</button>'+
+      '<div style="font-size:11px;color:var(--i4);margin-top:7px">Un fichier à ranger dans vos documents, à envoyer par mail ou à conserver sur un autre appareil.</div></div>'+
+    '<div class="cw"><div class="cw-t">Restaurer</div>'+
+      '<input type="file" id="bk-file" accept=".json,application/json" style="display:none">'+
+      '<div class="inv-bar">'+
+        '<button class="btn btn-ghost btn-sm" onclick="bkPick(\'merge\')">Ajouter à mes données</button>'+
+        '<button class="btn btn-ghost btn-sm" onclick="bkPick(\'replace\')">Tout remplacer</button>'+
+      '</div>'+
+      '<div style="font-size:11px;color:var(--i4);margin-top:7px">Rien n\'est modifié sans confirmation.</div></div>'+
+    (hist.length?
+    '<div class="cw"><div class="cw-t">Copies automatiques</div>'+
+      '<div style="font-size:11px;color:var(--i4);margin-bottom:7px">Les '+hist.length+' derniers états, conservés par l\'application.</div>'+
+      hist.slice().reverse().map(function(s,k){
+        var idx=hist.length-1-k;
+        return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed var(--bd)">'+
+          '<div style="flex:1;font-size:12px">'+new Date(s.ts).toLocaleString('fr-FR')+
+          '<div style="font-size:10px;color:var(--i4)">'+esc(s.motif||'')+' · '+
+          (s.data.recipes||[]).length+' recettes, '+(s.data.ingredients||[]).length+' ingrédients</div></div>'+
+          '<button class="btn btn-ghost btn-sm" onclick="restoreSafety('+idx+')">Restaurer</button></div>';
+      }).join('')+'</div>':'');
+}
+function bkPick(mode){
+  var f=document.getElementById('bk-file');
+  f.onchange=function(){ importBackupFile(f, mode); };
+  f.click();
+}
+
+var CATI={'Farines & Céréales':'🌾','Beurres & MG':'🧈','Sucres':'🍬','Levures':'🧫','Œufs & Laitages':'🥚','Sel & Épices':'🧂','Fruits & Garnitures':'🍓','Emballages':'📦','Autre':'📦'};
+function addIng(){var name=document.getElementById('cat-n').value.trim();if(!name){toast('Nom requis','err');return;}if(ingredients.find(function(i){return i.name.toLowerCase()===name.toLowerCase();})){toast('Existe déjà','err');return;}var _u=document.getElementById('cat-u').value;
+var _uw=parseFloat(document.getElementById('cat-uw').value)||0;
+var _bp=parseFloat(document.getElementById('cat-p').value)||0;
+var _tmp={unit:_u,unitWeight:_uw};
+var _f=unitFactor(_u,_tmp);
+if(isCountable(_u)&&!_uw){toast('Indiquez le poids d\'une '+_u,'err');return;}
+ingredients.push({id:uid(),name:name,cat:document.getElementById('cat-c').value,sub:(document.getElementById('cat-s')||{}).value||'',
+  unit:_u,unitWeight:_uw||null,buyPrice:_bp,price:rnd(_bp/_f),image:curIngImg||(document.getElementById('cat-img')||{value:''}).value.trim()});persist();updBadges();renderCat();closeMod('m-addcat');resetIngImgUI('cat');toast('✓ Ingrédient ajouté','ok');}
+function openEditIng(id){var ing=ingredients.find(function(i){return i.id===id;});if(!ing)return;document.getElementById('edit-cat-id').value=id;document.getElementById('edit-cat-n').value=ing.name;fillCatSelect('edit-cat-c','ing',ing.cat);fillSubSelect('edit-cat-s','ing',ing.cat,ing.sub||'');document.getElementById('edit-cat-u').value=ing.unit;
+document.getElementById('edit-cat-uw').value=ing.unitWeight||'';
+document.getElementById('edit-cat-p').value=(ing.buyPrice!=null?ing.buyPrice:ing.price);
+var _isImg=ing.image&&ing.image.length>4;curIngImg=_isImg?ing.image:null;document.getElementById('edit-cat-img').value=_isImg?'':(ing.image||'');document.getElementById('edit-cat-img').disabled=!!_isImg;showIngImgPrev('edit-cat');
+syncUW('edit');openMod('m-editcat');}
+function saveEditIng(){var id=document.getElementById('edit-cat-id').value;var ing=ingredients.find(function(i){return i.id===id;});if(!ing)return;var n=document.getElementById('edit-cat-n').value.trim();if(!n){toast('Nom requis','err');return;}ing.name=n;ing.cat=document.getElementById('edit-cat-c').value;ing.sub=(document.getElementById('edit-cat-s')||{}).value||'';var _u2=document.getElementById('edit-cat-u').value;
+var _uw2=parseFloat(document.getElementById('edit-cat-uw').value)||0;
+if(isCountable(_u2)&&!_uw2){toast('Indiquez le poids d\'une '+_u2,'err');return;}
+var _bp2=parseFloat(document.getElementById('edit-cat-p').value)||0;
+ing.unit=_u2; ing.unitWeight=_uw2||null; ing.buyPrice=_bp2; ing.image=curIngImg||(document.getElementById('edit-cat-img')||{value:''}).value.trim();
+ing.price=rnd(_bp2/unitFactor(_u2,{unit:_u2,unitWeight:_uw2}));orders.forEach(function(order){order.items.forEach(function(item){if(item.ingId===id)item.cost=rnd(item.qty*ing.price);});});persist();renderCat();closeMod('m-editcat');toast('✓ Ingrédient modifié','ok');}
+function dupIngredient(id){var ing=ingredients.find(function(i){return i.id===id;});if(!ing)return;var c=JSON.parse(JSON.stringify(ing));c.id=uid();c.name='Copie — '+ing.name;ingredients.push(c);persist();updBadges();renderCat();toast('⧉ Ingrédient dupliqué','ok');}
+function renderCat(){var cats0=[...new Set(ingredients.map(function(i){return i.cat;}))];var chEl=document.getElementById('cat-chips');if(chEl){chEl.innerHTML='<div class="chip'+(activeIngCat===''&&!activeIngSub?' on':'')+'" onclick="filterIngCat(\'\')">Tout</div>'+cats0.map(function(c){return'<div class="chip'+(activeIngCat===c&&!activeIngSub?' on':'')+'" onclick="filterIngCat(\''+esc(c)+'\')">'+esc(c)+'</div>';}).join('');}var usedIds=Array.from(new Set(ingredients.filter(function(i){return i.sub;}).map(function(i){return i.sub;})));var sl=usedIds.map(function(id){return subById('ing',id);}).filter(Boolean).sort(function(a,b){return a.name.localeCompare(b.name,'fr');});var subChips=sl.length?sl.map(function(s){return '<div class="chip'+(activeIngSub===s.id?' on':'')+'" onclick="filterIngSub(\''+s.id+'\')">⊛ '+esc(s.name)+'</div>';}).join(''):'';var subBox=document.getElementById('cat-subchips');if(subBox){subBox.innerHTML=subChips;subBox.style.display=subChips?'':'none';}var s=(document.getElementById('cat-srch').value||'').toLowerCase();var base=activeIngSub?ingredients.filter(function(i){return i.sub===activeIngSub;}):(activeIngCat?ingredients.filter(function(i){return i.cat===activeIngCat;}):ingredients);var list=base.filter(function(i){return!s||i.name.toLowerCase().indexOf(s)>=0||i.cat.toLowerCase().indexOf(s)>=0;});var el=document.getElementById('cat-list'),emp=document.getElementById('cat-empty');emp.style.display=list.length?'none':'block';if(!list.length){el.innerHTML='';return;}var groups={};list.forEach(function(i){if(!groups[i.cat])groups[i.cat]=[];groups[i.cat].push(i);});var cats=Object.keys(groups).sort();el.innerHTML=cats.map(function(cat){var icon=CATI[cat]||'🗂';
+      // Regroupement par sous-catégorie ; les éléments sans sous-catégorie
+      // restent affichés directement sous leur catégorie, comme avant.
+      var bySub={}, order=[];
+      groups[cat].forEach(function(i){
+        var k=i.sub||'';
+        if(!bySub[k]){ bySub[k]=[]; order.push(k); }
+        bySub[k].push(i);
+      });
+      order.sort(function(a,b){
+        if(!a) return -1; if(!b) return 1;
+        return (subLabel('ing',a)||'').localeCompare(subLabel('ing',b)||'','fr');
+      });
+      function cardsOf(list){ return list.map(function(i){var _ic=(i.image&&i.image.length<=4)?i.image:(i.image?'<img src="'+esc(i.image)+'" style="width:100%;height:100%;object-fit:cover;border-radius:6px">':icon);return'<div class="catcard"><div class="cat-ic">'+_ic+'</div><div class="cat-b"><div class="cat-n">'+esc(i.name)+'</div><div class="cat-m"><span class="badge bd-g" style="padding:1px 5px;font-size:7px">'+i.unit+'</span></div></div><div class="cat-r"><div class="cat-p">'+dispPrice(i)+'</div><div class="cat-btns"><button class="cat-d cat-edit" onclick="openEditIng(\''+i.id+'\')">✎</button><button class="cat-d cat-dup" onclick="dupIngredient(\''+i.id+'\')">⧉</button><button class="cat-d cat-del" onclick="askDel(\'ing\',\''+i.id+'\',\''+escJS(i.name)+'\')">✕</button></div></div></div>';}).join(''); }
+      return '<div style="margin-bottom:14px;"><div class="cat-grp-hd">'+icon+' '+esc(cat)+
+        '<span class="cat-grp-cnt">'+groups[cat].length+'</span></div>'+
+        order.map(function(k){
+          var lbl=k?subLabel('ing',k):'';
+          if(k&&!lbl) return cardsOf(bySub[k]);          // sous-catégorie supprimée
+          return (k?'<div class="cat-sub-hd">└ '+esc(lbl)+
+                    '<span class="cat-grp-cnt">'+bySub[k].length+'</span></div>':'')+
+                 cardsOf(bySub[k]);
+        }).join('')+'</div>';}).join('');}
+
+
+
+// ── Unités : affichage du poids unitaire ─────────────────────
+function syncUW(pfx){
+  var uSel=document.getElementById(pfx==='edit'?'edit-cat-u':'cat-u');
+  var box=document.getElementById(pfx==='edit'?'edit-cat-uw-box':'cat-uw-box');
+  var lbl=document.getElementById(pfx==='edit'?'edit-cat-plabel':'cat-plabel');
+  if(!uSel||!box)return;
+  var u=uSel.value;
+  box.style.display=isCountable(u)?'block':'none';
+  if(lbl)lbl.textContent='Prix TTC / '+u;
+  var uw=document.getElementById(pfx==='edit'?'edit-cat-uw':'cat-uw');
+  if(uw)uw.placeholder='kg par '+u;
+  showPerKg(pfx);
+}
+function showPerKg(pfx){
+  var hint=document.getElementById(pfx==='edit'?'edit-cat-hint':'cat-hint');
+  if(!hint)return;
+  var u=document.getElementById(pfx==='edit'?'edit-cat-u':'cat-u').value;
+  var uw=parseFloat(document.getElementById(pfx==='edit'?'edit-cat-uw':'cat-uw').value)||0;
+  var bp=parseFloat(document.getElementById(pfx==='edit'?'edit-cat-p':'cat-p').value)||0;
+  var f=unitFactor(u,{unit:u,unitWeight:uw});
+  if(!bp||!f){hint.textContent='';return;}
+  hint.textContent='→ '+fEur(bp/f)+' / kg  (utilisé pour les recettes et les bons)';
+}
+
+// ── SUPPRESSION ───────────────────────────────────────────────
+var delType=null,delId=null;
+function askDel(type,id,name){delType=type;delId=id;document.getElementById('del-msg').textContent='Supprimer "'+name+'" ? Irréversible.';openMod('m-del');}
+function confirmDel(){if(delType==='ing')ingredients=ingredients.filter(function(i){return i.id!==delId;});if(delType==='recipe')recipes=recipes.filter(function(r){return r.id!==delId;});if(delType==='order')orders=orders.filter(function(o){return o.id!==delId;});persist();updBadges();closeMod('m-del');renderBons();renderRec();renderCat();renderHome();toast('Supprimé','err');}
+
+// ── MODALS ────────────────────────────────────────────────────
+function openMod(id){if(id==='m-ing'){selIng=null;document.getElementById('ing-s').value='';document.getElementById('ing-q').value='';document.getElementById('ing-qty').style.display='none';filterIng();}if(id==='m-rec'){initRecMod();}if(id==='m-ring'){selRIng=null;document.getElementById('ring-s').value='';document.getElementById('ring-q').value='';document.getElementById('ring-qty').style.display='none';filterRIng();}if(id==='m-subrec'){if(!initSubRec())return;}if(id==='m-addcat'){fillCatSelect('cat-c','ing',loadCats('ing')[0]);fillSubSelect('cat-s','ing',loadCats('ing')[0],'');document.getElementById('cat-n').value='';document.getElementById('cat-p').value='';document.getElementById('cat-uw').value='';resetIngImgUI('cat');syncUW('add');}document.getElementById(id).classList.add('show');}
+function closeMod(id){document.getElementById(id).classList.remove('show');}
+
+// ── UTILS ─────────────────────────────────────────────────────
+function updBadges(){var bb=document.getElementById('nd-bons'),br=document.getElementById('nd-rec');bb.textContent=orders.length;bb.classList.toggle('on',orders.length>0);br.textContent=recipes.length;br.classList.toggle('on',recipes.length>0);}
+function toast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(type||'ok');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},3000);}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function escJS(s){return esc(s).replace(/&#39;/g,"\\'");}
+function fEur(n){return(Math.round((n||0)*100)/100).toFixed(2).replace('.',',')+' €';}
+// Arrondi TOUJOURS AU-DESSUS, au millième, pour le bon d'économat :
+// mieux vaut commander un peu plus que pas assez. 1,2346 kg → 1,235 kg.
+// Le calcul interne garde sa précision ; seul l'affichage est arrondi.
+function ceil3(n){ return Math.ceil((Number(n)||0)*1000)/1000; }
+function fQup(n){ return parseFloat(ceil3(n).toFixed(3)); }
+function fQ(n){return parseFloat(Number(n||0).toPrecision(5));}
+function fDate(d){return d?new Date(d+'T00:00:00').toLocaleDateString('fr-FR'):'—';}
+function fTs(iso){if(!iso)return'—';var d=new Date(iso);return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});}
+
+// ── DONNÉES PAR DÉFAUT ────────────────────────────────────────
+function migrateUnits(){var ch=false;ingredients.forEach(function(i){if(i.buyPrice===undefined){i.buyPrice=i.price;ch=true;}if(i.unitWeight===undefined)i.unitWeight=null;});if(ch)persist();}
+function loadDefaults(){if(ingredients.length)return;ingredients=[{id:'i1',name:'Farine T45',cat:'Farines & Céréales',unit:'kg',price:0.85},{id:'i2',name:'Farine T65',cat:'Farines & Céréales',unit:'kg',price:0.78},{id:'i3',name:'Beurre 82%',cat:'Beurres & MG',unit:'kg',price:7.50},{id:'i4',name:'Sucre cristal',cat:'Sucres',unit:'kg',price:0.95},{id:'i5',name:'Levure fraîche',cat:'Levures',unit:'kg',price:4.20},{id:'i6',name:'Sel fin',cat:'Sel & Épices',unit:'kg',price:0.45},{id:'i7',name:'Oeufs M',cat:'Œufs & Laitages',unit:'kg',price:3.00},{id:'i8',name:'Lait entier',cat:'Œufs & Laitages',unit:'kg',price:0.95},{id:'i9',name:'Chocolat 70%',cat:'Autre',unit:'kg',price:8.50},{id:'i10',name:'Poudre amande',cat:'Fruits & Garnitures',unit:'kg',price:9.50},{id:'i11',name:'Eau',cat:'Autre',unit:'kg',price:0.002},{id:'i12',name:'Levure chimique',cat:'Levures',unit:'kg',price:6.00}];recipes=[{id:'r1',name:'Baguette Tradition',cat:'Boulangerie',image:'🥖',notes:'250°C · 20 min.',items:[{id:'x1',type:'ingredient',refId:'i2',qty:1000,unit:'g'},{id:'x2',type:'ingredient',refId:'i11',qty:650,unit:'g'},{id:'x3',type:'ingredient',refId:'i5',qty:10,unit:'g'},{id:'x4',type:'ingredient',refId:'i6',qty:18,unit:'g'}],createdAt:now()},{id:'r2',name:'Pâte Croissant',cat:'Viennoiseries',image:'🥐',notes:'Tourage ×3.',items:[{id:'x5',type:'ingredient',refId:'i1',qty:500,unit:'g'},{id:'x6',type:'ingredient',refId:'i3',qty:300,unit:'g'},{id:'x7',type:'ingredient',refId:'i8',qty:250,unit:'g'},{id:'x8',type:'ingredient',refId:'i4',qty:60,unit:'g'},{id:'x9',type:'ingredient',refId:'i5',qty:20,unit:'g'},{id:'x10',type:'ingredient',refId:'i6',qty:10,unit:'g'}],createdAt:now()}];persist();}
+
+
+// ── BOOT ──────────────────────────────────────────────────────
+loadDefaults();migrateUnits();updBadges();renderHome();
+document.querySelectorAll('.ov').forEach(function(ov){ov.addEventListener('click',function(e){if(e.target===ov)ov.classList.remove('show');});});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')document.querySelectorAll('.ov.show').forEach(function(ov){ov.classList.remove('show');});});
+setInterval(function(){var d=new Date();var el=document.getElementById('sb-date');if(el)el.textContent=d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}).toUpperCase()+' · '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});},30000);
+setInterval(function(){if(curBon&&CUR==='edit'){curBon.name=document.getElementById('e-name').value.trim()||curBon.name;curBon.date=document.getElementById('e-date').value||curBon.date;curBon.notes=document.getElementById('e-notes').value.trim()||'';curBon.image=curImg||'';curBon.updatedAt=now();if(curBonNew){orders.unshift(curBon);curBonNew=false;}else{var i=orders.findIndex(function(o){return o.id===curBon.id;});if(i>=0)orders[i]=curBon;}persist();}},45000);
+
+
+
+// ── Fonctions OCR partagées ───────────────────────────────────
+var CDN_TESS = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js';
+var CDN_PDF  = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+var CDN_PDFW = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+function loadScript(src){
+  return new Promise(function(res,rej){
+    if(document.querySelector('script[data-src="'+src+'"]')) return res();
+    var s=document.createElement('script'); s.src=src; s.setAttribute('data-src',src);
+    s.onload=function(){res();}; s.onerror=function(){rej(new Error('Téléchargement impossible — vérifiez votre connexion'));};
+    document.head.appendChild(s);
+  });
+}
+
+// Filets de tableau : effacés avant la lecture optique. Seules les lignes
+// FINES sont visées (clair au-dessus et au-dessous) : un bandeau de couleur
+// qui porte un titre reste intact.
+function removeRules(p, w, h){
+  var minH=Math.max(60, w*0.15), minV=Math.max(60, h*0.05), gap=6;
+  function dark(x,y){ return x>=0 && y>=0 && x<w && y<h && p[(y*w+x)*4]<128; }
+  function lightShare(x0,x1,y0,y1,horiz){
+    var n=0, ok=0;
+    if(horiz){ for(var x=x0;x<x1;x+=3){ n++; if(!dark(x,y0)&&!dark(x,y1)) ok++; } }
+    else { for(var y=y0;y<y1;y+=3){ n++; if(!dark(x0,y)&&!dark(x1,y)) ok++; } }
+    return n?ok/n:0;
+  }
+  var kill=[];
+  for(var y=0;y<h;y++){
+    var run=0;
+    for(var x=0;x<=w;x++){
+      if(x<w && dark(x,y)) run++;
+      else { if(run>minH && lightShare(x-run,x,y-gap,y+gap,true)>0.6) kill.push([x-run,x,y,1]); run=0; }
+    }
+  }
+  for(var x2=0;x2<w;x2++){
+    var r2=0;
+    for(var y2=0;y2<=h;y2++){
+      if(y2<h && dark(x2,y2)) r2++;
+      else { if(r2>minV && lightShare(x2-gap,x2+gap,y2-r2,y2,false)>0.6) kill.push([y2-r2,y2,x2,0]); r2=0; }
+    }
+  }
+  kill.forEach(function(k){
+    for(var i=k[0];i<k[1];i++){
+      var idx = k[3] ? (k[2]*w+i)*4 : (i*w+k[2])*4;
+      p[idx]=p[idx+1]=p[idx+2]=255;
+    }
+  });
+}
+
+function enhance(srcCanvasOrImg, scale){
+  scale = scale || 1;
+  var w = (srcCanvasOrImg.naturalWidth||srcCanvasOrImg.width)*scale;
+  var h = (srcCanvasOrImg.naturalHeight||srcCanvasOrImg.height)*scale;
+  var c = document.createElement('canvas'); c.width=w; c.height=h;
+  var x = c.getContext('2d');
+  x.imageSmoothingEnabled=true; x.imageSmoothingQuality='high';
+  x.drawImage(srcCanvasOrImg,0,0,w,h);
+  var d = x.getImageData(0,0,c.width,c.height), p = d.data;
+  var sum=0;
+  for(var i=0;i<p.length;i+=4){ var g=0.299*p[i]+0.587*p[i+1]+0.114*p[i+2]; p[i]=p[i+1]=p[i+2]=g; sum+=g; }
+  var mean = sum/(p.length/4);
+  var k = 1.6; // contraste
+  for(var j=0;j<p.length;j+=4){
+    var v = (p[j]-mean)*k + mean;
+    v = v<0?0:(v>255?255:v);
+    p[j]=p[j+1]=p[j+2]=v;
+  }
+  try{ removeRules(p, c.width, c.height); }catch(e){}
+  x.putImageData(d,0,0);
+  return c;
+}
+
+
+// ── EXTRACTION DU TEXTE NATIF D'UN PDF ────────────────────────
+// Un PDF produit par un logiciel contient déjà son texte, avec la position
+// exacte de chaque mot. L'OCR n'a rien à y faire : il photographierait une
+// page déjà lisible, en y ajoutant ses propres erreurs.
+// On ne repasse à l'OCR que si le PDF est un scan (aucun texte exploitable).
+function pdfNativeText(file, onPage){
+  return loadScript(CDN_PDF).then(function(){
+    if(typeof pdfjsLib==='undefined')
+      throw new Error('Bibliothèque PDF non chargée — vérifiez votre connexion');
+    try { pdfjsLib.GlobalWorkerOptions.workerSrc = CDN_PDFW; } catch(e){}
+    return file.arrayBuffer();
+  }).then(function(buf){
+    return pdfjsLib.getDocument({data:buf, disableAutoFetch:true, disableStream:true}).promise;
+  }).then(function(pdf){
+    var n=Math.min(pdf.numPages, 40), pages=[], chain=Promise.resolve();
+    for(var i=1;i<=n;i++){
+      (function(no){
+        chain=chain.then(function(){
+          if(onPage) onPage(no,n);
+          return pdf.getPage(no);
+        }).then(function(page){
+          return page.getTextContent().then(function(tc){
+            pages.push(textItemsToLines(tc.items, page.getViewport({scale:1})));
+          });
+        });
+      })(i);
+    }
+    return chain.then(function(){ return pages; });
+  });
+}
+
+// Regroupe les fragments de texte en lignes visuelles, à partir de leurs
+// coordonnées : c'est ce qui recolle « Farine » et « 1,000 » d'une même ligne.
+function textItemsToLines(items, viewport){
+  var H = viewport ? viewport.height : 842;
+  var W = viewport ? viewport.width : 595;
+  var frags=[];
+  items.forEach(function(it){
+    var s=(it.str||'');
+    if(!s.trim()) return;
+    var t=it.transform||[1,0,0,1,0,0];
+    frags.push({ text:s, x:t[4], y:H-t[5], h:Math.abs(t[3])||10, w:it.width||0 });
+  });
+  if(!frags.length) return [];
+
+  var hs=frags.map(function(f){return f.h;}).sort(function(a,b){return a-b;});
+  var med=hs[Math.floor(hs.length/2)]||10;
+  var tol=Math.max(2, med*0.6);
+
+  // ── Regroupement en lignes visuelles (fragments à la même hauteur) ──
+  frags.sort(function(a,b){ return (a.y-b.y)||(a.x-b.x); });
+  var rows=[], cur=[], lastY=null;
+  frags.forEach(function(f){
+    if(lastY===null || Math.abs(f.y-lastY)>tol){ if(cur.length) rows.push(cur); cur=[f]; lastY=f.y; }
+    else cur.push(f);
+  });
+  if(cur.length) rows.push(cur);
+  rows.forEach(function(r){ r.sort(function(a,b){ return a.x-b.x; }); });
+
+  function rowToText(frs){
+    var out='', prev=null;
+    frs.forEach(function(f){
+      if(prev){
+        var gap=f.x-(prev.x+prev.w);
+        out += (gap > med*1.2) ? '  ' : (gap > med*0.15 ? ' ' : '');
+      }
+      out+=f.text.trim();
+      prev=f;
+    });
+    return out.replace(/\s{3,}/g,'  ').trim();
+  }
+
+  // ── Détection d'une vraie mise en page à deux colonnes ──────────────
+  // Une bande verticale sans texte qui revient à la même abscisse sur de
+  // nombreuses lignes trahit un vrai couloir entre deux colonnes — à ne
+  // pas confondre avec le simple espacement entre deux mots d'une ligne.
+  var gutterX = detectGutter(rows, W, med);
+
+  var lines=[];
+  if(gutterX==null){
+    rows.forEach(function(r){ var t=rowToText(r); if(t) lines.push(t); });
+    return lines.filter(Boolean);
+  }
+
+  // Deux colonnes détectées : chacune est lue intégralement de haut en bas
+  // avant de passer à la suivante, au lieu de mélanger les deux ligne par
+  // ligne à travers toute la largeur de la page.
+  var left=[], right=[];
+  rows.forEach(function(r){
+    var lf=r.filter(function(f){ return f.x<gutterX; });
+    var rf=r.filter(function(f){ return f.x>=gutterX; });
+    if(lf.length){ var tl=rowToText(lf); if(tl) left.push(tl); }
+    if(rf.length){ var tr=rowToText(rf); if(tr) right.push(tr); }
+  });
+  return left.concat(right);
+}
+
+// Cherche, sur toute la page, un point de coupure vertical régulièrement
+// dépourvu de texte : c'est la signature d'un couloir entre deux colonnes.
+function detectGutter(rows, pageWidth, med){
+  var multi=rows.filter(function(r){ return r.length>1; });
+  if(multi.length<6) return null;          // page trop courte pour conclure
+  var buckets={};
+  multi.forEach(function(r){
+    for(var i=0;i<r.length-1;i++){
+      var gap=r[i+1].x-(r[i].x+r[i].w);
+      if(gap > Math.max(18, med*2.2)){
+        var mid=Math.round((r[i].x+r[i].w+r[i+1].x)/2/6)*6;   // regroupe les abscisses voisines
+        buckets[mid]=(buckets[mid]||0)+1;
+      }
+    }
+  });
+  var best=null, bestN=0;
+  Object.keys(buckets).forEach(function(x){
+    if(buckets[x]>bestN){ bestN=buckets[x]; best=parseFloat(x); }
+  });
+  // Il faut qu'au moins un quart des lignes à plusieurs fragments partagent
+  // la même coupure, et que celle-ci tombe dans le tiers central de la
+  // page — un vrai couloir de colonnes, pas la case d'un simple tableau.
+  if(!best || bestN < Math.max(4, multi.length*0.25)) return null;
+  if(best < pageWidth*0.25 || best > pageWidth*0.75) return null;
+  return best;
+}
+
+// Le PDF contient-il assez de texte pour se passer de l'OCR ?
+function hasUsableText(pages){
+  var chars=0, withText=0;
+  pages.forEach(function(ls){
+    var n=ls.join(' ').replace(/\s/g,'').length;
+    chars+=n;
+    if(n>40) withText++;
+  });
+  return chars>150 && withText>=Math.max(1, Math.floor(pages.length*0.4));
+}
+
+function pdfToCanvases(file, onPage, range){
+  return loadScript(CDN_PDF).then(function(){
+    if(typeof pdfjsLib==='undefined')
+      throw new Error('Bibliothèque PDF non chargée — vérifiez votre connexion');
+    // Sans worker déclaré, pdf.js bascule en « fake worker » : ça fonctionne
+    // mais tout tourne dans le fil principal et fige l'écran sur les gros PDF.
+    try { pdfjsLib.GlobalWorkerOptions.workerSrc = CDN_PDFW; } catch(e){}
+    return file.arrayBuffer();
+  }).then(function(buf){
+    return pdfjsLib.getDocument({data:buf, disableAutoFetch:true, disableStream:true}).promise;
+  }).then(function(pdf){
+    // La lecture optique est lente : 40 pages au plus par passage. Une plage
+    // de pages choisie par l'utilisateur permet de lire la suite d'un livre.
+    var a=Math.max(1, Math.min(pdf.numPages, (range&&range.from)||1));
+    var b=Math.min(pdf.numPages, (range&&range.to)||pdf.numPages, a+39);
+    var n=b, out=[], chain=Promise.resolve();
+    out.totalPages=pdf.numPages; out.from=a; out.to=b;
+    for(var i=a;i<=n;i++){
+      (function(pageNo){
+        chain = chain.then(function(){
+          if(onPage) onPage(pageNo,n);
+          return pdf.getPage(pageNo);
+        }).then(function(page){
+          // Échelle calculée pour viser directement la résolution utile à l'OCR
+          var v1 = page.getViewport({scale:1});
+          var sc = Math.min(2.2, Math.max(1.2, 2200/Math.max(v1.width, v1.height)));
+          var vp = page.getViewport({scale:sc});
+          var c = document.createElement('canvas'); c.width=vp.width; c.height=vp.height;
+          return page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise.then(function(){ out.push(c); });
+        });
+      })(i);
+    }
+    return chain.then(function(){ return out; });
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+//  MODULE IMPORT DE RECETTES
+//  Fichier → OCR → Extraction → Rapprochement catalogue →
+//  Validation utilisateur → Création catalogue → Création recette
+//  Aucune écriture (catalogue ou recette) hors de commitRecipe().
+// ══════════════════════════════════════════════════════════════
+(function(){
+
+// ── 0. TABLEAUX DE FICHE ET DÉCOUPAGE EN RECETTES ─────────────
+function bkslug(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();}
+
+// Une « quantité nue » : 1,000 · 0,05 · QS · 4 bottes · 7 pièces · 2 feuilles
+var QTY_ONLY=/^(qs|q\.s\.)$/i;
+var NUM_ONLY=/^\d{1,4}([.,]\d{1,3})?$/;
+var COUNT_QTY=/^(\d{1,3})\s+(bottes?|pi[eè]ces?|feuilles?|gousses?|tranches?|sachets?)$/i;
+function isQtyLine(t){
+  t=String(t||'').trim();
+  return NUM_ONLY.test(t)||QTY_ONLY.test(t)||COUNT_QTY.test(t);
+}
+// En-têtes de tableau à ne pas confondre avec un ingrédient
+var HEADER=/^(ingr[ée]dients?( du p[ée]trissage| e)?|mise en (œuvre|oeuvre)|d[ée]signation|libell[ée]|quantit[ée]s?|total)$/i;
+// Une ligne de nom plausible dans un tableau d'ingrédients
+function isNameLine(t){
+  t=String(t||'').trim();
+  if(!t||t.length<2) return false;
+  if(isQtyLine(t)) return false;
+  if(/^\d+$/.test(t)) return false;              // numéro de page
+  if(t.split(/\s+/).length>7) return false;      // phrase = procédé
+  return true;
+}
+function parseQty(t){
+  t=String(t||'').trim();
+  if(QTY_ONLY.test(t)) return {qty:0, unit:'kg', qs:true};
+  var m=t.match(COUNT_QTY);
+  if(m){
+    var u=bkslug(m[2]);
+    var unit=/botte/.test(u)?'botte':(/piece/.test(u)?'pièce':(/feuille/.test(u)?'feuille':
+             (/gousse/.test(u)?'gousse':(/tranche/.test(u)?'tranche':'sachet'))));
+    return {qty:parseFloat(m[1]), unit:unit};
+  }
+  // Dans ces fiches, les valeurs sont exprimées en kg (1,000 = 1 kg)
+  return {qty:parseFloat(t.replace(',','.')), unit:'kg'};
+}
+
+
+// Une colonne « Mise en œuvre » (quantités pour une autre fournée) se retrouve
+// parfois collée aux étapes du procédé : on vérifie que la fenêtre retenue
+// ressemble bien à une liste d'ingrédients.
+var NOT_ING=/(°c|allerg|temp[ée]rature|p[ée]trissage|pointage|pesage|fa[çc]onnage|appr[eê]t|cuisson|d[ée]tente|autolyse|incorporation|mise en (œuvre|oeuvre)|r[ée]alisation|proc[ée]d[ée]|conservation|:$)/i;
+function looksLikeIngredientList(lines, idxs){
+  if(!idxs.length) return false;
+  var good=0, total=0;
+  idxs.forEach(function(k){
+    var t=lines[k].trim();
+    if(/^total$/i.test(t)||HEADER.test(t)) return;   // neutre
+    total++;
+    if(!NOT_ING.test(t)) good++;
+  });
+  return total===0 ? false : (good/total)>=0.7;
+}
+
+// Regroupe les lignes consécutives en « blocs » de même nature
+function runs(lines){
+  var out=[], cur=null;
+  lines.forEach(function(t,i){
+    var kind=isQtyLine(t)?'qty':(isNameLine(t)?'name':'other');
+    if(!cur||cur.kind!==kind){ cur={kind:kind, from:i, items:[]}; out.push(cur); }
+    cur.items.push({text:t, index:i});
+  });
+  return out;
+}
+
+// Reconstruit « nom + quantité » quand le PDF a séparé les deux colonnes.
+// L'appariement se fait par la FIN : les en-têtes restent en tête de liste,
+// les TOTAL se retrouvent alignés et sont écartés ensemble.
+
+
+// ── QUANTITÉS SANS UNITÉ ÉCRITE ───────────────────────────────
+// Sur une fiche technique de boulangerie, la colonne des poids est en kg
+// sans que l'unité soit écrite : « Farine de sarrasin 0,390 » vaut 390 g.
+// Sans cette règle, aucune ligne de ces fiches n'est reconnue.
+function normalizeUnitlessQty(lines){
+  return lines.map(function(l){
+    var t=String(l||'').trim();
+    if(!t) return l;
+    if(new RegExp('(\\d)\\s*('+UNITWORDS+')[\\s\\u2063]*$','i').test(t)) return l;  // unité déjà présente
+    if(/^total\b/i.test(t)) return l;
+    if(/%\s*$/.test(t)) return l;
+    if(HEADER.test(t)||MAIN_HEADER.test(t)) return l;
+    if(PROC_TITLE.test(t)) return l;
+    if(/^(temp[ée]rature|allerg|r[ée]alisation|proc[ée]d[ée]|mise en (œuvre|oeuvre)|conservation)/i.test(t)) return l;
+    var m=t.match(/^(.+?)\s+(\d{1,3}[.,]\d{1,3})$/);
+    if(!m) return l;
+    var name=m[1].trim();
+    if(name.length<2) return l;
+    if(/^[\d.,\s]+$/.test(name)) return l;   // un nom peut finir par un chiffre (T65, T130)
+    if(name.split(/\s+/).length>12) return l;   // certains noms sont longs (« Pâte de meule sur levain dur (page n°6) »)
+    return name+' '+m[2]+' kg\u2063';
+  });
+}
+
+function rebuildBookTable(lines){
+  lines=normalizeUnitlessQty(lines);
+  var kinds=lines.map(function(t){ return isQtyLine(t)?'qty':(isNameLine(t)?'name':'other'); });
+  var pairs={}, consumed={};
+
+  // Repérer chaque bloc de quantités consécutives
+  var i=0;
+  while(i<lines.length){
+    if(kinds[i]!=='qty'){ i++; continue; }
+    var qi=[];
+    while(i<lines.length && kinds[i]==='qty'){ qi.push(i); i++; }
+    if(qi.length<2) continue;                 // un chiffre isolé n'est pas un tableau
+    var N=qi.length;
+
+    // Fenêtre de noms : on prend au plus N+2 lignes de noms qui suivent,
+    // en s'arrêtant à la première phrase (procédé) ou au bloc suivant.
+    function window(start,dir){
+      var w=[], k=start;
+      while(k>=0 && k<lines.length && w.length<N+2){
+        if(kinds[k]==='qty') break;
+        if(kinds[k]==='name'){
+          if(lines[k].split(/\s+/).length>7) break;   // phrase : fin du tableau
+          w.push(k);
+          // « TOTAL » clôt toujours le tableau : on n'aller pas au-delà
+          if(/^total$/i.test(lines[k].trim())) break;
+        }
+        k+=dir;
+      }
+      return dir>0?w:w.reverse();
+    }
+    var after=window(qi[N-1]+1,1);
+    var before=window(qi[0]-1,-1);
+    var win = after.length>=N ? after : (before.length>=N ? before : (after.length>=before.length?after:before));
+    if(!win.length) continue;
+    // Fenêtre qui ne ressemble pas à des ingrédients : on essaie l'autre côté,
+    // sinon on abandonne ce bloc de quantités (colonne secondaire, totaux…).
+    if(!looksLikeIngredientList(lines,win)){
+      var alt = (win===after)?before:after;
+      if(alt.length && looksLikeIngredientList(lines,alt)) win=alt;
+      else continue;
+    }
+
+    // Appariement par la fin : en-tête et titre restent en tête, TOTAL s'aligne
+    var n=Math.min(N,win.length);
+    for(var p=0;p<n;p++){
+      var nameIdx=win[win.length-n+p], qtyIdx=qi[N-n+p];
+      if(consumed[nameIdx]) continue;
+      pairs[nameIdx]={qty:lines[qtyIdx]};
+      consumed[qtyIdx]=true;
+    }
+  }
+
+  var out=[];
+  lines.forEach(function(t,idx){
+    if(consumed[idx]) return;                       // quantité déjà rattachée
+    var p=pairs[idx];
+    if(p){
+      if(HEADER.test(t.trim())) return;             // « TOTAL » et en-têtes : écartés
+      var q=parseQty(p.qty);
+      out.push(t+' '+(q.qs?'QS':q.qty)+' '+q.unit);
+      return;
+    }
+    if(kinds[idx]==='qty') return;                  // quantité orpheline
+    out.push(t);
+  });
+  return out;
+}
+
+
+// ── Découpage d'un book en recettes distinctes ────────────────
+// Une recette commence à un titre : ligne sans chiffre suivie, peu après,
+// d'un tableau d'ingrédients. Une page peut en contenir plusieurs.
+var PROC_TITLE=/^(incorporation|p[ée]trissage|pointage|pesage|d[ée]tente|fa[çc]onnage|appr[eê]t|cuisson|autolyse|ressuage|division|mise en forme|temp[ée]rature|allerg[èe]nes?|conservation|dlc|rendement)/i;
+// Préparations intermédiaires : rattachées à la recette qui précède
+var SUB_TITLE=/^(empois|tangzhong|appareil|levain|p[âa]te [àa]|cr[èe]me|garniture|sirop|gla[çc]age|streusel|crumble|ganache|praline|farce)\b/i;
+var CATEGORY=/^(tradition|meule|p[âa]te lev[ée]e|tartinable ap[ée]ro|viennoiserie|p[âa]tisserie|snacking|boulangerie|chocolaterie)$/i;
+function splitRecipes(lines){
+  var isIng=lines.map(function(l){ return /\s(?:QS|\d+(?:[.,]\d+)?)\s*(kg|g|L|ml|cl|botte|pi[èe]ce|feuille|gousse|tranche|sachet)\u2063?$/i.test(l); });
+  var starts=[];
+  lines.forEach(function(l,i){
+    if(isIng[i]) return;
+    // Un titre peut contenir un chiffre ; ce qui l'exclut, c'est une
+    // quantité en fin de ligne, signature d'une ligne de tableau.
+    if(/\d/.test(l) && new RegExp('(\\d)\\s*('+UNITWORDS+')[\\s\\u2063]*$','i').test(l)) return;
+    if(/^[\d.,\s]+$/.test(l)) return;
+    if(CATEGORY.test(l.trim())) return;              // badge de rubrique
+    if(isRubric(l)) return;                          // en-tête de page du livre
+    if(/^ingr[ée]dients?\b/i.test(l.trim())) return; // en-tête de tableau, pas un titre
+    if(/^(pr[ée]paration|m[ée]thode)\b/i.test(l.trim())) return;
+    if(HEADER.test(l.trim())||MAIN_HEADER_COLS.test(l.trim())) return;
+    if(NOT_ING.test(l)) return;                      // étape de fabrication
+    if(PROC_TITLE.test(l.trim())) return;
+    // Un titre de recette ne se termine jamais par un point : « minute. »,
+    // « surgélateur. » sont des fins de phrase du procédé.
+    if(/[.;:]$/.test(l.trim())) return;
+    // Ni une mention de rendement (« Recette pour 8 pièces »)
+    if(/^(recette\s+)?pour\s+\d+/i.test(l.trim())) return;
+    // Ni une ligne commençant par une minuscule (suite de phrase)
+    if(/^[a-zà-ÿ]/.test(l.trim())) return;
+    if(l.split(/\s+/).length>7) return;
+    // Un tableau d'ingrédients commence peu après le titre. La fenêtre est
+    // large car une fiche intercale souvent le rendement, un en-tête de
+    // colonnes, voire un nom coupé sur deux lignes avant la première quantité.
+    var near=false;
+    for(var k=i+1;k<Math.min(i+14,lines.length);k++) if(isIng[k]){ near=true; break; }
+    // La toute première ligne d'une page est le titre de la fiche, même si son
+    // tableau arrive plus loin (rendement, consignes, sous-préparations
+    // intercalées). On exige seulement que la page contienne un tableau.
+    if(!near && i===0 && isIng.some(function(x){return x;})) near=true;
+    if(!near) return;
+    // et rien juste avant qui soit déjà un ingrédient (sinon c'est un sous-titre)
+    if(i>0&&isIng[i-1]) return;
+    starts.push(i);
+  });
+  // Fusionner les débuts trop rapprochés (titre sur deux lignes)
+  var clean=[];
+  starts.forEach(function(s){
+    if(clean.length && s-clean[clean.length-1]<=2) return;
+    clean.push(s);
+  });
+  if(!clean.length) return [{name:'', lines:lines}];
+  var blocks=[];
+  clean.forEach(function(s,k){
+    var end = (k+1<clean.length) ? clean[k+1] : lines.length;
+    var seg=lines.slice(s,end);
+    if(!seg.some(function(l,ix){ return isIng[s+ix]; })) return;
+    var title=lines[s], tl=1;
+    // Titre imprimé sur deux lignes (« TOURTE » / « DE SEIGLE »)
+    var nx=lines[s+1];
+    function capsLine(x){ x=String(x||'').trim(); return !!x && x===x.toUpperCase() && /[A-ZÀ-Ý]/.test(x) && !/\d/.test(x); }
+    if(capsLine(title) && capsLine(nx) && !isIng[s+1] && nx.trim().split(/\s+/).length<=4 &&
+       !/^ingr[ée]dients?\b/i.test(nx.trim()) && !isRubric(nx) && !MAIN_HEADER.test(nx.trim()) && !PROC_TITLE.test(nx.trim())){
+      title=title.trim()+' '+nx.trim(); tl=2;
+    }
+    // Titre en lettres espacées (« S Ü B R O T »)
+    if(/^(\S\s)+\S$/.test(title.trim())) title=title.replace(/\s+/g,'');
+    if(SUB_TITLE.test(title.trim()) && blocks.length){
+      // préparation intermédiaire : elle appartient à la recette précédente
+      var prev=blocks[blocks.length-1];
+      prev.subs=prev.subs||[];
+      prev.subs.push({name:title, lines:seg});
+      prev.lines=prev.lines.concat(seg);
+      return;
+    }
+    blocks.push({name:title, lines:seg, subs:[], titleLines:tl});
+  });
+  return blocks.length?blocks:[{name:'', lines:lines, subs:[]}];
+}
+
+// ── 1. ANALYSE DU DOCUMENT (2 passes) ─────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  ANALYSE DE FICHE TECHNIQUE — classification en 2 passes
+//  Passe 1 : comprendre la structure (zones, types de blocs)
+//  Passe 2 : extraire les ingrédients des seules zones ingrédients
+// ══════════════════════════════════════════════════════════════
+function cslug(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();}
+
+// ── LEXIQUES MÉTIER ───────────────────────────────────────────
+// Phases de fabrication (substantifs) — jamais des ingrédients
+var DUAL_SECTION=['finition','glacage','nappage','montage'];
+var PROCESS_LABELS=['petrissage','frasage','pointage','pointage retarde','division','pesage',
+'boulage','mise en forme','detente','faconnage','appret','pousse','fermentation','scarification','lamage',
+'grignage','enfournement','cuisson','ressuage','defournement','finition','glacage','nappage','montage','realisation',
+'tourage','laminage','abaisse','detaillage','surgelation','congelation','refroidissement','repos',
+'maturation','cremage','emulsion','sablage','cuisson a blanc','decongelation','conservation','stockage',
+'temperature','temps de cuisson','temps de repos','duree','rendement','materiel','ustensiles','methode',
+'procede','preparation','etapes','deroulement','conseils','remarques','observations','allergenes','dlc'];
+
+// Verbes d'action — une ligne qui commence par là est une étape
+var PROCESS_VERBS=['melanger','petrir','frasser','bassiner','ajouter','incorporer','verser','battre',
+'fouetter','monter','cremer','sabler','tamiser','peser','diviser','bouler','faconner','detailler','etaler',
+'abaisser','tourer','laminer','plier','rabattre','degazer','filmer','reserver','laisser','deposer','placer',
+'disposer','ranger','enfourner','cuire','baisser','augmenter','sortir','defourner','demouler','refroidir',
+'surgeler','congeler','decongeler','chauffer','porter','bouillir','pocher','infuser','mixer','blender',
+'chinoiser','passer','refermer','garnir','fourrer','napper','glacer','saupoudrer','dorer','badigeonner',
+'beurrer','fariner','graisser','couvrir','decouvrir','remuer','racler','corner','lisser','dresser','pocher',
+'couler','demarrer','arreter','controler','verifier','maintenir','conserver','stocker','servir'];
+
+// Matériel
+var EQUIPMENT=['batteur','feuille','crochet','fouet','laminoir','four','chambre','etuve','surgelateur',
+'congelateur','frigo','refrigerateur','casserole','poele','plaque','grille','moule','cercle','cadre',
+'poche','douille','maryse','corne','rouleau','tamis','chinois','thermometre','balance','petrin','cuve',
+'silpat','papier cuisson','toile','couche','banneton','grigne','lame','spatule','mixeur','blender','robot'];
+
+// Familles d'ingrédients (le noyau du bon sens alimentaire)
+var FOOD_WORDS=['farine','ble','seigle','epeautre','sarrasin','mais','riz','avoine','orge','son','gruau',
+'semoule','fecule','amidon','maizena','levure','levain','poudre a lever','bicarbonate','sel','sucre',
+'cassonade','vergeoise','glucose','trimoline','miel','sirop','isomalt','fondant','beurre','margarine',
+'huile','graisse','saindoux','creme','lait','yaourt','fromage','mascarpone','ricotta','oeuf','oeufs',
+'jaune','jaunes','blanc','blancs','chocolat','cacao','couverture','praline','gianduja','pralin','nougatine',
+'amande','amandes','noisette','noisettes','pistache','pistaches','noix','pecan','cajou','sesame','pavot',
+'tournesol','lin','courge','graine','graines','millet','topping','flocon','flocons','son','malt','orge','torrefie','integrale','fruit','fruits','pomme','poire','fraise','framboise','myrtille','cassis',
+'abricot','peche','cerise','citron','orange','mandarine','pamplemousse','banane','ananas','mangue',
+'passion','coco','vanille','cannelle','cardamome','muscade','gingembre','anis','badiane','safran',
+'fleur d oranger','rhum','kirsch','grand marnier','cointreau','alcool','eau','glace','gelatine','agar',
+'pectine','stabilisateur','emulsifiant','colorant','arome','extrait','purée','puree','pulpe','compote',
+'confiture','marmelade','pate','jus','zeste','raisin','raisins','figue','datte','pruneau','abricot sec',
+'lardon','jambon','bacon','poulet','thon','saumon','tomate','oignon','ail','herbes','persil','basilic',
+'thym','romarin','laurier','poivre','paprika','curry','moutarde','vinaigre','olive','olives','epinard',
+'champignon','courgette','poivron','carotte','pomme de terre','emmental','gruyere','comte','mozzarella',
+'parmesan','chevre','feta','creme fraiche','lait concentre','lait en poudre','babeurre','ferment'];
+
+var UNITWORDS='kgs?|kg|kilos?|grammes?|gr|g|litres?|ltr|l|ml|cl|dl|unit[eé]s?|pi[eè]ces?|pces?|pc|bo[iî]tes?|sacs?|sachets?|bouteilles?|cartons?|bidons?|plaques?|feuilles?';
+var UNIT_NORM={'kg':'kg','kgs':'kg','kilo':'kg','kilos':'kg','g':'g','gr':'g','gramme':'g','grammes':'g',
+'l':'L','ltr':'L','litre':'L','litres':'L','ml':'ml','cl':'cl','dl':'dl','unite':'unité','unites':'unité',
+'piece':'pièce','pieces':'pièce','pce':'pièce','pces':'pièce','pc':'pièce','boite':'boîte','boites':'boîte',
+'sac':'sac','sacs':'sac','sachet':'sachet','sachets':'sachet','bouteille':'bouteille','carton':'carton',
+'bidon':'bidon','plaque':'plaque','plaques':'plaque','feuille':'feuille','feuilles':'feuille'};
+function normUnit(u){var k=cslug(u);return UNIT_NORM[k]||UNIT_NORM[k.replace(/s$/,'')]||'';}
+
+// ── MOTIFS ────────────────────────────────────────────────────
+// En-tête générique d'un tableau d'ingrédients : ce n'est pas une préparation
+// séparée, c'est la liste principale de la recette.
+var NUTRITION_LINE=/^(valeurs?\s+nutritionnelles?|valeur\s+[ée]nerg[ée]tique|prot[ée]ines?|glucides?|lipides?|fibres?\s+alimentaires?|dont\s+(sucres?|acides?\s+gras)|acides?\s+gras|apports?\s+de\s+r[ée]f[ée]rence|[ée]nergie)\b/i;
+var NUTRITION_HINT=/valeurs?\s+nutritionnelles?|pour\s+100\s*g\b|kcal|kj\b/i;
+var MAIN_HEADER_COLS=/^ingr[ée]dients?(\s+(%|recette|au|kilo|la|commande|gramme?s?|quantit[ée]s?|poids|unit[ée]s?))+\s*$/i;
+var MAIN_HEADER=/^(ingr[ée]dients?(\s+(du|de)\s+p[ée]trissage)?(\s+e)?|ingr[ée]dients? de base|composition|recette de base|p[ée]trissage direct|fin de p[ée]trissage|p[âa]te finale)\s*:?\s*$/i;
+// Rubriques de livre (en-tête de page) : jamais un titre de recette
+var RUBRICS=['painsregionaux','painsspeciaux','painsdumonde','briochesdumonde','briochesetclassiquesfrancais',
+  'douceursboulangeres','levains','sommaire','preface','presentation','glossairetechnique','lespartenaires',
+  'lesphotographes','noteauxlecteurs','viennoiseries','boulangerie','patisserie'];
+function isRubric(l){ return RUBRICS.indexOf(cslug(l).replace(/ /g,''))>=0; }
+// « INGRÉDIENTS DU RAFRAÎCHI » → « Rafraîchi »
+function cleanSubName(t){
+  var raw=String(t||'').trim();
+  var s=raw.replace(/^ingr[ée]dients?\s+(du|de la|de l'|de l’|des|de|pour la|pour le|pour les|pour)\s+/i,'').replace(/\s*:\s*$/,'');
+  if(s && s===s.toUpperCase() && /[A-ZÀ-Ý]/.test(s)){ s=s.toLowerCase(); s=s.charAt(0).toUpperCase()+s.slice(1); }
+  return s||raw;
+}
+// Même chose quand l'en-tête liste aussi les colonnes du tableau
+// (« Ingrédients % Recette au kilo La commande », « Ingrédients Gramme »…)
+var RE_TEMP=/(\d{1,3})\s*°\s*c\b|\bà\s+(\d{1,3})\s*°/i;
+var RE_DUR=/\b(\d{1,3}\s*h\s*\d{0,2}|\d{1,3}\s*(?:min(?:utes?)?|mn|heures?|h|jours?|nuits?|sec(?:ondes?)?))\b|\b\d{1,3}\s*[-–à]\s*\d{1,3}\s*min/i;
+var RE_QTYUNIT=new RegExp('(\\d+(?:[.,]\\d+)?)\\s*('+UNITWORDS+')\\b','i');
+var RE_PCT=/\d+\s*%/;
+
+function hasWord(s,list){ s=' '+cslug(s)+' '; return list.some(function(w){ return s.indexOf(' '+w+' ')>=0; }); }
+function startsWithVerb(s){
+  var first=cslug(s).split(' ')[0];
+  if(!first) return false;
+  // Un mot d'aliment n'est jamais un verbe d'action, même si une forme
+  // conjuguée lui ressemble (« farine » / fariner, « creme » / cremer).
+  if(FOOD_WORDS.indexOf(first)>=0) return false;
+  // On n'accepte que l'infinitif et l'impératif en -ez : les formes en -e
+  // entrent en collision avec des noms d'ingrédients.
+  return PROCESS_VERBS.some(function(v){
+    return first===v || first===v.replace(/er$/,'ez');
+  });
+}
+function looksFood(s){
+  var c=cslug(s);
+  if(!c) return false;
+  if(FOOD_WORDS.some(function(w){ return c===w || c.indexOf(w+' ')===0 || c.indexOf(' '+w)>=0 || c.indexOf(w)===0; })) return true;
+  // tournures typiques : « purée de X », « poudre à lever », « X en poudre »
+  if(/^(puree|pulpe|jus|zeste|extrait|arome|pate|poudre|creme|sirop) (de|d|a|au|aux) /.test(c)) return true;
+  if(/ en (poudre|grains|morceaux|des|lamelles|julienne)$/.test(c)) return true;
+  return false;
+}
+
+// ── CLASSIFICATION D'UNE LIGNE ────────────────────────────────
+function classifyLine(raw){
+  var text=String(raw||'').trim();
+  var c=cslug(text);
+  if(!c) return {type:'unknown',confidence:0};
+
+  // Ligne d'un tableau nutritionnel : jamais un ingrédient
+  if(NUTRITION_LINE.test(text)) return {type:'unknown',confidence:0};
+
+  // Ligne de total d'un tableau : jamais un ingrédient
+  if(/^total\b/i.test(text)) return {type:'unknown',confidence:0};
+
+  // « Finition », « Glaçage », « Nappage », « Montage »… seuls sur leur
+  // ligne annoncent presque toujours un second petit tableau d'ingrédients
+  // (garniture, décor), pas l'étape de fabrication homonyme — on rouvre
+  // alors la lecture d'ingrédients au lieu de basculer dans le procédé.
+  if(DUAL_SECTION.indexOf(c)>=0) return {type:'sub_recipe_title',confidence:0.75};
+
+  var hasTemp=RE_TEMP.test(text);
+  var hasDur=RE_DUR.test(text);
+  var mQU=text.match(RE_QTYUNIT);
+  var words=c.split(' ').filter(Boolean);
+
+  // 1. Verbe d'action en tête → étape de fabrication
+  if(startsWithVerb(text)) return {type:'process_step',confidence:0.96,temperature:hasTemp,duration:hasDur};
+
+  // 2. Phase de fabrication connue (« Apprêt », « Cuisson 170°C »)
+  //    On teste le début de ligne : « Division 60 g » → phase, pas ingrédient
+  var head=words.slice(0,3).join(' ');
+  var matchedLabel=PROCESS_LABELS.find(function(l){
+    return head===l || head.indexOf(l)===0 || c.indexOf(l)===0;
+  });
+  if(matchedLabel){
+    if(hasTemp||hasDur) return {type:'process_step',confidence:0.97,label:matchedLabel,temperature:hasTemp,duration:hasDur};
+    return {type:'process_label',confidence:0.95,label:matchedLabel};
+  }
+
+  // 3. Température ou durée sans phase nommée
+  if(hasTemp&&!mQU) return {type:'temperature',confidence:0.93};
+  if(hasDur&&!mQU)  return {type:'duration',confidence:0.93};
+
+  // 4. Matériel seul
+  if(hasWord(text,EQUIPMENT)&&!mQU&&words.length<=4) return {type:'equipment',confidence:0.85};
+
+  // 5. Rendement
+  if(/^(pour|rendement|donne|nombre)\b/.test(c)) return {type:'yield',confidence:0.9};
+
+  // 6. Phrase longue → procédé (une ligne d'ingrédient est courte)
+  if(words.length>=9 && !(mQU && new RegExp('(\\d)\\s*('+UNITWORDS+')[\\s\\u2063]*$','i').test(text)))
+    return {type:'process_step',confidence:0.8,temperature:hasTemp,duration:hasDur};
+
+  // 7. Quantité + unité alimentaire présente
+  if(mQU){
+    var name=text.slice(0,text.indexOf(mQU[0])).replace(/[.\-–—:•*]+$/,'').trim()
+          || text.slice(text.indexOf(mQU[0])+mQU[0].length).replace(/^[.\-–—:•*]+/,'').trim();
+    if(name){
+      if(looksFood(name)) return {type:'ingredient',confidence:0.95};
+      if(hasWord(name,PROCESS_LABELS)) return {type:'process_step',confidence:0.9};
+      // Nom inconnu du lexique : plausible mais à vérifier — on n'invente rien
+      return {type:'ingredient',confidence:0.6,uncertain:true};
+    }
+  }
+
+  // En-tête de tableau principal
+  if(MAIN_HEADER.test(text.trim())||MAIN_HEADER_COLS.test(text.trim())) return {type:'main_header',confidence:0.95};
+
+  // « QS » (quantité suffisante) : ingrédient dont la quantité n'est pas chiffrée
+  if(/\bQS\b/.test(text) && words.length<=8) return {type:'ingredient',confidence:0.75,qs:true};
+
+  // 8. Sans chiffre : titre probable
+  if(!/\d/.test(text)){
+    // Suite de phrase du procédé (« du pétrissage dans la cuve. »,
+    // « Au batteur, mélanger… ») : jamais un titre de préparation
+    if(/^[a-zà-ÿ]/.test(text) || /[.;]$/.test(text) || /,/.test(text) || hasWord(text,PROCESS_VERBS))
+      return {type:'process_step',confidence:0.75};
+    if(looksFood(text)) return {type:'ingredient',confidence:0.5,uncertain:true,noQty:true};
+    if(words.length<=6) return {type:'sub_recipe_title',confidence:0.7};
+  }
+
+  return {type:'unknown',confidence:0.3};
+}
+
+
+// ── RECONSTRUCTION DES COLONNES (règle 6) ─────────────────────
+// Certaines fiches en 2 colonnes ressortent de l'OCR sous la forme
+// « Farine / Sucre / Beurre » puis « 80 g / 50 g / 20 g ».
+// On recolle les paires quand on détecte ce motif.
+function isBareQty(t){
+  return new RegExp('^\\s*\\d[\\d.,\\s]*\\s*('+UNITWORDS+')\\s*$','i').test(String(t||''));
+}
+function isBareName(t){
+  var s=String(t||'').trim();
+  if(!s||/\d/.test(s)) return false;
+  if(s.split(/\s+/).length>4) return false;
+  var cl=classifyLine(s);
+  return cl.type==='ingredient'||cl.type==='sub_recipe_title'||cl.type==='unknown';
+}
+function rebuildColumns(lines){
+  var out=[], i=0;
+  while(i<lines.length){
+    // bloc de noms nus consécutifs
+    var names=[], j=i;
+    while(j<lines.length&&isBareName(lines[j])&&looksFood(lines[j])){ names.push(lines[j]); j++; }
+    if(names.length>=2){
+      var qtys=[], k=j;
+      while(k<lines.length&&isBareQty(lines[k])){ qtys.push(lines[k]); k++; }
+      if(qtys.length===names.length){
+        for(var n=0;n<names.length;n++) out.push(names[n]+' '+qtys[n]);
+        i=k; continue;
+      }
+    }
+    out.push(lines[i]); i++;
+  }
+  return out;
+}
+
+// ── PASSE 1 : STRUCTURE ───────────────────────────────────────
+function analyzeStructure(rawText){
+  var lines=String(rawText||'').split('\n')
+    .map(function(l){return l.replace(/\.{2,}/g,'  ').replace(/[ \t]+/g,' ').trim();})
+    .filter(Boolean);
+  lines=rebuildColumns(lines);
+  var blocks=lines.map(function(l,i){
+    var cl=classifyLine(l);
+    return {index:i, text:l, type:cl.type, confidence:cl.confidence,
+            uncertain:!!cl.uncertain, noQty:!!cl.noQty, label:cl.label||'',
+            temperature:!!cl.temperature, duration:!!cl.duration};
+  });
+
+  // ── Passe contextuelle ──────────────────────────────────────
+  // Un nom d'aliment SANS quantité suivi d'ingrédients chiffrés est un
+  // titre de préparation, pas une matière première (« Crème framboise »).
+  blocks.forEach(function(b,i){
+    if(b.type!=='ingredient'||!b.noQty) return;
+    var followers=0;
+    for(var j=i+1;j<Math.min(i+4,blocks.length);j++){
+      var n=blocks[j];
+      if(n.type==='ingredient'&&!n.noQty) followers++;
+      else if(n.type!=='unknown') break;
+    }
+    if(followers>=2){ b.type='sub_recipe_title'; b.confidence=0.8; b.uncertain=true; }
+  });
+
+  return blocks;
+}
+
+// ── PASSE 2 : EXTRACTION ──────────────────────────────────────
+function fixNum(s){ return String(s).replace(/[OoQ]/g,'0').replace(/[lI|]/g,'1').replace(/\s/g,'').replace(',','.'); }
+
+function lastQtyMatch(text){
+  var re=new RegExp('(\\d+(?:[.,]\\d+)?)\\s*('+UNITWORDS+')\\b','ig');
+  var m, last=null;
+  while((m=re.exec(text))!==null) last=m;
+  return last;
+}
+function extractIngredient(text){
+  // « QS » : quantité laissée à l'appréciation — la ligne reste un ingrédient
+  var mqs=text.match(/^(.+?)\s+QS\s*(kg|g|L|ml|cl)?\s*$/i);
+  if(mqs){
+    var nqs=mqs[1].replace(/[.\-–—:•*]+$/,'').trim();
+    if(nqs) return {name:nqs, qty:0, unit:mqs[2]||'kg', unitDetected:!!mqs[2], qs:true};
+  }
+  var m=lastQtyMatch(text);
+  if(!m) return null;
+  var qty=parseFloat(fixNum(m[1]));
+  var unit=normUnit(m[2]);
+  // Marqueur invisible posé par normalizeUnitlessQty : une quantité sans
+  // unité écrite sur la fiche a été complétée en kg par déduction — on le
+  // garde en mémoire pour prévenir l'utilisateur, sans jamais l'imposer.
+  var guessedKg = text.charAt(m.index+m[0].length)==='\u2063';
+  var at=m.index;
+  var before=text.slice(0,at).replace(/[.\-–—:•*]+$/,'').trim();
+  var after=text.slice(at+m[0].length).replace(/\u2063/g,'').replace(/^[.\-–—:•*]+/,'').trim();
+  var name=(before||after).replace(/\u2063/g,'');
+  if(!name||isNaN(qty)||qty<0) return null;
+  return {name:name, qty:qty, unit:unit||'g', unitDetected:!!unit, unitGuessedKg:guessedKg};
+}
+
+function parseFiche(rawText, confOf){
+  var blocks=analyzeStructure(rawText);
+
+  // Titre : 1er bloc non-procédé sans quantité, en tête de document
+  var name='';
+  for(var i=0;i<Math.min(blocks.length,4);i++){
+    var b=blocks[i];
+    if(/\d/.test(b.text)) continue;
+    if(b.type==='process_step'||b.type==='process_label'||b.type==='equipment') continue;
+    if(b.type==='main_header') continue;   // « Ingrédients du pétrissage » n'est pas un titre
+    if(/^ingr[ée]dients?\b/i.test(b.text) || isRubric(b.text)) continue;
+    // La première ligne exploitable en tête de document est le titre,
+    // même si elle contient des noms d'aliments (« Brioche framboise pistache »).
+    name=b.text; b.type='recipe_title'; break;
+  }
+
+  var subs=[], cur=null, main0=null, process=[], inProcessZone=false;
+  // « Préparation du rafraîchi » : les étapes qui suivent appartiennent à
+  // cette sous-recette ; « Méthode de travail » revient à la recette.
+  var procSection=null;
+
+  blocks.forEach(function(b){
+    if(b.type==='recipe_title') return;
+
+    // En-tête générique : on revient à la liste principale de la recette
+    if(b.type==='main_header'){
+      if(!main0){ main0={name:'', ingredients:[], confidence:1}; subs.push(main0); }
+      cur=main0; inProcessZone=false; return;
+    }
+
+    // Un titre rouvre une zone ingrédients
+    if(b.type==='sub_recipe_title'){
+      cur={name:cleanSubName(b.text), ingredients:[], confidence:b.confidence};
+      subs.push(cur); inProcessZone=false; return;
+    }
+
+    if(b.type==='process_step'||b.type==='process_label'||b.type==='temperature'||
+       b.type==='duration'||b.type==='equipment'||b.type==='yield'){
+      inProcessZone=true;
+      if(b.type==='process_label'){
+        var mp=b.text.match(/^(?:pr[ée]paration|r[ée]alisation|fabrication)\s+(du\s+|de la\s+|de l['’]\s*|des\s+|de\s+)(.+?)\s*:?$/i);
+        if(mp){
+          var key=cslug(mp[2]);
+          var hit=subs.filter(function(s){ return s.name && cslug(s.name)===key; })[0] ||
+                  subs.filter(function(s){ var k2=cslug(s.name); return s.name && (k2.indexOf(key)===0 || key.indexOf(k2)===0); })[0];
+          procSection = hit ? hit.name : cleanSubName(mp[2]);
+        } else if(/^m[ée]thode\b/i.test(b.text)) procSection='';
+      }
+      // Les phases du pétrissage final ramènent à la recette principale,
+      // même sans titre « Méthode de travail ».
+      if(procSection && /^(incorporation|pointage|pesage|d[ée]tente|fa[çc]onnage|appr[eê]t|cuisson|ressuage|division|frasage|mise en forme)\b/i.test(b.text)) procSection='';
+      process.push({type:b.type, text:b.text, label:b.label,
+                    temperature:b.temperature, duration:b.duration, confidence:b.confidence,
+                    section:(procSection!==null?procSection:(cur?cur.name:''))});
+      return;
+    }
+
+    if(b.type==='ingredient'){
+      // Une ligne « nom + quantité + unité » franche rouvre le tableau :
+      // sur une mise en page à deux colonnes, une phrase du procédé peut
+      // s'intercaler entre deux lignes d'ingrédients.
+      if(inProcessZone && extractIngredient(b.text) &&
+         new RegExp('(\\d)\\s*('+UNITWORDS+')[\\s\\u2063]*$','i').test(b.text)) inProcessZone=false;
+      // Règle 16 : dans la zone procédé, un aliment ne crée pas d'ingrédient
+      if(inProcessZone){
+        process.push({type:'process_step',text:b.text,confidence:b.confidence,section:cur?cur.name:''});
+        return;
+      }
+      var ing=extractIngredient(b.text);
+      // Sans quantité lisible, c'est un titre de recette ou de préparation :
+      // on ne le transforme jamais en matière première.
+      if(!ing) return;
+      var conf=Math.round(b.confidence*100);
+      if(confOf) conf=Math.min(conf, Math.max(35,confOf(b.index)));
+      if(b.uncertain) conf=Math.min(conf,60);
+      if(!ing.unitDetected) conf=Math.min(conf,55);
+      if(!cur){ cur={name:'', ingredients:[], confidence:1}; subs.push(cur); }
+      cur.ingredients.push({originalName:ing.name, normalizedName:ing.name,
+        quantity:ing.qty, unit:ing.unit, unitDetected:ing.unitDetected, unitGuessedKg:ing.unitGuessedKg, confidence:conf});
+      return;
+    }
+
+    // Fragment non reconnu au milieu du procédé (« 2e vitesse. ») : il reste
+    // dans le procédé plutôt que d'être perdu
+    if(b.type==='unknown'&&inProcessZone){
+      process.push({type:'process_step',text:b.text,confidence:b.confidence,
+                    section:(procSection!==null?procSection:(cur?cur.name:''))});
+      return;
+    }
+    if(b.type==='unknown'&&!inProcessZone&&!/\d/.test(b.text)&&b.text.length<=40){
+      cur={name:cleanSubName(b.text), ingredients:[], confidence:0.55};
+      subs.push(cur);
+    }
+  });
+
+  subs=subs.filter(function(s){ return s.ingredients.length>0; });
+  var main=null, real=[];
+  subs.forEach(function(s){ if(!main&&!s.name) main=s; else real.push(s); });
+  if(!main){ if(real.length===1){ main=real[0]; real=[]; } else main={name:'',ingredients:[]}; }
+
+  function toItems(list){
+    return list.map(function(g){
+      return {detectedName:g.originalName, quantity:g.quantity, unit:g.unit,
+              unitDetected:g.unitDetected, unitGuessedKg:g.unitGuessedKg, confidence:g.confidence};
+    });
+  }
+  return {recipeName:name, main:toItems(main.ingredients), subRecipes:real.map(function(s){
+    return {name:s.name, items:toItems(s.ingredients)};
+  }), process:process, blocks:blocks};
+}
+
+function rslug(s){return cslug(s);}
+
+// Seuil (point 22) : en dessous, la ligne n'est pas cochée par défaut.
+// Rien n'est jamais créé sans que vous cochiez vous-même.
+var CONF_MIN=45;
+
+// ── Correction OCR + apprentissage (points 11, 12, 20) ────────
+// Table de correspondances « lu par l'OCR → terme corrigé ».
+// Elle se remplit toute seule des corrections que vous faites à l'écran
+// de vérification, et sert aux imports suivants.
+function loadFixes(){ try{ return JSON.parse(localStorage.getItem('v4_ocrfix')||'{}'); }catch(e){ return {}; } }
+function saveFixes(f){ try{ localStorage.setItem('v4_ocrfix', JSON.stringify(f)); }catch(e){} }
+function learnCorrection(from,to){
+  if(!from||!to) return;
+  var a=cslug(from), b=String(to).trim();
+  if(!a||a===cslug(b)) return;
+  var f=loadFixes();
+  f[a]={to:b, n:((f[a]&&f[a].n)||0)+1, ts:now()};
+  saveFixes(f);
+}
+
+// Distance de Levenshtein, bornée : sert à repérer une faute de frappe
+function editDist(a,b,max){
+  a=cslug(a); b=cslug(b);
+  if(Math.abs(a.length-b.length)>max) return max+1;
+  var prev=[],cur=[];
+  for(var j=0;j<=b.length;j++) prev[j]=j;
+  for(var i=1;i<=a.length;i++){
+    cur[0]=i; var best=i;
+    for(var k=1;k<=b.length;k++){
+      cur[k]=Math.min(prev[k]+1, cur[k-1]+1, prev[k-1]+(a[i-1]===b[k-1]?0:1));
+      if(cur[k]<best) best=cur[k];
+    }
+    if(best>max) return max+1;
+    prev=cur.slice();
+  }
+  return prev[b.length];
+}
+
+// Propose une correction SANS jamais l'imposer : le texte lu reste conservé.
+function proposeFix(raw){
+  var s=String(raw||'').trim();
+  if(!s) return {normalized:s, corrected:false, source:''};
+  var key=cslug(s);
+
+  // 1. Correction déjà apprise
+  var fixes=loadFixes();
+  if(fixes[key]) return {normalized:fixes[key].to, corrected:true, source:'appris'};
+
+  // 2. Nom très proche d'un ingrédient du catalogue
+  var best=null, bd=99;
+  ingredients.forEach(function(i){
+    var d=editDist(s,i.name,2);
+    if(d<bd){ bd=d; best=i; }
+  });
+  if(best && bd<=2 && cslug(best.name)!==key)
+    return {normalized:best.name, corrected:true, source:'catalogue'};
+
+  // Aucune correction « au jugé » sur le vocabulaire : le risque de
+  // dénaturer un nom valide (« Pignon » → « oignon ») dépasse le gain.
+  // Seules les corrections apprises et le rapprochement catalogue agissent.
+  return {normalized:s, corrected:false, source:''};
+}
+
+
+// ── 2. RAPPROCHEMENT CATALOGUE ────────────────────────────────
+function rdice(a,b){
+  a=rslug(a); b=rslug(b); if(!a||!b)return 0; if(a===b)return 1;
+  var ga=[],gb=[];
+  for(var i=0;i<a.length-1;i++)ga.push(a.substr(i,2));
+  for(var j=0;j<b.length-1;j++)gb.push(b.substr(j,2));
+  if(!ga.length||!gb.length)return 0;
+  var hit=0,pool=gb.slice();
+  ga.forEach(function(g){var k=pool.indexOf(g); if(k>=0){hit++;pool.splice(k,1);}});
+  return 2*hit/(ga.length+gb.length);
+}
+
+// ── SYNONYMES ET FAMILLES PROFESSIONNELLES ────────────────────
+// Une recette n'écrit jamais un ingrédient comme le catalogue : « jaunes »
+// pour « jaune d'œuf », « beurre tourage » pour « beurre de tourage ».
+// Ce dictionnaire rapproche les deux écritures sans jamais décider seul :
+// il ne fait qu'augmenter le score, la validation reste à l'utilisateur.
+var ING_SYNONYMS=[
+  {canon:"jaune d'oeuf", alias:['jaune','jaunes','jaunes d oeufs','jaune d oeufs','jaunes oeuf']},
+  {canon:"blanc d'oeuf", alias:['blanc','blancs','blancs d oeufs','blanc d oeufs']},
+  {canon:'oeuf entier',  alias:['oeuf','oeufs','ovoproduit','ovoproduits']},
+  {canon:'beurre de tourage', alias:['beurre tourage','beurre sec','beurre de tour','tourage']},
+  {canon:'beurre doux',  alias:['beurre non sale']},
+  {canon:'creme liquide', alias:['creme fleurette','creme 35','creme 35 mg','creme entiere','creme uht']},
+  {canon:'levure biologique fraiche', alias:['levure fraiche','levure','levure biologique','levure de boulanger']},
+  {canon:'levure chimique', alias:['poudre a lever','poudre levante','baking powder']},
+  {canon:'levain liquide', alias:['levain tout point liquide','levain liq']},
+  {canon:'levain dur',    alias:['levain ferme','levain tout point dur']},
+  {canon:'pate fermentee',alias:['pate fermente','pate ferm','vieille pate']},
+  {canon:'sucre semoule', alias:['sucre','sucre blanc','sucre cristal','sucre en poudre']},
+  {canon:'sucre glace',   alias:['glace royal sucre','sucre impalpable']},
+  {canon:'cassonade',     alias:['sucre roux','vergeoise brune','sucre brun']},
+  {canon:'poudre d amande', alias:['amande en poudre','tant pour tant amande','poudre amande']},
+  {canon:'pistache',      alias:['pistaches','pistaches hachees','poudre de pistache','pate de pistache']},
+  {canon:'noisette',      alias:['noisettes','noisettes torrefiees','poudre de noisette']},
+  {canon:'chocolat noir', alias:['couverture noire','couverture noir','chocolat de couverture noir']},
+  {canon:'chocolat au lait', alias:['couverture lait','chocolat lait']},
+  {canon:'chocolat blanc',alias:['couverture blanche','couverture blanc']},
+  {canon:'cacao en poudre', alias:['cacao poudre','cacao','poudre de cacao']},
+  {canon:'farine de ble t65', alias:['farine t65','farine de tradition','farine tradition','tradition t65','farine de ble tradition']},
+  {canon:'farine de ble t45', alias:['farine t45','farine de gruau','gruau']},
+  {canon:'farine de ble t55', alias:['farine t55','farine de ble blanche']},
+  {canon:'farine de ble t80', alias:['farine t80','farine de meule','farine bise']},
+  {canon:'farine de seigle', alias:['seigle','farine seigle','farine de seigle t130','seigle t130','seigle t85']},
+  {canon:'farine complete', alias:['farine integrale','farine t150','farine t110']},
+  {canon:'fecule de mais', alias:['maizena','amidon de mais','fecule']},
+  {canon:'sel fin',       alias:['sel','sel de guerande','sel marin','sel de table']},
+  {canon:'eau',           alias:['eau froide','eau tiede','eau de coulage','eau tb','eau de bassinage','eau graine']},
+  {canon:'lait entier',   alias:['lait','lait froid','lait uht','lait demi ecreme']},
+  {canon:'gousse de vanille', alias:['vanille','vanille gousse','gousses de vanille']},
+  {canon:'huile d olive', alias:['huile olive','olive huile']},
+  {canon:'graine de sesame', alias:['sesame','sesame blanc','sesame noir','poudre de sesame','graines de sesame']},
+  {canon:'graine de tournesol', alias:['tournesol','graines de tournesol']},
+  {canon:'graine de courge', alias:['courge','graines de courge']}
+];
+
+// Table inversée, construite une seule fois
+var _synIndex=null;
+function synIndex(){
+  if(_synIndex) return _synIndex;
+  _synIndex={};
+  ING_SYNONYMS.forEach(function(e){
+    var canon=rslug(e.canon);
+    _synIndex[canon]=canon;
+    e.alias.forEach(function(a){ _synIndex[rslug(a)]=canon; });
+  });
+  return _synIndex;
+}
+// Forme canonique d'un nom, ou le nom nettoyé s'il est inconnu
+function canonIng(name){
+  var k=rslug(name);
+  var idx=synIndex();
+  if(idx[k]) return idx[k];
+  // Correspondance partielle : « farine t65 bio » contient « farine t65 »
+  var best=null;
+  Object.keys(idx).forEach(function(a){
+    if(a.length<4) return;
+    if(k.indexOf(a)>=0 && (!best||a.length>best.length)) best=a;
+  });
+  return best?idx[best]:k;
+}
+// Deux noms désignent-ils le même produit selon le dictionnaire métier ?
+function sameFamily(a,b){
+  var ca=canonIng(a), cb=canonIng(b);
+  return ca && cb && ca===cb;
+}
+
+function findMatches(nm){
+  var q=rslug(nm);
+  var scored=ingredients.map(function(i){
+    var c=rslug(i.name), s=rdice(i.name,nm);
+    // Vocabulaire métier : « jaunes » et « jaune d'œuf » sont le même produit,
+    // ce que la seule ressemblance de lettres ne peut pas voir.
+    if(sameFamily(i.name,nm)) s=Math.max(s,0.93);
+    // Un nom court entièrement contenu dans l'autre est un candidat sérieux
+    // (« Sel » vs « Sel fin ») que la similarité seule sous-évalue.
+    if(q&&c&&(c.indexOf(q)>=0||q.indexOf(c)>=0)){
+      var shorter=Math.min(q.length,c.length), longer=Math.max(q.length,c.length);
+      if(shorter>=3) s=Math.max(s, 0.62+0.25*(shorter/longer));
+    }
+    return {ing:i, score:Math.min(1,s)};
+  }).sort(function(a,b){ return b.score-a.score; });
+  return scored.slice(0,5);
+}
+
+// ── 3. ÉTAT (jamais persisté) ─────────────────────────────────
+var draft=null,draftQueue=null,draftQueueIdx=0;
+var IS_MOBILE = !document.getElementById('sidebar');
+function el(t,c,h){var e=document.createElement(t); if(c)e.className=c; if(h!=null)e.innerHTML=h; return e;}
+
+// ── 4. UI ─────────────────────────────────────────────────────
+function buildUI(){
+  var st=el('style'); st.textContent=[
+  '.ri-drop{border:2px dashed var(--bd2);border-radius:12px;padding:24px 16px;text-align:center;cursor:pointer;background:var(--p2)}',
+  '.ri-drop:hover{border-color:var(--g);background:#fff}',
+  '.ri-opt{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid var(--bd);border-radius:10px;padding:13px;margin-bottom:8px;cursor:pointer;text-align:left;width:100%}',
+  '.ri-opt:hover{border-color:var(--g)}.ri-opt:active{opacity:.8}',
+  '.ri-opt-ic{font-size:22px;flex-shrink:0}',
+  '.ri-opt-t{font-size:13px;font-weight:600;color:var(--i)}',
+  '.ri-opt-s{font-size:11px;color:var(--i4);margin-top:1px}',
+  '.ri-log{background:var(--p2);border-radius:9px;padding:12px;font-size:12px;line-height:1.9;color:var(--i3);max-width:340px;margin:14px auto 0;text-align:left}',
+  '.ri-row{background:#fff;border:1px solid var(--bd);border-radius:10px;padding:11px 12px;margin-bottom:8px}',
+  '.ri-row.ok{border-left:3px solid var(--gr2)}',
+  '.ri-row.warn{border-left:3px solid #F79009}',
+  '.ri-row.new{border-left:3px solid var(--bl)}',
+  '.ri-row.off{opacity:.4}',
+  '.ri-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}',
+  '.ri-nm{font-size:13px;font-weight:600;color:var(--i);flex:1;min-width:90px}',
+  '.ri-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;white-space:nowrap}',
+  '.b-ok2{background:#ECFDF3;color:#027A48}.b-warn{background:#FFFAEB;color:#B54708}.b-new{background:#EFF4FF;color:#1D4ED8}',
+  '.ri-conf{font-size:10px;font-weight:600;padding:2px 6px;border-radius:20px}',
+  '.c-hi{background:#ECFDF3;color:#027A48}.c-mid{background:#FFFAEB;color:#B54708}.c-lo{background:#FEF3F2;color:#B42318}',
+  '.ri-match{font-size:11px;color:var(--i4);margin-top:5px}',
+  '.ri-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:7px;margin-top:9px}',
+  '.ri-f{display:flex;flex-direction:column;gap:3px}',
+  '.ri-f label{font-size:10px;color:var(--i4);font-weight:500}',
+  '.ri-f input,.ri-f select{background:var(--p2);border:1px solid var(--bd2);border-radius:6px;padding:6px 8px;font-size:12px;color:var(--i);outline:none;width:100%;font-family:inherit;-webkit-appearance:none}',
+  '.ri-f input:focus,.ri-f select:focus{border-color:var(--g);background:#fff}',
+  '.ri-sub{background:rgba(46,107,168,.06);border:1px solid rgba(46,107,168,.2);border-radius:9px;padding:10px 12px;margin-bottom:10px}',
+  '.ri-sub-t{font-size:12px;font-weight:600;color:var(--bl);margin-bottom:3px}',
+  '.ri-sum{background:var(--i);color:#fff;border-radius:10px;padding:13px 15px;margin-bottom:12px}',
+  '.ri-sum-r{display:flex;justify-content:space-between;padding:4px 0;font-size:12px}',
+  '.ri-sum-r b{font-size:14px}',
+  '.ri-src{background:var(--p2);border-radius:8px;padding:9px 11px;font-size:11px;color:var(--i4);margin-bottom:11px;display:flex;align-items:center;gap:8px}',
+  '.ri-step{font-size:11px;color:var(--i4);margin-bottom:12px}.ri-step b{color:var(--g)}'
+  ].join('\n');
+  document.head.appendChild(st);
+
+  var scroll=document.getElementById('scroll');
+
+  // Page : choix de la source
+  var p1=el('div','pg'); p1.id='p-rec-import'; p1.style.display='none';
+  p1.innerHTML=
+    '<div class="ri-step">Import → Analyse → <b>Vérification</b> → Enregistrement</div>'+
+    '<button class="ri-opt" id="ri-pdf"><span class="ri-opt-ic">📄</span><div><div class="ri-opt-t">Importer un PDF</div><div class="ri-opt-s">Fiche technique, livre scanné — plusieurs pages acceptées</div></div></button>'+
+    '<button class="ri-opt" id="ri-cam"><span class="ri-opt-ic">📷</span><div><div class="ri-opt-t">Prendre une photo</div><div class="ri-opt-s">Fiche papier, tableau, cahier de laboratoire</div></div></button>'+
+    '<button class="ri-opt" id="ri-img"><span class="ri-opt-ic">🖼️</span><div><div class="ri-opt-t">Importer une image</div><div class="ri-opt-s">Capture d\'écran ou photo déjà enregistrée</div></div></button>'+
+    '<button class="ri-opt" id="ri-xls"><span class="ri-opt-ic">📊</span><div><div class="ri-opt-t">Importer un fichier Excel</div><div class="ri-opt-s">Classeur .xlsx ou .csv — une fiche par feuille, ou un tableau de recettes</div></div></button>'+
+    '<input type="file" id="ri-f-xls" accept=".xlsx,.xlsm,.xls,.ods,.csv,.tsv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" style="display:none">'+
+    '<button class="ri-opt" id="ri-multi"><span class="ri-opt-ic">📑</span><div><div class="ri-opt-t">Plusieurs pages</div><div class="ri-opt-s">Sélectionnez plusieurs images de la même recette</div></div></button>'+
+    '<div class="ri-f" style="display:flex;flex-direction:row;align-items:center;gap:8px;margin:-2px 0 10px;flex-wrap:wrap">'+
+      '<label style="font-size:11px;color:var(--i4)">Pages du PDF (facultatif) : de</label>'+
+      '<input type="number" id="ri-pg-from" min="1" placeholder="1" style="width:70px">'+
+      '<label style="font-size:11px;color:var(--i4)">à</label>'+
+      '<input type="number" id="ri-pg-to" min="1" placeholder="fin" style="width:70px"></div>'+
+    '<input type="file" id="ri-f-pdf" accept=".pdf,application/pdf,image/*" style="display:none">'+
+    '<input type="file" id="ri-f-cam" accept="image/*" capture="environment" style="display:none">'+
+    '<input type="file" id="ri-f-img" accept="image/*,.pdf,application/pdf" style="display:none">'+
+    '<input type="file" id="ri-f-multi" accept="image/*,.pdf,application/pdf" multiple style="display:none">'+
+    // Analyse par IA : facultative, clé fournie par l'utilisateur
+    '<div class="cw" style="margin-top:14px">'+
+      '<div class="cw-t">🧠 Analyse par IA <span style="font-size:11px;font-weight:400;color:var(--i4)">facultatif</span></div>'+
+      '<div style="font-size:12px;color:var(--i4);line-height:1.5;margin-bottom:8px">'+
+        'Sans clé, l\'application analyse le document toute seule, hors ligne. '+
+        'Avec une clé, la lecture des fiches complexes est nettement meilleure. '+
+        'Clé Google Gemini (gratuite) ou Anthropic (sk-ant…, payante). '+
+        'La clé reste sur cet appareil et n\'est envoyée qu\'à Anthropic.</div>'+
+      '<div class="field" style="margin-bottom:6px">'+
+        '<input class="fi sm" type="password" id="ri-aikey" placeholder="sk-ant-... (laisser vide pour rester hors ligne)">'+
+      '</div>'+
+      '<div class="inv-bar">'+
+        '<button class="btn btn-ghost btn-sm" onclick="RIMP.saveKey()">Enregistrer la clé</button>'+
+        '<button class="btn btn-ghost btn-sm" onclick="RIMP.clearKey()">Retirer</button>'+
+        '<span id="ri-aistate" style="font-size:11px;color:var(--i4);align-self:center"></span>'+
+      '</div>'+
+    '</div>'+
+    '<button class="btn btn-ghost btn-full" style="margin-top:8px" onclick="RIMP.openFixes()">🧠 Corrections apprises</button>';
+  var resumeBox=el('div'); resumeBox.id='ri-resume';
+  p1.insertBefore(resumeBox, p1.firstChild);
+  scroll.appendChild(p1);
+
+  // Page : analyse + validation
+  var p2=el('div','pg'); p2.id='p-rec-valid'; p2.style.display='none';
+  p2.innerHTML=
+    '<div class="ri-step">Import → Analyse → <b>Vérification</b> → Enregistrement</div>'+
+    '<div id="ri-loading" style="text-align:center;padding:30px 16px;display:none">'+
+      '<div class="inv-spin"></div>'+
+      '<div class="empty-t">Analyse du document…</div>'+
+      '<div class="ri-log" id="ri-log"></div></div>'+
+    '<div id="ri-fail" style="display:none"></div>'+
+    '<div id="ri-result" style="display:none">'+
+      '<div class="ri-src" id="ri-src"></div>'+
+      '<div id="ri-reclist"></div>'+
+      '<div id="ri-warn"></div>'+
+      '<div class="cw"><div class="cw-t" style="margin-bottom:9px">Recette</div>'+
+        '<div class="field"><div class="fl">Nom</div><input class="fi" type="text" id="ri-name"></div>'+
+        '<div class="frow" style="margin-top:9px"><div class="field" style="margin-bottom:0"><div class="fl">Catégorie</div>'+
+        '<select class="fi sm" id="ri-cat" onchange="handleCatChange(this,\'rec\')"></select></div>'+
+        '<div class="field" style="margin-bottom:0"><div class="fl">Emoji</div><input class="fi sm" type="text" id="ri-emoji" placeholder="🥖"></div></div>'+
+      '</div>'+
+      '<div id="ri-subs"></div>'+
+      '<div id="ri-process"></div>'+
+      '<div class="cw"><div class="cw-t" style="margin-bottom:8px">Ingrédients détectés '+
+        '<button class="btn btn-ghost btn-sm" id="ri-add">＋ Ligne</button></div>'+
+        '<div id="ri-lines"></div></div>'+
+      '<div class="ri-sum" id="ri-sum"></div>'+
+      '<button class="btn btn-green btn-full" id="ri-save">✓ Enregistrer</button>'+
+      '<button class="btn btn-ghost btn-full" id="ri-cancel">Annuler — ne rien enregistrer</button>'+
+    '</div>';
+  scroll.appendChild(p2);
+
+  var mf=el('div','ov'); mf.id='m-fixes';
+  mf.innerHTML='<div class="modal"><div class="m-hdr"><h3>🧠 Corrections apprises</h3><button class="m-x" onclick="RIMP.closeFixes()">✕</button></div>'+
+    '<div class="m-body"><div style="font-size:11px;color:var(--i4);margin-bottom:10px;line-height:1.5">Ces corrections viennent des modifications que vous avez faites à l\'écran de vérification ; elles sont appliquées automatiquement aux imports suivants. Supprimez celles qui ne conviennent pas.</div>'+
+    '<div id="fixes-list"></div></div>'+
+    '<div class="m-foot"><button class="btn btn-ghost" onclick="RIMP.clearFixes()">Tout effacer</button><button class="btn btn-gold btn-full" onclick="RIMP.closeFixes()">Fermer</button></div></div>';
+  document.body.appendChild(mf);
+
+  // Bouton dans la page Recettes
+  var grid=document.getElementById('rec-grid');
+  if(grid&&grid.parentNode){
+    var b=el('button','btn btn-ghost btn-full','📄 Importer une recette');
+    b.style.marginBottom='12px';
+    b.onclick=function(){ goPage('rec-import'); };
+    grid.parentNode.insertBefore(b,grid);
+  }
+
+  document.getElementById('ri-pdf').onclick=function(){document.getElementById('ri-f-pdf').click();};
+  document.getElementById('ri-cam').onclick=function(){document.getElementById('ri-f-cam').click();};
+  document.getElementById('ri-img').onclick=function(){document.getElementById('ri-f-img').click();};
+  refreshAiState();
+  document.getElementById('ri-multi').onclick=function(){document.getElementById('ri-f-multi').click();};
+  document.getElementById('ri-xls').onclick=function(){document.getElementById('ri-f-xls').click();};
+  document.getElementById('ri-f-xls').onchange=function(){ if(this.files[0]) runImport([this.files[0]]); this.value=''; };
+  ['ri-f-pdf','ri-f-cam','ri-f-img'].forEach(function(id){
+    document.getElementById(id).onchange=function(){ if(this.files[0]) runImport([this.files[0]]); this.value=''; };
+  });
+  document.getElementById('ri-f-multi').onchange=function(){
+    if(this.files.length) runImport(Array.prototype.slice.call(this.files));
+    this.value='';
+  };
+  document.getElementById('ri-add').onclick=function(){
+    draft.lines.push(mkLine({detectedName:'',quantity:0,unit:'g',confidence:100}));
+    renderLines(); renderSummary();
+  };
+  document.getElementById('ri-save').onclick=commitRecipe;
+  document.getElementById('ri-cancel').onclick=function(){
+    draft=null; draftQueue=null; draftQueueIdx=0; persistDraft();
+    goPage('recettes'); toast('Annulé — rien n\'a été enregistré','info');
+  };
+  ['ri-name','ri-cat','ri-emoji'].forEach(function(id){
+    document.getElementById(id).onchange=function(){ if(draft){ draft[id.slice(3)]=this.value; persistDraft(); } };
+  });
+}
+
+
+
+// ── ANALYSE PAR IA (optionnelle, clé fournie par l'utilisateur) ──
+// L'analyse locale reste la référence : l'IA ne fait que proposer une
+// lecture plus fine du document. En cas d'échec, de clé absente ou de
+// réponse inexploitable, on retombe systématiquement sur l'analyse locale.
+// La clé est saisie par l'utilisateur et rangée sur son appareil ; elle
+// n'est jamais incluse dans le fichier de l'application.
+function aiKey(){ try{ return (localStorage.getItem('v4_aikey')||'').trim(); }catch(e){ return ''; } }
+function setAiKey(k){ try{ localStorage.setItem('v4_aikey',String(k||'').trim()); }catch(e){} }
+var AI_MODEL='claude-haiku-4-5-20251001';
+var AI_MODEL_GEMINI='gemini-2.5-flash';
+
+// Le fournisseur se devine à la forme de la clé : inutile de le demander.
+// Anthropic : sk-ant-…  ·  Google Gemini (offre gratuite) : AIza…
+function aiProvider(k){
+  k=String(k||aiKey()).trim();
+  if(!k) return '';
+  // Anthropic est la seule à imposer un préfixe stable (« sk-ant… »).
+  // Google a changé de format en 2026 (clés d'autorisation) : tout ce qui
+  // n'est pas une clé Anthropic est donc traité comme une clé Google.
+  if(k.indexOf('sk-')===0) return 'anthropic';
+  return 'gemini';
+}
+
+function aiPrompt(text, catalogue){
+  return 'Tu analyses une fiche technique de boulangerie-pâtisserie lue par OCR.\n'+
+  'Sépare STRICTEMENT trois natures : ingrédients, quantités/unités, procédé.\n\n'+
+  'RÈGLES ABSOLUES\n'+
+  '- Une étape de fabrication (pétrir, pointer, façonner, cuire, détente, apprêt…) '+
+  'n\'est JAMAIS un ingrédient.\n'+
+  '- Une température, une durée, un rendement ne sont JAMAIS des ingrédients.\n'+
+  '- Une ligne « TOTAL » est un total, pas un ingrédient.\n'+
+  '- Sur ces fiches, une quantité écrite sans unité est en KILOGRAMMES '+
+  '(« Farine 0,390 » = 0.39 kg).\n'+
+  '- Une préparation intermédiaire (empois, tangzhong, crème, appareil, craquelin, '+
+  'confit, frangipane…) est une sous-recette avec ses propres ingrédients.\n'+
+  '- Un document peut contenir plusieurs recettes : rends-les toutes.\n'+
+  '- N\'invente jamais un ingrédient absent du texte. En cas de doute, baisse la confiance.\n\n'+
+  (catalogue.length?('CATALOGUE EXISTANT (rapproche si c\'est le même produit) :\n'+
+    catalogue.slice(0,120).join(', ')+'\n\n'):'')+
+  'Réponds UNIQUEMENT par du JSON valide, sans texte autour, sans balises markdown :\n'+
+  '{"recipes":[{"name":"","category":"","ingredients":[{"name":"","quantity":0,'+
+  '"unit":"kg","confidence":95,"catalog_match":""}],'+
+  '"sub_recipes":[{"name":"","ingredients":[{"name":"","quantity":0,"unit":"kg",'+
+  '"confidence":95,"catalog_match":""}]}],"procedure":["étape"]}]}\n\n'+
+  'unit doit valoir kg, g, L, ml, cl, piece ou unite.\n'+
+  'catalog_match : nom EXACT du catalogue si c\'est le même produit, sinon "".\n\n'+
+  'TEXTE DE LA FICHE :\n'+text.slice(0,14000);
+}
+
+function aiAnalyze(text, allowEmpty){
+  var key=aiKey();
+  if(!key) return Promise.resolve(null);
+  var cat=ingredients.map(function(i){ return i.name; });
+  var prov=aiProvider(key);
+  step('analyse par IA');
+  logLine('🧠 analyse par IA en cours ('+(prov==='gemini'?'Gemini':'Claude')+')…');
+  var req;
+  if(prov==='gemini'){
+    req=fetch('https://generativelanguage.googleapis.com/v1beta/models/'+AI_MODEL_GEMINI+':generateContent',{
+      method:'POST',
+      headers:{'content-type':'application/json','x-goog-api-key':key},
+      body:JSON.stringify({
+        contents:[{parts:[{text:aiPrompt(text,cat)}]}],
+        generationConfig:{temperature:0, maxOutputTokens:4000}
+      })
+    });
+  } else {
+    req=fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'content-type':'application/json',
+        'x-api-key':key,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:AI_MODEL, max_tokens:4000,
+        messages:[{role:'user',content:aiPrompt(text,cat)}]
+      })
+    });
+  }
+  return req.then(function(r){
+    if(!r.ok) return r.text().then(function(t){ throw new Error('HTTP '+r.status+' '+t.slice(0,120)); });
+    return r.json();
+  }).then(function(d){
+    var txt;
+    if(prov==='gemini'){
+      txt=(((d.candidates||[])[0]||{}).content||{}).parts||[];
+      txt=txt.map(function(p){ return p.text||''; }).join('').trim();
+    } else {
+      txt=(d.content||[]).map(function(b){ return b.type==='text'?b.text:''; }).join('').trim();
+    }
+    txt=txt.replace(/^```(?:json)?/i,'').replace(/```$/,'').trim();
+    var obj=JSON.parse(txt);
+    if(!obj||!Array.isArray(obj.recipes)||(!obj.recipes.length&&!allowEmpty)) throw new Error('réponse vide');
+    return obj;
+  }).catch(function(e){
+    logLine('⚠️ IA indisponible ('+(e&&e.message||'erreur')+') — analyse locale utilisée');
+    return null;
+  });
+}
+
+// Un livre entier dépasse ce que l'IA lit en une fois : on l'envoie par
+// paquets de pages et on réunit les recettes. Si une partie échoue, toute
+// l'analyse repasse en local pour ne rien perdre.
+function aiAnalyzeDoc(res){
+  if(!aiKey()) return Promise.resolve(null);
+  var pages=(res.pageTexts&&res.pageTexts.length)?res.pageTexts:[res.text||''];
+  var chunks=[], cur='';
+  pages.forEach(function(p){
+    if(!p||!p.trim()) return;
+    if(cur && cur.length+p.length>12000){ chunks.push(cur); cur=''; }
+    cur+=(cur?'\n':'')+p;
+  });
+  if(cur) chunks.push(cur);
+  // Pas de quantité, pas de recette : inutile d'interroger l'IA
+  chunks=chunks.filter(function(t){ return /\d\s*(g|kg|l|ml|cl)\b|\bqs\b/i.test(t); });
+  if(!chunks.length) return Promise.resolve(null);
+  if(chunks.length===1) return aiAnalyze(chunks[0]);
+  logLine('🧠 document long : analyse IA en '+chunks.length+' parties');
+  var all=[], k=0;
+  function next(){
+    if(k>=chunks.length) return Promise.resolve(all.length?{recipes:all}:null);
+    var i=k++;
+    logLine('  IA : partie '+(i+1)+'/'+chunks.length);
+    return aiAnalyze(chunks[i], true).then(function(o){
+      if(!o) return null;
+      all=all.concat(o.recipes||[]);
+      return next();
+    });
+  }
+  return next();
+}
+
+// Transforme la réponse IA en la même structure que l'analyse locale,
+// pour que tout le reste de l'application soit inchangé.
+function aiToDocs(obj){
+  var UOK={kg:'kg',g:'g',l:'L',L:'L',ml:'ml',cl:'cl',piece:'pièce','pièce':'pièce',unite:'unité','unité':'unité'};
+  function conv(list){
+    return (list||[]).filter(function(x){ return x&&x.name&&String(x.name).trim().length>1; })
+      .map(function(x){
+        var u=UOK[String(x.unit||'kg')]||'kg';
+        return { detectedName:String(x.name).trim(),
+                 quantity:(parseFloat(x.quantity)||0),
+                 unit:u, unitDetected:true,
+                 confidence:Math.max(40,Math.min(99,parseInt(x.confidence,10)||85)),
+                 aiMatch:(x.catalog_match||'').trim() };
+      });
+  }
+  var docs=[];
+  obj.recipes.forEach(function(r,i){
+    var main=conv(r.ingredients);
+    var subs=(r.sub_recipes||[]).map(function(s){
+      return {name:String(s.name||'').trim()||'Préparation', items:conv(s.ingredients)};
+    }).filter(function(s){ return s.items.length; });
+    var count=main.length+subs.reduce(function(a,s){return a+s.items.length;},0);
+    if(count<1) return;
+    docs.push({ page:i+1, name:String(r.name||'').trim()||('Recette '+(i+1)),
+      parsed:{ recipeName:String(r.name||'').trim(), main:main, subRecipes:subs,
+               process:(r.procedure||[]).map(function(t){ return {text:String(t)}; }) },
+      count:count, viaAI:true });
+  });
+  return docs;
+}
+
+
+// ── RECETTES RÉPARTIES SUR PLUSIEURS PAGES ────────────────────
+// Une fiche déborde souvent sur la page suivante : celle-ci ne porte alors
+// pas un vrai titre de recette mais un nom de préparation (« Frangipane »,
+// « Pâte finale », « Recette de pâte »). La rattacher à la recette précédente
+// évite de créer trois recettes là où il n'y en a qu'une.
+var CONTINUATION=/^(p[âa]te |p[âa]te$|recette de |suite|proc[ée]d[ée]|montage|finition|d[ée]coration|garniture|cr[èe]me |insert|biscuit|ganache|glaçage|sirop|nappage|craquelin|confit|frangipane|streusel|appareil|empois|tangzhong|caramel)/i;
+
+// La page ouvre-t-elle une VRAIE nouvelle recette, ou prolonge-t-elle la précédente ?
+function isContinuationTitle(name, lines){
+  var t=String(name||'').trim();
+  if(!t) return true;                       // aucun titre : c'est une suite
+  if(!CONTINUATION.test(t)) return false;
+  // Un nom de préparation peut aussi être une VRAIE recette du sommaire
+  // (« Pâte levée feuilletée »). Ce qui tranche : une fiche complète annonce
+  // son rendement (« Recette pour 8 pièces »), une simple suite ne le fait pas.
+  var txt=(lines||[]).join(' ');
+  if(/(recette\s+pour|pour\s+\d+\s*(pi[èe]ces?|personnes?|galettes?|croissants?))/i.test(txt)) return false;
+  return true;
+}
+
+// Fusionne les documents détectés page par page : un bloc de continuation
+// devient une sous-recette de la recette ouverte juste avant.
+function mergeContinuations(docs){
+  if(docs.length<2) return docs;
+  var out=[];
+  docs.forEach(function(doc){
+    var prev=out.length?out[out.length-1]:null;
+    // On ne rattache que si la page précède immédiatement et que le titre
+    // ressemble à une préparation plutôt qu'à une recette.
+    var contigu = prev && (doc.page - prev.page) <= 1;
+    if(prev && contigu && isContinuationTitle(doc.name, doc.lines)){
+      var nom=String(doc.name||'').trim()||'Préparation';
+      // Les ingrédients principaux de la page deviennent une sous-recette
+      if(doc.parsed.main.length){
+        prev.parsed.subRecipes.push({name:nom, items:doc.parsed.main});
+      }
+      // Les sous-recettes de la page sont reprises telles quelles
+      (doc.parsed.subRecipes||[]).forEach(function(s){
+        if(!prev.parsed.subRecipes.some(function(x){ return rslug(x.name)===rslug(s.name); }))
+          prev.parsed.subRecipes.push(s);
+      });
+      prev.parsed.process=(prev.parsed.process||[]).concat(doc.parsed.process||[]);
+      prev.count += doc.count;
+      prev.pages=(prev.pages||[prev.page]).concat([doc.page]);
+      prev.page = doc.page;                 // pour tester la contiguïté suivante
+      return;
+    }
+    doc.pages=[doc.page];
+    out.push(doc);
+  });
+  // On rétablit la page d'origine pour l'affichage
+  out.forEach(function(d){ d.page=d.pages[0]; });
+  return out;
+}
+
+// ── Analyse d'un document pouvant contenir plusieurs recettes ──
+function parseDocument(res){
+  var pages = (res.pageTexts && res.pageTexts.length) ? res.pageTexts : [res.text||''];
+  var found=[];
+  pages.forEach(function(pt,pi){
+    var lines=String(pt||'').split('\n').map(function(l){
+      return l.replace(/\.{2,}/g,'  ').replace(/[ \t]+/g,' ').trim();
+    }).filter(Boolean);
+    if(!lines.length) return;
+    // Recollage des tableaux dont le PDF a séparé noms et quantités
+    var rebuilt=rebuildBookTable(lines);
+    splitRecipes(rebuilt).forEach(function(blk){
+      // Le titre du bloc ne doit pas être relu comme un ingrédient — sauf s'il
+      // désigne lui-même une sous-préparation (« Crème coco chocolat »), auquel
+      // cas parseFiche a besoin de le voir pour classer la table qui suit en
+      // sous-recette plutôt qu'en liste principale.
+      var body=blk.lines.slice();
+      var titleIsSub = SUB_TITLE.test(String(blk.name||'').trim());
+      if(!titleIsSub && blk.titleLines && blk.name) body=body.slice(blk.titleLines);
+      else if(!titleIsSub && body.length && rslug(body[0])===rslug(blk.name||'')) body=body.slice(1);
+      var parsed=parseFiche(body.join('\n'));
+      if(blk.name && !titleIsSub) parsed.recipeName=blk.name;
+      var count=parsed.main.length+parsed.subRecipes.reduce(function(a,s){return a+s.items.length;},0);
+      if(count<2) return;
+      // Page de valeurs nutritionnelles : ce sont des nutriments, pas des
+      // matières premières — on l'écarte entièrement.
+      var blkTxt=blk.lines.join(' ');
+      if(NUTRITION_HINT.test(blkTxt) &&
+         blk.lines.filter(function(l){ return NUTRITION_LINE.test(l); }).length>=3) return;   // une couverture ou un sommaire n'est pas une recette
+      // Les préparations intermédiaires détectées deviennent des sous-recettes
+      (blk.subs||[]).forEach(function(sb){
+        if(!parsed.subRecipes.some(function(s){ return rslug(s.name)===rslug(sb.name); })){
+          var sp=parseFiche(sb.lines.join('\n'));
+          if(sp.main.length) parsed.subRecipes.push({name:sb.name, items:sp.main});
+        }
+      });
+      var realPage=(res.pageOffset||0)+pi+1;
+      var sheetName=(res.pageNames&&res.pageNames[pi])||'';
+      found.push({ page:realPage, name:blk.name||parsed.recipeName||sheetName||('Recette page '+realPage), lines:blk.lines,
+                   parsed:parsed, count:count });
+    });
+  });
+  return mergeContinuations(found);
+}
+
+// ── TABLEAUX À EN-TÊTE (fiche de coût, book d'examen) ─────────
+// « Ingrédients | Recette de base en grammes | Quantité mise en œuvre | Coût »
+// La quantité de la recette est la PREMIÈRE colonne chiffrée ; les autres
+// (quantité mise en œuvre, coût, total) sont ignorées. Le procédé est le
+// bloc « Procédé » qui suit le tableau.
+var TABLE_HEAD=/^ingr[ée]dients?\s+(recettes?|quantit[ée]s?|poids|masse|grammages?)(?=\s|$|[^a-zà-ÿ])|^ingr[ée]dients?\s+.*\b(quant|rec[a-z]{0,3}tte|poids|gramm|co[uûi]t\b)/i;
+var GENERIC_TITLE=/^(recettes?|commande|proc[ée]d[ée]s?|sommaire|m[ée]thode)\s*:?$/i;
+var STEP_MARK=/^[-–—•●·]\s*/;
+function parseHeaderTables(res){
+  var pages=(res.pageTexts&&res.pageTexts.length)?res.pageTexts:[res.text||''];
+  var L=[];
+  pages.forEach(function(pt,pi){
+    String(pt||'').split('\n').forEach(function(l){
+      l=l.replace(/⁣/g,'').replace(/[|¦\[\]]/g,' ').replace(/\s+/g,' ').trim();
+      // Débris de filets lus par l'OCR (« , », « : », « S ») : ignorés
+      if(l && /[A-Za-zÀ-ÿ0-9]{2,}/.test(l)) L.push({t:l, page:(res.pageOffset||0)+pi+1});
+    });
+  });
+  var heads=[];
+  L.forEach(function(x,i){ if(TABLE_HEAD.test(x.t)) heads.push(i); });
+  if(!heads.length) return [];
+  function isTitleLike(s){
+    return !STEP_MARK.test(s) && /^[A-ZÀ-ÝŒ0-9]/.test(s) && s.split(' ').length<=10 &&
+           !/[,;]$/.test(s) && !/^\d+$/.test(s) && !TABLE_HEAD.test(s) && !/^total\b/i.test(s);
+  }
+  var docs=[];
+  heads.forEach(function(h){
+    var head=L[h].t;
+    var unit=/\bkg\b|kilo/i.test(head)?'kg':(/gramme/i.test(head)?'g':'');
+    var i=h+1;
+    // En-tête écrit sur deux lignes (« en grammes   oeuvre »)
+    while(i<L.length && !/\d/.test(L[i].t) && /^(en\s+grammes?|en\s+kg|oeuvre|œuvre|de base|\(g\)|€)/i.test(L[i].t)){
+      if(!unit && /gramme/i.test(L[i].t)) unit='g';
+      if(!unit && /\bkg\b/i.test(L[i].t)) unit='kg';
+      i++;
+    }
+    var items=[], last=null;
+    for(;i<L.length;i++){
+      var t=L[i].t;
+      if(TABLE_HEAD.test(t)) break;
+      if(/^total\b/i.test(t)){ i++; break; }
+      var tok=t.split(' '), qi=-1;
+      for(var k=1;k<tok.length;k++) if(/^(\d+(?:[.,]\d+)?|q\.?s\.?)$/i.test(tok[k])){ qi=k; break; }
+      if(qi>0 && /[A-Za-zÀ-ÿ]/.test(tok.slice(0,qi).join(' '))){
+        var qs=/^q/i.test(tok[qi]);
+        last={detectedName:tok.slice(0,qi).join(' '), quantity:qs?0:parseFloat(tok[qi].replace(',','.')),
+              unit:unit||'g', unitDetected:true, unitGuessedKg:!unit, confidence:95};
+        items.push(last); continue;
+      }
+      // Nom coupé sur deux lignes (« Farine de » / « tradition »)
+      if(last && !/\d/.test(t) && t.split(' ').length<=3 &&
+         (/^[a-zà-ÿ]/.test(t) || /\b(de|d'|d’|du|des|à|au|aux|en|et)$/i.test(last.detectedName))){
+        last.detectedName+=' '+t; continue;
+      }
+      break;
+    }
+    // Ligne de total mal écrite (« Tol 1848 ») : sa quantité est la somme des autres
+    if(items.length>=3){
+      var lastIt=items[items.length-1], sum=0;
+      items.slice(0,-1).forEach(function(x){ sum+=x.quantity||0; });
+      if(sum>0 && Math.abs(lastIt.quantity-sum)<=Math.max(1,sum*0.02)) items.pop();
+    }
+    if(!items.length) return;
+    // Titre : la ligne significative la plus proche au-dessus du tableau
+    var title='';
+    for(var u=h-1;u>=0 && u>=h-8;u--){
+      var s=L[u].t;
+      if(/^total\b/i.test(s) || TABLE_HEAD.test(s)) break;
+      if(GENERIC_TITLE.test(s) || STEP_MARK.test(s) || /^[a-zà-ÿ(]/.test(s) || /^\d+$/.test(s) ||
+         /^commande\b/i.test(s) || /:\s*$/.test(s)) continue;
+      if(s.split(' ').length>12) continue;
+      title=s.replace(/\s*[.:]\s*$/,'').trim(); break;
+    }
+    // Procédé : le bloc qui suit le tableau
+    var proc=[];
+    while(i<L.length && /^total\b/i.test(L[i].t)) i++;
+    if(i<L.length && /^proc[ée]d[ée]s?\s*:?$/i.test(L[i].t)){
+      for(i=i+1;i<L.length;i++){
+        var s2=L[i].t, nx=(L[i+1]||{}).t||'', nx2=(L[i+2]||{}).t||'';
+        if(TABLE_HEAD.test(s2) || GENERIC_TITLE.test(s2)) break;
+        // Titre de la recette suivante : ligne courte suivie d'un procédé ou d'un tableau
+        if(isTitleLike(s2) && !/\.\s*$/.test(s2) &&
+           (/^proc[ée]d[ée]s?\s*:?$/i.test(nx) || GENERIC_TITLE.test(nx) || TABLE_HEAD.test(nx) || TABLE_HEAD.test(nx2) || GENERIC_TITLE.test(nx2))) break;
+        if(STEP_MARK.test(s2) || !proc.length) proc.push(s2.replace(STEP_MARK,''));
+        else proc[proc.length-1]+=' '+s2;            // suite de la consigne
+      }
+    }
+    docs.push({ page:L[h].page, head:h, title:title, name:title||('Recette page '+L[h].page), direct:true, count:items.length,
+      parsed:{ recipeName:title, main:items, subRecipes:[],
+               process:proc.filter(Boolean).map(function(x){ return {type:'process_step', text:x, confidence:0.9, section:''}; }) } });
+  });
+  return groupFinalDough(docs, L);
+}
+
+// « Rafraîchis levain », « Poolish »… puis « Pétrissage final » : un seul pain.
+// Les tableaux qui précèdent le pétrissage final, depuis le début de la
+// rubrique « Recette » du produit, deviennent ses sous-recettes ; le nom du
+// pain est le titre écrit au-dessus de cette rubrique.
+var FINAL_DOUGH=/^(p[ée]trissage( final)?|p[âa]te finale|fin de p[ée]trissage|p[ée]trissage de la p[âa]te finale)$/i;
+function groupFinalDough(docs, L){
+  var used={}, out=[];
+  docs.forEach(function(F,fi){
+    if(!FINAL_DOUGH.test(F.title||'')) return;
+    // Début de la rubrique du produit : la ligne « Recette » la plus proche au-dessus
+    var start=-1;
+    for(var u=F.head-1;u>=0 && u>=F.head-250;u--){
+      if(/^recettes?\s*:?$/i.test(L[u].t)){ start=u; break; }
+    }
+    var subs=[];
+    for(var k=fi-1;k>=0;k--){
+      var D=docs[k];
+      if(used[k] || FINAL_DOUGH.test(D.title||'') || (start>=0 && D.head<start) || (start<0 && F.page-D.page>2)) break;
+      subs.unshift(k);
+    }
+    if(!subs.length) return;
+    var bread='';
+    if(start>=0){
+      for(var v=start-1;v>=0 && v>=start-10;v--){
+        var s=L[v].t;
+        if(/^total\b/i.test(s) || TABLE_HEAD.test(s)) break;
+        if(GENERIC_TITLE.test(s) || STEP_MARK.test(s) || /^[a-zà-ÿ(]/.test(s) || /^\d+$/.test(s) || /^commande\b/i.test(s) || /:\s*$/.test(s)) continue;
+        if(s.split(' ').length>12) continue;
+        bread=s.replace(/\s*[.:]\s*$/,'').trim(); break;
+      }
+    }
+    subs.forEach(function(k){
+      var D=docs[k]; used[k]=true;
+      var nm=D.title||('Préparation '+(F.parsed.subRecipes.length+1));
+      F.parsed.subRecipes.push({name:nm, items:D.parsed.main});
+      F.parsed.process=D.parsed.process.map(function(p){ p.section=nm; return p; }).concat(F.parsed.process);
+      F.count+=D.count;
+    });
+    if(bread){ F.name=bread; F.parsed.recipeName=bread; }
+    F.page=docs[subs[0]].page;
+  });
+  docs.forEach(function(d,k){ if(!used[k]) out.push(d); });
+  return out;
+}
+
+// Analyse locale d'un texte : tableaux à en-tête d'abord, fiches libres ensuite
+function localDocsFor(r){
+  var tbl=parseHeaderTables(r), base=parseDocument(r);
+  if(!tbl.length) return base;
+  if(tbl.length>=3) return tbl;               // book entièrement en tableaux
+  var covered={}; tbl.forEach(function(d){ covered[d.page]=true; });
+  return tbl.concat(base.filter(function(d){ return !(d.pages||[d.page]).some(function(p){ return covered[p]; }); }))
+    .sort(function(a,b){ return (a.page||0)-(b.page||0); });
+}
+
+// Une photo peut être mise en page de plusieurs façons (colonnes par zones,
+// coupure unique, lignes brutes) : on garde celle qui retrouve le plus
+// d'ingrédients — à égalité, la première, la plus fidèle.
+function bestLocalDocs(res){
+  function score(ds){ return ds.reduce(function(a,d){ return a+(d.count||0); },0); }
+  var best=localDocsFor(res), bs=score(best);
+  if(res.directDocs&&res.directDocs.length)
+    return best.concat(res.directDocs).sort(function(a,b){ return (a.page||0)-(b.page||0); });
+  (res.alts||[]).forEach(function(pt){
+    if(!pt||!pt.length) return;
+    var alt={}; for(var k in res) alt[k]=res[k];
+    alt.pageTexts=pt; alt.text=pt.join('\n');
+    var d=localDocsFor(alt), s=score(d);
+    if(s>bs){ best=d; bs=s; }
+  });
+  return best;
+}
+
+// ── 5. PIPELINE D'IMPORT ──────────────────────────────────────
+var IMPORT_ARM=null;   // relance la minuterie tant que l'import progresse
+function logLine(txt){
+  var l=document.getElementById('ri-log');
+  if(l) l.innerHTML += txt+'<br>';
+  if(IMPORT_ARM) IMPORT_ARM();
+}
+// Affiche une panne dans la page, au lieu de laisser un écran blanc.
+
+// ── Diagnostic : décrire n'importe quelle erreur, même non standard ──
+function describeError(e){
+  if(e==null) return 'erreur vide (aucune information)';
+  if(typeof e==='string') return e;
+  var parts=[];
+  if(e.message) parts.push(e.message);
+  if(e.name && e.name!=='Error') parts.push('['+e.name+']');
+  if(!parts.length && e.type) parts.push('événement '+e.type);
+  if(!parts.length && e.status) parts.push('HTTP '+e.status);
+  if(!parts.length){
+    try{
+      var keys=Object.keys(e);
+      if(keys.length) parts.push(keys.slice(0,4).map(function(k){
+        var v=e[k]; return k+'='+(typeof v==='object'?'{…}':String(v).slice(0,40));
+      }).join(', '));
+      else parts.push(Object.prototype.toString.call(e));
+    }catch(x){ parts.push(String(e)); }
+  }
+  return parts.join(' ');
+}
+var IMPORT_STEP='';
+function step(s){ IMPORT_STEP=s; }
+
+function showImportError(msg){
+  var load=document.getElementById('ri-loading');
+  var res=document.getElementById('ri-result');
+  if(load) load.style.display='none';
+  if(res) res.style.display='none';
+  var box=document.getElementById('ri-fail');
+  if(!box) return;
+  box.style.display='block';
+  box.innerHTML='<div style="background:#FEF3F2;border:1px solid #FDA29B;border-radius:10px;padding:14px">'+
+    '<div style="font-size:14px;font-weight:600;color:#B42318;margin-bottom:6px">Analyse impossible</div>'+
+    '<div style="font-size:12px;color:#B42318;line-height:1.5;white-space:pre-wrap">'+esc(msg)+'</div></div>'+
+    '<button class="btn btn-ghost btn-full" style="margin-top:10px" onclick="RIMP.retry()">← Choisir un autre fichier</button>';
+}
+
+
+function refreshAiState(){
+  var el=document.getElementById('ri-aistate');
+  if(!el) return;
+  el.textContent = aiKey() ? ('✓ '+(aiProvider()==='gemini'?'Gemini (gratuit)':'Claude')) : 'hors ligne';
+  el.style.color = aiKey() ? 'var(--g)' : 'var(--i4)';
+}
+
+function runImport(files){
+  goPage('rec-valid');
+  var load=document.getElementById('ri-loading');
+  var res0=document.getElementById('ri-result');
+  var fail=document.getElementById('ri-fail');
+  var log=document.getElementById('ri-log');
+  if(!load||!res0||!log){ toast('Écran d\'import introuvable','err'); return; }
+  load.style.display='block';
+  res0.style.display='none';
+  if(fail) fail.style.display='none';
+  log.innerHTML='';
+  step('démarrage');
+  logLine('🔍 Lecture du document…');
+
+  // Filet : si plus rien ne progresse pendant 3 minutes, on prévient au lieu
+  // de rester figé (un long livre peut prendre davantage, tant qu'il avance).
+  var watchdog=null, finished=false;
+  function arm(){
+    if(finished) return;
+    clearTimeout(watchdog);
+    watchdog=setTimeout(function(){
+      IMPORT_ARM=null;
+      showImportError('Le document ne progresse plus. '+
+        'Un PDF scanné volumineux ou une photo très lourde peut dépasser les capacités du téléphone. '+
+        'Essayez une plage de pages plus courte, ou une photo plutôt qu\'un PDF.');
+    }, 180000);
+  }
+  IMPORT_ARM=arm; arm();
+
+  ocrFiles(files).then(function(res){
+    if(res.excel){
+      logLine('✓ Classeur lu ('+res.pages+' feuille'+(res.pages>1?'s':'')+')');
+    } else {
+      logLine('✓ Texte lu ('+res.pages+' page'+(res.pages>1?'s':'')+')');
+      if(res.native) logLine('✓ lecture exacte (texte du PDF, sans OCR)');
+    }
+    // Analyse par IA si une clé est renseignée ; sinon, et en cas d'échec,
+    // l'analyse locale prend le relais sans que rien ne change pour la suite.
+    return aiAnalyzeDoc(res).then(function(ai){
+      var aidocs=null;
+      if(ai){
+        try{ aidocs=aiToDocs(ai); }catch(e){ aidocs=null; }
+        if(aidocs&&aidocs.length) logLine('🧠 analyse IA retenue — '+aidocs.length+' recette(s)');
+        else logLine('⚠️ réponse IA inexploitable — analyse locale utilisée');
+      }
+      return {res:res, aidocs:(aidocs&&aidocs.length)?aidocs:null};
+    });
+  }).then(function(bundle){
+    var res=bundle.res;
+    finished=true; IMPORT_ARM=null;
+    clearTimeout(watchdog);
+    // On calcule toujours l'analyse locale, même quand l'IA a répondu :
+    // elle sert de garde-fou pour repérer une éventuelle hallucination
+    // (ingrédient inventé, recette manquante…) sans jamais rien corriger
+    // toute seule — l'écart est seulement signalé à l'utilisateur.
+    var localDocs = bestLocalDocs(res);
+    // Un tableau Excel se lit exactement : ses recettes ne passent pas par l'IA
+    var docs = bundle.aidocs ? bundle.aidocs.concat(res.directDocs||[]) : localDocs;
+    if(res.directDocs && res.directDocs.length) localDocs=localDocs.filter(function(d){ return !d.direct; });
+    var aiCrossWarn = res.warn ? '⚠️ '+res.warn : '';
+    if(bundle.aidocs){
+      var aiCnt=bundle.aidocs.length, locCnt=localDocs.length;
+      var aiIng=bundle.aidocs.reduce(function(a,d){return a+(d.count||0);},0);
+      var locIng=localDocs.reduce(function(a,d){return a+(d.count||0);},0);
+      var diffRatio = Math.max(aiIng,locIng)>0 ? Math.abs(aiIng-locIng)/Math.max(aiIng,locIng) : 0;
+      if(aiCnt!==locCnt || (Math.abs(aiIng-locIng)>=3 && diffRatio>=0.25)){
+        aiCrossWarn=(aiCrossWarn?aiCrossWarn+' — ':'')+'⚠️ Écart entre l\'IA et l\'analyse locale : IA = '+aiCnt+' recette(s) / '+aiIng+
+          ' ingrédient(s), analyse locale = '+locCnt+' / '+locIng+' — vérifiez attentivement avant d\'enregistrer.';
+        logLine(aiCrossWarn);
+      }
+    }
+    if(docs.length>1){
+      logLine('✓ '+docs.length+' recettes détectées dans le document');
+      draftQueue=docs.map(function(doc){
+        var p=doc.parsed;
+        if(doc.name) p.recipeName=p.recipeName||doc.name;
+        var d=buildDraft(p,res,files);
+        d.aiWarning=aiCrossWarn;
+        d.queueDone=false;
+        return d;
+      });
+      draftQueueIdx=0;
+      draft=draftQueue[0];
+      clearTimeout(watchdog);
+      setTimeout(function(){
+        try{
+          document.getElementById('ri-loading').style.display='none';
+          document.getElementById('ri-result').style.display='block';
+          renderDraft();
+        }catch(err){ showImportError('Affichage impossible : '+err.message); }
+      },600);
+      return;
+    }
+    var parsed = docs.length ? docs[0].parsed : parseFiche(res.text,function(i){
+      return res.confs.length?Math.max(35,Math.min(99,res.confs[Math.min(i,res.confs.length-1)])):80;
+    });
+    if(docs.length===1 && docs[0].name) parsed.recipeName=parsed.recipeName||docs[0].name;
+    var total=parsed.main.length+parsed.subRecipes.reduce(function(a,s){return a+s.items.length;},0);
+    logLine('✓ '+(parsed.recipeName?'Recette « '+esc(parsed.recipeName)+' »':'Recette sans nom')+' détectée');
+    logLine('✓ '+total+' ingrédient'+(total>1?'s':'')+' détecté'+(total>1?'s':''));
+    if(parsed.subRecipes.length) logLine('✓ '+parsed.subRecipes.length+' sous-recette(s) détectée(s)');
+    if(parsed.process&&parsed.process.length) logLine('✓ '+parsed.process.length+' étape(s) de fabrication écartée(s) du catalogue');
+
+    draft=buildDraft(parsed,res,files);
+    draft.aiWarning=aiCrossWarn;
+    var found=draft.lines.filter(function(l){return l.matchId;}).length;
+    var check=draft.lines.filter(function(l){return !l.matchId||l.confidence<70;}).length;
+    logLine('✓ '+found+' trouvé(s) dans le catalogue');
+    if(check) logLine('⚠️ '+check+' à vérifier');
+
+    setTimeout(function(){
+      try{
+        document.getElementById('ri-loading').style.display='none';
+        document.getElementById('ri-result').style.display='block';
+        renderDraft();
+      }catch(err){
+        console.error('Affichage de la vérification :',err);
+        showImportError('Le document a bien été lu, mais l\'écran de vérification n\'a pas pu s\'afficher : '+err.message);
+      }
+    },700);
+  }).catch(function(e){
+    finished=true; IMPORT_ARM=null;
+    clearTimeout(watchdog);
+    console.error('Import recette — étape « '+IMPORT_STEP+' » :',e);
+    var d=describeError(e);
+    showImportError('Étape : '+(IMPORT_STEP||'inconnue')+'\n'+d+
+      '\n\nSi le problème persiste, ouvrez l\'application depuis une adresse web (version installée) '+
+      'plutôt que depuis le fichier : Safari bloque une partie des traitements sur les fichiers locaux.');
+  });
+}
+
+// OCR multi-fichiers (réutilise loadScript/enhance/pdfToCanvases)
+// Résolution utile pour l'OCR : au-delà, les pixels supplémentaires
+// n'améliorent plus la reconnaissance mais coûtent du temps de calcul.
+var OCR_TARGET_PX = 2200;   // côté long visé
+var OCR_MIN_PX    = 1800;   // en dessous, on agrandit (marge de lisibilité)
+
+// Nombre de pages traitées en parallèle, selon les cœurs disponibles
+function ocrConcurrency(pages){
+  var cores = navigator.hardwareConcurrency || 2;
+  return Math.max(1, Math.min(4, cores - 1, pages));
+}
+
+// Redimensionne à la résolution utile AVANT le filtrage pixel par pixel :
+// on divise ainsi le coût du prétraitement au lieu de le multiplier.
+function scaleForOCR(src){
+  var w = src.naturalWidth || src.width;
+  var h = src.naturalHeight || src.height;
+  var big = Math.max(w, h);
+  if(big > OCR_TARGET_PX) return OCR_TARGET_PX / big;   // réduction
+  if(big < OCR_MIN_PX)    return Math.min(2.5, OCR_MIN_PX / big); // agrandissement
+  return 1;
+}
+
+
+
+// ── Reconstruction des lignes visuelles à partir des coordonnées (point 14) ──
+// Tesseract renvoie une ligne par bloc détecté ; sur une fiche en colonnes,
+// « Farine » et « 500 g » peuvent être deux blocs distincts à la même hauteur.
+function linesFromBlocks(blocks){
+  var valid=blocks.filter(function(b){ return b.text && b.y!=null && isFinite(b.y); });
+  if(!valid.length) return null;
+  var hs=valid.map(function(b){ return b.h||0; }).filter(function(h){return h>0;}).sort(function(a,b){return a-b;});
+  var med=hs.length?hs[Math.floor(hs.length/2)]:12;
+  var tol=Math.max(6, med*0.6);   // deux blocs à moins d'une demi-hauteur = même ligne
+
+  var sorted=valid.slice().sort(function(a,b){
+    return (a.page-b.page)||(a.y-b.y)||(a.x-b.x);
+  });
+  var out=[], cur=[], lastY=null, lastPage=null;
+  function flush(){
+    if(!cur.length) return;
+    // lecture de gauche à droite
+    out.push(cur.slice().sort(function(a,b){ return (a.x||0)-(b.x||0); })
+      .map(function(b){ return b.text; }).join(' '));
+    cur=[];
+  }
+  sorted.forEach(function(b){
+    if(lastY===null || b.page!==lastPage || Math.abs(b.y-lastY)>tol){
+      flush(); cur=[b]; lastY=b.y; lastPage=b.page;
+    } else cur.push(b);
+  });
+  flush();
+  return out;
+}
+
+
+// ── Détection du type réel du fichier (en-tête binaire) ───────
+// Sur iPhone, un fichier venant d'iCloud arrive souvent avec un type vide,
+// et rien n'empêche de choisir un PDF via « Importer une image ».
+// On lit donc les premiers octets plutôt que de se fier au nom.
+function sniffType(file){
+  return new Promise(function(res){
+    try{
+      var r=new FileReader();
+      r.onload=function(e){
+        var b=new Uint8Array(e.target.result);
+        // %PDF
+        if(b.length>4 && b[0]===0x25 && b[1]===0x50 && b[2]===0x44 && b[3]===0x46) return res('pdf');
+        if(b.length>3 && b[0]===0xFF && b[1]===0xD8) return res('image');            // JPEG
+        if(b.length>8 && b[0]===0x89 && b[1]===0x50 && b[2]===0x4E) return res('image'); // PNG
+        // HEIC / HEIF : « ftyp » en octets 4-7
+        if(b.length>12 && b[4]===0x66 && b[5]===0x74 && b[6]===0x79 && b[7]===0x70) return res('image');
+        if(b.length>2 && b[0]===0x47 && b[1]===0x49) return res('image');             // GIF
+        if(b.length>12 && b[0]===0x52 && b[1]===0x49 && b[8]===0x57) return res('image'); // WEBP
+        // repli sur le nom / le type déclaré
+        if(/pdf$/i.test(file.type||'') || /\.pdf$/i.test(file.name||'')) return res('pdf');
+        res('image');
+      };
+      r.onerror=function(){ res(/\.pdf$/i.test(file.name||'')?'pdf':'image'); };
+      r.readAsArrayBuffer(file.slice(0,16));
+    }catch(e){ res(/\.pdf$/i.test(file.name||'')?'pdf':'image'); }
+  });
+}
+
+// Décodage image tolérant : <img> d'abord, puis createImageBitmap
+// (qui gère le HEIC de l'iPhone quand <img> échoue).
+function decodeImage(file){
+  return new Promise(function(res,rej){
+    var img=new Image();
+    var url=URL.createObjectURL(file);
+    img.onload=function(){ res(img); };
+    img.onerror=function(){
+      URL.revokeObjectURL(url);
+      if(typeof createImageBitmap==='function'){
+        createImageBitmap(file).then(function(bmp){ res(bmp); })
+          .catch(function(){ rej(new Error('Format d\'image non pris en charge par le navigateur ('+(file.type||'type inconnu')+')')); });
+      } else rej(new Error('Format d\'image non pris en charge ('+(file.type||'type inconnu')+')'));
+    };
+    img.src=url;
+  });
+}
+
+// Plage de pages saisie sur l'écran d'import (facultative)
+function importRange(){
+  var f=parseInt((document.getElementById('ri-pg-from')||{}).value,10);
+  var t=parseInt((document.getElementById('ri-pg-to')||{}).value,10);
+  if(!(f>0)&&!(t>0)) return null;
+  return {from:(f>0?f:1), to:(t>0?t:null)};
+}
+
+// Fragments de texte d'un PDF → mots positionnés, pour réutiliser la même
+// reconstruction des colonnes que la lecture optique.
+function pdfItemsToWords(items, H){
+  var out=[];
+  items.forEach(function(it){
+    var s=String(it.str||''); if(!s.trim()) return;
+    var t=it.transform||[1,0,0,1,0,0];
+    var h=Math.abs(t[3])||Math.abs(t[0])||10;
+    var x=t[4], base=H-t[5], w=it.width||s.length*h*0.5;
+    var cw=w/Math.max(1,s.length), re=/\S+/g, m;
+    while((m=re.exec(s))){
+      out.push({text:m[0], x0:x+m.index*cw, x1:x+(m.index+m[0].length)*cw, y0:base-h, y1:base});
+    }
+  });
+  return out;
+}
+
+function pdfPagesNative(file, range){
+  return loadScript(CDN_PDF).then(function(){
+    if(typeof pdfjsLib==='undefined') throw new Error('Bibliothèque PDF non chargée — vérifiez votre connexion');
+    try{ pdfjsLib.GlobalWorkerOptions.workerSrc=CDN_PDFW; }catch(e){}
+    return file.arrayBuffer();
+  }).then(function(buf){
+    return pdfjsLib.getDocument({data:buf, disableAutoFetch:true, disableStream:true}).promise;
+  }).then(function(pdf){
+    var a=Math.max(1, Math.min(pdf.numPages, (range&&range.from)||1));
+    var b=Math.min(pdf.numPages, (range&&range.to)||pdf.numPages);
+    var pages=[], chain=Promise.resolve();
+    for(var i=a;i<=b;i++)(function(no){
+      chain=chain.then(function(){ return pdf.getPage(no); }).then(function(page){
+        var vp=page.getViewport({scale:1});
+        return page.getTextContent().then(function(tc){
+          var words=pdfItemsToWords(tc.items||[], vp.height);
+          pages.push(words.length ? pageLinesFromWords(words) : []);
+          if((no-a)%20===0 || no===b) logLine('  page '+no+'/'+b);
+        });
+      });
+    })(i);
+    return chain.then(function(){ return {pages:pages, total:pdf.numPages, from:a, to:b}; });
+  });
+}
+
+// ── LECTURE D'UN FICHIER EXCEL (.xlsx) OU CSV ─────────────────
+// Lecteur intégré : aucun téléchargement de bibliothèque, fonctionne hors
+// ligne. Un .xlsx est une archive zip de fichiers XML ; on la décompresse
+// avec le navigateur puis on relit les cellules.
+function isSpreadsheet(file){
+  return /\.(xlsx|xlsm|xls|ods|csv|tsv)$/i.test(file.name||'') ||
+         /spreadsheetml|ms-excel|text\/csv/i.test(file.type||'');
+}
+
+function zipReader(buf){
+  var dv=new DataView(buf), u8=new Uint8Array(buf), eocd=-1;
+  for(var i=u8.length-22;i>=Math.max(0,u8.length-65557);i--){
+    if(dv.getUint32(i,true)===0x06054b50){ eocd=i; break; }
+  }
+  if(eocd<0) throw new Error('Ce fichier n\'est pas un classeur Excel .xlsx lisible');
+  var n=dv.getUint16(eocd+10,true), p=dv.getUint32(eocd+16,true), entries={};
+  for(var k=0;k<n;k++){
+    if(dv.getUint32(p,true)!==0x02014b50) break;
+    var nl=dv.getUint16(p+28,true), xl=dv.getUint16(p+30,true), cl=dv.getUint16(p+32,true);
+    var name=new TextDecoder().decode(u8.subarray(p+46,p+46+nl));
+    entries[name]={method:dv.getUint16(p+10,true), size:dv.getUint32(p+20,true), off:dv.getUint32(p+42,true)};
+    p+=46+nl+xl+cl;
+  }
+  function get(name){
+    var e=entries[name]; if(!e) return Promise.resolve(null);
+    var q=e.off, start=q+30+dv.getUint16(q+26,true)+dv.getUint16(q+28,true);
+    var data=u8.slice(start, start+e.size);
+    if(e.method===0) return Promise.resolve(new TextDecoder().decode(data));
+    if(e.method!==8) return Promise.reject(new Error('Compression du classeur non prise en charge'));
+    if(typeof DecompressionStream==='undefined')
+      return Promise.reject(new Error('Navigateur trop ancien pour lire un fichier Excel — mettez-le à jour ou exportez en CSV'));
+    var s=new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+    return new Response(s).text();
+  }
+  return {get:get, has:function(nm){ return !!entries[nm]; }};
+}
+
+function xmlDoc(txt){ return new DOMParser().parseFromString(txt||'<x/>','application/xml'); }
+function colIndex(ref){
+  var m=String(ref||'').match(/^([A-Z]+)(\d+)$/i); if(!m) return null;
+  var c=0; for(var i=0;i<m[1].length;i++) c=c*26+(m[1].toUpperCase().charCodeAt(i)-64);
+  return {c:c-1, r:parseInt(m[2],10)-1};
+}
+function textOf(el){
+  var ts=el.getElementsByTagName('t'), s='';
+  for(var i=0;i<ts.length;i++) s+=ts[i].textContent;
+  return s;
+}
+
+// Classeur → [{name, rows:[[{c,text,num,pct,end}]]}]
+function readXlsx(file){
+  return file.arrayBuffer().then(function(buf){
+    var z=zipReader(buf);
+    return Promise.all([z.get('xl/workbook.xml'), z.get('xl/_rels/workbook.xml.rels'),
+                        z.get('xl/sharedStrings.xml'), z.get('xl/styles.xml')]).then(function(r){
+      var wb=xmlDoc(r[0]), rels=xmlDoc(r[1]), ss=xmlDoc(r[2]), st=xmlDoc(r[3]);
+      var shared=[], si=ss.getElementsByTagName('si');
+      for(var i=0;i<si.length;i++) shared.push(textOf(si[i]));
+      // Formats « pourcentage » (pourcentages du boulanger : inutiles à l'import)
+      var pctFmt={9:true,10:true}, nf=st.getElementsByTagName('numFmt');
+      for(var j=0;j<nf.length;j++) if(/%/.test(nf[j].getAttribute('formatCode')||'')) pctFmt[nf[j].getAttribute('numFmtId')]=true;
+      var xfs=[], cx=st.getElementsByTagName('cellXfs')[0];
+      if(cx){ var xl=cx.getElementsByTagName('xf'); for(var k=0;k<xl.length;k++) xfs.push(!!pctFmt[xl[k].getAttribute('numFmtId')]); }
+      var target={}, rl=rels.getElementsByTagName('Relationship');
+      for(var a=0;a<rl.length;a++) target[rl[a].getAttribute('Id')]=rl[a].getAttribute('Target');
+      var sheets=[], sl=wb.getElementsByTagName('sheet');
+      for(var b=0;b<sl.length;b++){
+        var t=target[sl[b].getAttribute('r:id')]||'';
+        t=t.replace(/^\/?xl\//,'').replace(/^\//,'');
+        sheets.push({name:sl[b].getAttribute('name')||('Feuille '+(b+1)), path:'xl/'+t});
+      }
+      return Promise.all(sheets.map(function(s){ return z.get(s.path); })).then(function(xmls){
+        return sheets.map(function(s,si2){
+          var d=xmlDoc(xmls[si2]), rows=[], merges={}, vm=[];
+          var mc=d.getElementsByTagName('mergeCell');
+          for(var m=0;m<mc.length;m++){
+            var pr=(mc[m].getAttribute('ref')||'').split(':'), p0=colIndex(pr[0]), p1=colIndex(pr[1]);
+            if(p0&&p1){ merges[p0.r+':'+p0.c]=p1.c; if(p1.r>p0.r) vm.push({r0:p0.r,r1:p1.r,c0:p0.c,c1:p1.c}); }
+          }
+          var cells=d.getElementsByTagName('c');
+          for(var q=0;q<cells.length;q++){
+            var el=cells[q], pos=colIndex(el.getAttribute('r')); if(!pos) continue;
+            var ty=el.getAttribute('t')||'n', vEl=el.getElementsByTagName('v')[0], v=vEl?vEl.textContent:'';
+            var text='', num=null;
+            if(ty==='s') text=shared[parseInt(v,10)]||'';
+            else if(ty==='inlineStr') text=textOf(el);
+            else if(ty==='str'||ty==='e') text=v;
+            else if(ty==='b') text=(v==='1'?'VRAI':'FAUX');
+            else if(v!==''){ num=parseFloat(v); text=String(num); }
+            text=String(text).replace(/\s+/g,' ').trim();
+            if(!text) continue;
+            var sIdx=parseInt(el.getAttribute('s')||'0',10);
+            var cell={c:pos.c, text:text, num:(num!=null&&isFinite(num))?num:null, pct:(num!=null&&!!xfs[sIdx])};
+            cell.end=merges[pos.r+':'+pos.c]!=null?merges[pos.r+':'+pos.c]:pos.c;
+            (rows[pos.r]=rows[pos.r]||[]).push(cell);
+          }
+          rows.forEach(function(r){ if(r) r.sort(function(x,y){ return x.c-y.c; }); });
+          // Cellules fusionnées verticalement (nom de recette écrit une fois
+          // pour plusieurs lignes) : on retient la cellule d'origine.
+          vm.forEach(function(v){ v.cell=(rows[v.r0]||[]).filter(function(x){ return x.c===v.c0; })[0]||null; });
+          return {name:s.name, rows:rows, vm:vm.filter(function(v){ return v.cell; })};
+        });
+      });
+    });
+  });
+}
+
+// CSV (séparateur « ; » d'Excel en français, ou « , » / tabulation)
+function readCsv(file){
+  return file.text().then(function(txt){
+    txt=txt.replace(/^﻿/,'');
+    var first=txt.split(/\r?\n/)[0]||'';
+    var sep=[';','\t',','].map(function(s){ return {s:s, n:first.split(s).length}; })
+      .sort(function(a,b){ return b.n-a.n; })[0].s;
+    var rows=[], row=[], cell='', q=false;
+    for(var i=0;i<txt.length;i++){
+      var ch=txt[i];
+      if(q){ if(ch==='"'){ if(txt[i+1]==='"'){ cell+='"'; i++; } else q=false; } else cell+=ch; continue; }
+      if(ch==='"'){ q=true; continue; }
+      if(ch===sep){ row.push(cell); cell=''; continue; }
+      if(ch==='\n'||ch==='\r'){ if(ch==='\r'&&txt[i+1]==='\n') i++; row.push(cell); rows.push(row); row=[]; cell=''; continue; }
+      cell+=ch;
+    }
+    if(cell||row.length){ row.push(cell); rows.push(row); }
+    var out=rows.map(function(r){
+      var cs=[];
+      r.forEach(function(v,c){
+        v=String(v).replace(/\s+/g,' ').trim(); if(!v) return;
+        var pct=/%$/.test(v), num=null, t=v.replace(/\s/g,'');
+        if(/^-?\d+([.,]\d+)?%?$/.test(t)){ num=parseFloat(t.replace(',','.')); if(pct) num=num/100; }
+        cs.push({c:c, text:v, num:num, pct:pct, end:c});
+      });
+      return cs.length?cs:null;
+    });
+    return [{name:(file.name||'CSV').replace(/\.\w+$/,''), rows:out}];
+  });
+}
+
+var UNIT_CELL=new RegExp('^('+UNITWORDS+')\\.?$','i');
+function fmtNum(v){ return Number.isInteger(v) ? String(v) : String(Math.round(v*10000)/10000).replace('.',','); }
+function qtyOf(cell){
+  if(!cell) return null;
+  if(cell.num!=null) return cell.num;
+  if(/^q\.?s\.?$/i.test(cell.text)) return 0;
+  // Une vraie quantité, pas une phrase qui commence par un chiffre (« 4 min en 1re vitesse »)
+  var m=cell.text.trim().match(new RegExp('^(\\d+(?:[.,]\\d+)?)\\s*('+UNITWORDS+')?\\.?$','i'));
+  return m?parseFloat(m[1].replace(',','.')):null;
+}
+// Unité donnée par l'en-tête de colonne : « Poids (g) », « Quantité en kg »…
+function unitHint(t){
+  var m=String(t||'').match(/\(\s*(kg|g|gr|grammes?|l|litres?|ml|cl)\s*\)|\ben\s+(kg|g|grammes?|l|litres?|ml|cl)\b/i);
+  return m?normUnit(m[1]||m[2]):'';
+}
+
+// ── Format « tableau » : une ligne par ingrédient, colonnes nommées ──
+// Recette | (Sous-recette) | Ingrédient | Quantité | (Unité) | (Catégorie)
+function sheetTableDocs(sh, sheetNo){
+  var ROLE={
+    ing:/^(ingredients?|matieres? premieres?|matiere|article|designation|composant)\b/,
+    qty:/^(quantites?|qte|qt|poids|masse|dose)\b/,
+    unit:/^unites?( de mesure)?$/,
+    rec:/^(recettes?|nom( de la)? recette|fiche|produit fini)$/,
+    sub:/^(sous ?recettes?|preparations?|partie|element|composante)$/,
+    cat:/^categories?$/,
+    proc:/^(methode|procede|instructions?|etapes?|remarques?|notes?)$/
+  };
+  var head=-1, col={}, rows=sh.rows;
+  for(var r=0;r<Math.min(rows.length,20)&&head<0;r++){
+    var cs=rows[r]; if(!cs) continue;
+    var found={}, dup=false;
+    cs.forEach(function(cl){
+      if(cl.num!=null) return;
+      var s=cslug(cl.text);
+      Object.keys(ROLE).forEach(function(k){
+        if(ROLE[k].test(s)){ if(found[k]!=null) dup=true; else found[k]=cl.c; }
+      });
+    });
+    if(found.ing!=null && found.qty!=null && !dup && found.qty!==found.ing){ head=r; col=found; }
+  }
+  if(head<0) return null;
+  var colUnit=unitHint((rows[head].filter(function(c){return c.c===col.qty;})[0]||{}).text);
+  // Titre éventuel au-dessus de l'en-tête
+  var title='';
+  for(var t=0;t<head&&!title;t++) (rows[t]||[]).forEach(function(cl){ if(!title&&cl.num==null&&cl.text.length>1) title=cl.text; });
+  var docs=[], byName={}, curRec=title||sh.name, curSub='', curCat='';
+  function docFor(name){
+    if(!byName[name]){
+      byName[name]={ page:sheetNo, name:name, direct:true, count:0,
+        parsed:{recipeName:name, main:[], subRecipes:[], process:[], category:''} };
+      docs.push(byName[name]);
+    }
+    return byName[name];
+  }
+  function at(cs,c,ri){
+    if(c==null) return null;
+    var hit=cs.filter(function(x){ return x.c===c; })[0];
+    if(hit) return hit;
+    var v=(sh.vm||[]).filter(function(m){ return ri>m.r0 && ri<=m.r1 && c>=m.c0 && c<=m.c1; })[0];
+    return v?v.cell:null;
+  }
+  for(var i=head+1;i<rows.length;i++){
+    var cs=rows[i]; if(!cs) continue;
+    var rc=at(cs,col.rec,i), sc=at(cs,col.sub,i), ic=at(cs,col.ing,i), qc=at(cs,col.qty,i), uc=at(cs,col.unit,i), cc=at(cs,col.cat,i), pc=at(cs,col.proc,i);
+    if(rc&&rc.num==null){ curRec=rc.text; curSub=''; }   // les cellules fusionnées ne répètent pas le nom
+    // Colonne sous-recette vide = ingrédient de la recette principale
+    if(col.sub!=null) curSub = sc&&sc.num==null ? cleanSubName(sc.text) : '';
+    if(cc&&cc.num==null) curCat=cc.text;
+    var d=docFor(curRec);
+    if(curCat) d.parsed.category=curCat;
+    if(pc&&pc.num==null&&cs.indexOf(pc)>=0) d.parsed.process.push({type:'process_step', text:pc.text, confidence:0.9, section:curSub});
+    if(!ic||ic.num!=null){
+      // Ligne de texte seule sous le tableau : consigne de fabrication
+      if(!qc && cs.length===1 && cs[0].num==null && cs[0].text.split(/\s+/).length>=3)
+        d.parsed.process.push({type:'process_step', text:cs[0].text, confidence:0.8, section:curSub});
+      continue;
+    }
+    if(/^total\b/i.test(ic.text)) continue;
+    // « Pétrissage | 4 min en 1re vitesse » : une étape, pas un ingrédient
+    var ct=classifyLine(ic.text).type;
+    if(qtyOf(qc)==null && (ct==='process_label'||ct==='process_step'||ct==='temperature'||ct==='duration')){
+      d.parsed.process.push({type:'process_step', text:cs.map(function(x){ return x.num!=null?fmtNum(x.num):x.text; }).join(' '), confidence:0.85, section:''});
+      continue;
+    }
+    var q=qtyOf(qc);
+    if(q==null){
+      // Nom seul, sans quantité : titre d'une sous-préparation
+      if(col.sub==null && cs.length===1){ curSub=cleanSubName(ic.text); }
+      continue;
+    }
+    var u=uc?normUnit(uc.text):'', detected=!!u;
+    if(!u && qc && qc.num==null){ var mu=qc.text.match(new RegExp('('+UNITWORDS+')\\.?$','i')); if(mu){ u=normUnit(mu[1]); detected=!!u; } }
+    var guessed=false;
+    if(!u){ u=colUnit || (Number.isInteger(q)?'g':'kg'); detected=!!colUnit; guessed=!colUnit; }
+    var item={detectedName:ic.text, quantity:q, unit:u, unitDetected:detected||guessed, unitGuessedKg:guessed, confidence:97};
+    if(curSub){
+      var s=d.parsed.subRecipes.filter(function(x){ return x.name===curSub; })[0];
+      if(!s){ s={name:curSub, items:[]}; d.parsed.subRecipes.push(s); }
+      s.items.push(item);
+    } else d.parsed.main.push(item);
+    d.count++;
+  }
+  return docs.filter(function(x){ return x.count>0; });
+}
+
+// ── Format « fiche » : mise en page libre (titre, un ou deux tableaux,
+// méthode). Transformée en lignes de texte pour l'analyse habituelle, les
+// deux tableaux côte à côte étant lus l'un après l'autre.
+function sheetLayoutLines(sh){
+  var rows=sh.rows, colUnit={};
+  rows.forEach(function(r){ (r||[]).forEach(function(cl){ if(cl.num==null){ var u=unitHint(cl.text); if(u) colUnit[cl.c]=u; } }); });
+  // Colonne où commence le second tableau : juste après une quantité, un
+  // nom suivi lui-même d'une quantité, sur au moins deux lignes.
+  var cnt={};
+  rows.forEach(function(r){
+    if(!r) return;
+    for(var i=1;i<r.length;i++){
+      var a=r[i-1], b=r[i];
+      if(!(a.num!=null || /^q\.?s\.?$/i.test(a.text) || UNIT_CELL.test(a.text))) continue;
+      if(b.num!=null || UNIT_CELL.test(b.text) || !/^[A-Za-zÀ-ÿŒœ]/.test(b.text)) continue;
+      if(!r.slice(i+1).some(function(x){ return x.num!=null || /^q\.?s\.?$/i.test(x.text); })) continue;
+      cnt[b.c]=(cnt[b.c]||0)+1;
+    }
+  });
+  var S=null, best=1;
+  Object.keys(cnt).forEach(function(c){ if(cnt[c]>best || (cnt[c]===best&&S!==null&&+c<S)){ best=cnt[c]; S=+c; } });
+  if(best<2) S=null;
+
+  function cellText(cl, row, idx){
+    if(cl.pct) return '';
+    if(cl.num==null) return cl.text;
+    var s=fmtNum(cl.num), nx=row[idx+1];
+    if(nx && nx.num==null && UNIT_CELL.test(nx.text)) return s;
+    if(colUnit[cl.c]) return s+' '+colUnit[cl.c];
+    if(Number.isInteger(cl.num)){
+      var nm=row.filter(function(x){ return x.num==null && x.c<cl.c; }).slice(-1)[0];
+      if(nm){
+        var ty=classifyLine(nm.text).type;
+        // Nombre entier sans unité après un nom d'ingrédient : grammes, signalés « déduits »
+        if(ty==='ingredient'||ty==='sub_recipe_title'||ty==='unknown') return s+' g⁣';
+      }
+    }
+    return s;
+  }
+  function rowText(r){
+    return r.map(function(cl,i){ return cellText(cl,r,i); }).filter(Boolean).join('  ').trim();
+  }
+  var out=[], band=null;
+  function flush(){ if(band){ out=out.concat(band.L, band.R); band=null; } }
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i];
+    if(!r||!r.length){ flush(); continue; }              // ligne vide : fin de zone
+    if(S===null){ var t0=rowText(r); if(t0) out.push(t0); continue; }
+    var L=r.filter(function(c){ return c.c<S; }), R=r.filter(function(c){ return c.c>=S; });
+    var spans=r.some(function(c){ return c.c<S && c.end>=S; });
+    var sentence=r.length===1 && r[0].num==null && r[0].text.split(/\s+/).length>=7;
+    if(spans||sentence){ flush(); var t1=rowText(r); if(t1) out.push(t1); continue; }
+    if(L.length && R.length && !band) band={L:[],R:[]};
+    if(!band){ var t2=rowText(r); if(t2) out.push(t2); continue; }
+    if(L.length){ var tl=rowText(L); if(tl) band.L.push(tl); }
+    if(R.length){ var tr=rowText(R); if(tr) band.R.push(tr); }
+  }
+  flush();
+  return out;
+}
+
+function readSpreadsheet(file){
+  step('lecture du classeur');
+  logLine('  '+esc(file.name)+' : tableur');
+  if(/\.(xls|ods)$/i.test(file.name||''))
+    return Promise.reject(new Error('Format de classeur ancien (.xls / .ods) : dans votre tableur, « Enregistrer sous » → Classeur Excel (.xlsx), puis réimportez.'));
+  var isCsv=/\.(csv|tsv)$/i.test(file.name||'') || /text\/csv/i.test(file.type||'');
+  return (isCsv ? readCsv(file) : readXlsx(file)).then(function(sheets){
+    var pageTexts=[], pageNames=[], direct=[];
+    sheets.forEach(function(sh,i){
+      var docs=sheetTableDocs(sh, i+1);
+      pageNames.push(sh.name);
+      if(docs&&docs.length){
+        direct=direct.concat(docs); pageTexts.push('');
+        logLine('  feuille « '+esc(sh.name)+' » : tableau — '+docs.length+' recette(s)');
+      } else {
+        var lines=sheetLayoutLines(sh);
+        pageTexts.push(lines.join('\n'));
+        if(lines.length) logLine('  feuille « '+esc(sh.name)+' » : fiche ('+lines.length+' lignes)');
+      }
+    });
+    return { text:pageTexts.join('\n'), pageTexts:pageTexts, pageNames:pageNames, directDocs:direct,
+             rawText:pageTexts.join('\n'), blocks:[], confs:[], pages:sheets.length, thumb:null,
+             native:true, excel:true, fileName:file.name };
+  });
+}
+
+function ocrFiles(files){
+  if(files.length===1 && isSpreadsheet(files[0])) return readSpreadsheet(files[0]);
+  // Un PDF qui contient déjà son texte (livre, fiche exportée) est lu
+  // directement : exact, en quelques secondes, et sans limite de pages. Les
+  // tableaux côte à côte sont séparés avec la même méthode que la lecture
+  // optique. Celle-ci ne sert plus qu'aux photos et aux PDF scannés.
+  if(files.length!==1) return ocrFilesLocal(files);
+  var f=files[0];
+  return sniffType(f).then(function(kind){
+    if(kind!=='pdf') return ocrFilesLocal(files);
+    step('lecture du texte du PDF');
+    logLine('  '+esc(f.name)+' : PDF — recherche du texte intégré…');
+    return pdfPagesNative(f, importRange()).then(function(r){
+      var withText=r.pages.filter(function(p){ return p.join('').replace(/\s/g,'').length>40; }).length;
+      var chars=r.pages.reduce(function(a,p){ return a+p.join('').length; },0);
+      // Les pages-photos d'un livre n'ont pas de texte : on n'exige donc
+      // qu'une partie des pages lisibles.
+      if(chars>150 && withText>=Math.max(1, Math.ceil(r.pages.length*0.15))){
+        var pageTexts=r.pages.map(function(p){ return p.join('\n'); });
+        return { text:pageTexts.join('\n'), pageTexts:pageTexts, rawText:pageTexts.join('\n'),
+                 blocks:[], confs:[], pages:r.pages.length, thumb:null, native:true,
+                 pageOffset:r.from-1, fileName:f.name };
+      }
+      logLine('  pas de texte intégré (PDF scanné) — lecture optique');
+      return ocrFilesLocal(files);
+    }, function(){
+      logLine('  lecture directe impossible — lecture optique');
+      return ocrFilesLocal(files);
+    });
+  });
+}
+
+
+// ── RECONSTRUCTION GÉOMÉTRIQUE (à partir de la position des mots) ──
+// La sortie texte de Tesseract écrase les colonnes d'un tableau : c'est une
+// limite connue du moteur, que « preserve_interword_spaces » ne corrige pas.
+// On repart donc des coordonnées de chaque mot, que Tesseract fournit, et on
+// reconstruit nous-mêmes lignes et colonnes. C'est ce qui permet de garder
+// « Farine de sarrasin » et « 0,390 » sur la même ligne, et surtout de ne pas
+// fusionner deux tableaux côte à côte (pétrissage à gauche, empois à droite).
+
+// Extrait tous les mots d'un résultat Tesseract, quelle que soit la forme
+// de l'objet retourné (v5 expose words, les versions récentes les imbriquent).
+function wordsFromResult(r){
+  var out=[];
+  function push(w){
+    if(!w||!w.bbox) return;
+    var t=String(w.text||'').trim();
+    if(!t) return;
+    out.push({text:t, x0:w.bbox.x0, x1:w.bbox.x1, y0:w.bbox.y0, y1:w.bbox.y1,
+              conf:(typeof w.confidence==='number'?w.confidence:80)});
+  }
+  var d=r&&r.data; if(!d) return out;
+  if(Array.isArray(d.words)&&d.words.length){ d.words.forEach(push); return out; }
+  (d.blocks||[]).forEach(function(b){
+    (b.paragraphs||[]).forEach(function(p){
+      (p.lines||[]).forEach(function(l){ (l.words||[]).forEach(push); });
+    });
+  });
+  return out;
+}
+
+// Cherche la gouttière qui sépare deux tableaux côte à côte.
+// Une page réelle mêle du texte pleine largeur (titre, procédé) et un tableau
+// à deux colonnes : exiger une bande vide sur toute la hauteur ne marche donc
+// jamais. On repère plutôt les écarts francs À L'INTÉRIEUR des lignes, et on
+// retient leur position médiane — c'est là que passe la séparation.
+function findColumnSplit(words){
+  if(words.length<12) return null;
+  var hs=words.map(function(w){return w.y1-w.y0;}).sort(function(a,b){return a-b;});
+  var med=hs[Math.floor(hs.length/2)]||10;
+
+  var rows=groupRows(words, med);
+  var strong=[], all=[];
+  var NUM=/^[\d.,]+$/;
+  rows.forEach(function(r){
+    r.sort(function(a,b){ return a.x0-b.x0; });
+    for(var i=1;i<r.length;i++){
+      var gap=r[i].x0-r[i-1].x1;
+      if(gap<=med*2.5) continue;
+      var mid=(r[i-1].x1+r[i].x0)/2;
+      all.push(mid);
+      // Indice décisif : à gauche de la vraie gouttière se trouve la colonne
+      // des quantités du premier tableau, donc un NOMBRE. Un écart de procédé
+      // (« Pointage      30 minutes ») a au contraire le nombre à droite.
+      if(NUM.test(r[i-1].text)) strong.push(mid);
+    }
+  });
+  var pool = (strong.length>=2) ? strong : all;
+  if(pool.length<3) return null;           // pas assez d'indices : page à une colonne
+  pool.sort(function(a,b){ return a-b; });
+  var cut=pool[Math.floor(pool.length/2)];
+
+  // La coupure doit séparer deux ensembles substantiels, sinon on l'ignore
+  var left=words.filter(function(w){ return w.x1<=cut; }).length;
+  var right=words.filter(function(w){ return w.x0>=cut; }).length;
+  if(left<5||right<5) return null;
+  return cut;
+}
+
+// Regroupe les mots en lignes visuelles selon leur hauteur médiane
+function groupRows(words, med){
+  var sorted=words.slice().sort(function(a,b){
+    var ca=(a.y0+a.y1)/2, cb=(b.y0+b.y1)/2;
+    return (ca-cb)||(a.x0-b.x0);
+  });
+  var rows=[], cur=[], last=null;
+  sorted.forEach(function(w){
+    var c=(w.y0+w.y1)/2;
+    if(last===null||Math.abs(c-last)<=med*0.6){ cur.push(w); last=(last===null)?c:(last*0.7+c*0.3); }
+    else { rows.push(cur); cur=[w]; last=c; }
+  });
+  if(cur.length) rows.push(cur);
+  return rows;
+}
+
+// Regroupe des mots en lignes visuelles, puis en texte, en marquant d'un
+// double espace les écarts importants (séparation nom / quantité).
+function wordsToLines(words){
+  if(!words.length) return [];
+  var hs=words.map(function(w){return w.y1-w.y0;}).sort(function(a,b){return a-b;});
+  var med=hs[Math.floor(hs.length/2)]||10;
+  var tol=Math.max(3, med*0.6);
+  var sorted=words.slice().sort(function(a,b){
+    var ca=(a.y0+a.y1)/2, cb=(b.y0+b.y1)/2;
+    return (ca-cb)||(a.x0-b.x0);
+  });
+  var rows=[], cur=[], lastC=null;
+  sorted.forEach(function(w){
+    var c=(w.y0+w.y1)/2;
+    if(lastC===null||Math.abs(c-lastC)<=tol){ cur.push(w); lastC=(lastC===null)?c:(lastC*0.7+c*0.3); }
+    else { rows.push(cur); cur=[w]; lastC=c; }
+  });
+  if(cur.length) rows.push(cur);
+
+  return rows.map(function(row){
+    row.sort(function(a,b){ return a.x0-b.x0; });
+    var out='', prev=null;
+    row.forEach(function(w){
+      if(prev){
+        var gap=w.x0-prev.x1;
+        // écart franc = changement de colonne ; fragments accolés = même mot (ligature « fi »)
+        out += (gap > med*1.1) ? '  ' : (gap < med*0.12 ? '' : ' ');
+      }
+      out+=w.text;
+      prev=w;
+    });
+    return out.replace(/\s{3,}/g,'  ').trim();
+  }).filter(Boolean);
+}
+
+// Chaîne complète pour une page : colonnes d'abord, lignes ensuite.
+// Fin d'une colonne de quantités (« 500 G », « 0,390 », « QS ») : c'est ce
+// qu'on trouve juste à gauche du couloir entre deux tableaux côte à côte.
+var QTY_END=/^(\d+([.,]\d+)?(kgs?|g|gr|l|ml|cl|dl)?|kgs?|g|gr|l|ml|cl|dl|qs|pi[eè]ces?|%)$/i;
+// Filet vertical entre deux tableaux, parfois lu comme un caractère isolé
+var RULE_CHAR=/^[|│┃¦!\[\]Il]$/;
+
+function pageLinesFromWords(words){
+  if(!words||!words.length) return [];
+  var hs=words.map(function(w){return w.y1-w.y0;}).sort(function(a,b){return a-b;});
+  var med=hs[Math.floor(hs.length/2)]||10;
+  var rows=groupRows(words, med);
+  rows.forEach(function(r){ r.sort(function(a,b){ return a.x0-b.x0; }); });
+  // Le filet vertical entre deux tableaux n'est pas du texte
+  rows=rows.map(function(r){
+    return r.filter(function(w,i){
+      if(!RULE_CHAR.test(w.text)) return true;
+      var gp=i>0 ? w.x0-r[i-1].x1 : Infinity, gn=i<r.length-1 ? r[i+1].x0-w.x1 : Infinity;
+      return !(gp>med*0.8 && gn>med*0.8);
+    });
+  }).filter(function(r){ return r.length; });
+
+  // Couloir entre deux tableaux : un écart franc précédé d'une QUANTITÉ et
+  // suivi d'un NOM. Dans un tableau seul, l'écart nom → quantité est dans
+  // l'autre sens ; dans le procédé, il n'y a pas d'écart franc.
+  var cands=[], pairs=[];
+  rows.forEach(function(r){
+    for(var i=1;i<r.length;i++){
+      var gap=r[i].x0-r[i-1].x1;
+      if(gap<=med*1.5) continue;
+      if(!QTY_END.test(r[i-1].text)) continue;
+      if(!/^[A-Za-zÀ-ÿŒœ]/.test(r[i].text)) continue;
+      cands.push((r[i-1].x1+r[i].x0)/2);
+      pairs.push({l:r[i-1].x1, r:r[i].x0, mid:(r[i-1].x1+r[i].x0)/2});
+    }
+  });
+  if(cands.length<2) return wordsToLines(words);
+  var tolX=Math.max(med*2,12), best=null, bestN=0;
+  cands.forEach(function(x){
+    var k=cands.filter(function(y){ return Math.abs(y-x)<=tolX; }).length;
+    if(k>bestN){ bestN=k; best=x; }
+  });
+  if(bestN<2) return wordsToLines(words);
+  // Le couloir va du bord droit de la colonne de quantités de gauche au
+  // début du nom le plus à gauche du tableau de droite (noms alignés à
+  // droite ou à gauche : c'est le premier caractère qui compte).
+  var clp=pairs.filter(function(p){ return Math.abs(p.mid-best)<=tolX; });
+  var leftEdge=Math.max.apply(null, clp.map(function(p){ return p.l; }));
+  var same=pairs.filter(function(p){ return Math.abs(p.l-leftEdge)<=tolX && p.r>leftEdge; });
+  var rightEdge=Math.min.apply(null, same.map(function(p){ return p.r; }));
+  var cut=(leftEdge+rightEdge)/2;
+
+  function rowText(r){
+    var out='', prev=null;
+    r.forEach(function(w){
+      // Fragments accolés (ligature « fi » d'un PDF) : même mot, sans espace
+      if(prev) out += (w.x0-prev.x1 > med*1.1) ? '  ' : (w.x0-prev.x1 < med*0.12 ? '' : ' ');
+      out+=w.text; prev=w;
+    });
+    return out.replace(/\s{3,}/g,'  ').trim();
+  }
+  // Nature d'une ligne visuelle par rapport au couloir
+  function kind(r){
+    var slack=med*0.3;
+    for(var i=0;i<r.length;i++){
+      if(r[i].x0<cut-slack && r[i].x1>cut+slack) return 'full';          // un mot enjambe le couloir
+      // deux mots voisins de part et d'autre du couloir, sans vrai écart : phrase continue
+      if(i>0 && (r[i-1].x0+r[i-1].x1)/2<cut && (r[i].x0+r[i].x1)/2>=cut && r[i].x0-r[i-1].x1<=med*1.0) return 'full';
+    }
+    var hasL=r.some(function(w){ return (w.x0+w.x1)/2<cut; });
+    var hasR=r.some(function(w){ return (w.x0+w.x1)/2>=cut; });
+    return hasL&&hasR ? 'two' : (hasL ? 'left' : 'right');
+  }
+  // Seule la zone des tableaux est lue colonne par colonne ; le titre, le
+  // rendement et le procédé (pleine largeur) restent à leur place.
+  var kinds=rows.map(kind), splitAt=rows.map(function(){ return null; });
+  // Ligne d'en-têtes juste au-dessus des tableaux, mais centrée de travers
+  // sur le couloir : on la coupe à son plus grand écart.
+  for(var q=0;q<rows.length-1;q++){
+    if(kinds[q]!=='full' || kinds[q+1]!=='two') continue;
+    var rq=rows[q], bg=0, bx=null;
+    for(var j=1;j<rq.length;j++){ var g=rq[j].x0-rq[j-1].x1; if(g>bg){ bg=g; bx=(rq[j-1].x1+rq[j].x0)/2; } }
+    if(bg>med*1.5){ kinds[q]='two'; splitAt[q]=bx; }
+  }
+  function cy(r){ return r.reduce(function(a,w){ return a+(w.y0+w.y1)/2; },0)/r.length; }
+  var out=[], band=null, lastY=null, pitches=[];
+  function flush(){ if(!band) return; out=out.concat(band.L, band.R); band=null; lastY=null; pitches=[]; }
+  rows.forEach(function(r,q){
+    var k=kinds[q], y=cy(r);
+    // Un grand blanc vertical termine la zone des tableaux (le titre de la
+    // préparation qui suit n'appartient à aucune des deux colonnes).
+    if(band && lastY!==null){
+      var dy=y-lastY;
+      var pm=pitches.length ? pitches.slice().sort(function(a,b){return a-b;})[Math.floor(pitches.length/2)] : med*1.6;
+      if(dy>Math.max(med*2.2, pm*1.5)) flush(); else pitches.push(dy);
+    }
+    if(k==='full'){ flush(); var t=rowText(r); if(t) out.push(t); return; }
+    if(k==='two' && !band) band={L:[],R:[]};
+    if(!band){ var t2=rowText(r); if(t2) out.push(t2); return; }
+    var sx=(splitAt[q]!=null)?splitAt[q]:cut;
+    var L=r.filter(function(w){ return (w.x0+w.x1)/2<sx; });
+    var R=r.filter(function(w){ return (w.x0+w.x1)/2>=sx; });
+    if(L.length){ var tl=rowText(L); if(tl) band.L.push(tl); }
+    if(R.length){ var tr=rowText(R); if(tr) band.R.push(tr); }
+    lastY=y;
+  });
+  flush();
+  return out;
+}
+
+// Ancienne mise en page (coupure unique de la page) : gardée comme variante
+// de secours, l'analyse retient celle qui trouve le plus d'ingrédients.
+function pageLinesLegacy(words){
+  if(!words||!words.length) return [];
+  var cut=findColumnSplit(words);
+  if(cut===null) return wordsToLines(words);
+  var left=words.filter(function(w){ return w.x1<=cut; });
+  var right=words.filter(function(w){ return w.x0>=cut; });
+  return wordsToLines(left).concat(wordsToLines(right));
+}
+
+function ocrFilesLocal(files){
+  var canvases=[], srcThumb=null, pdfWarn='', pdfOffset=0;
+  step('chargement du moteur OCR');
+  return loadScript(CDN_TESS)
+  .then(function(){
+    var chain=Promise.resolve();
+    files.forEach(function(f){
+      chain=chain.then(function(){
+        step('lecture du fichier '+f.name);
+        return sniffType(f).then(function(kind){
+          if(kind==='pdf'){
+            logLine('  '+esc(f.name)+' : PDF');
+            step('rendu du PDF');
+            return pdfToCanvases(f,function(p,n){ logLine('  page '+p+'/'+n); }, importRange())
+              .then(function(cs){
+                cs.forEach(function(c){ canvases.push(enhance(c,scaleForOCR(c))); });
+                if(cs.totalPages>cs.length){
+                  pdfWarn='Lecture optique limitée à 40 pages : pages '+cs.from+' à '+cs.to+' sur '+cs.totalPages+
+                    '. Indiquez une plage de pages sur l\'écran d\'import pour lire la suite.';
+                  pdfOffset=cs.from-1;
+                  logLine('⚠️ '+pdfWarn);
+                } else pdfOffset=cs.from-1;
+              });
+          }
+          logLine('  '+esc(f.name)+' : image');
+          step('décodage de l\'image');
+          return decodeImage(f).then(function(img){
+            canvases.push(enhance(img, scaleForOCR(img)));
+            if(!srcThumb){ try{ srcThumb=makeThumb(img); }catch(e){} }
+          });
+        });
+      });
+    });
+    return chain;
+  })
+  .then(function(){
+    var n = ocrConcurrency(canvases.length);
+    logLine('  '+canvases.length+' page(s) · '+n+' en parallèle');
+    // Un worker par voie : les pages sont lues simultanément.
+    return Promise.all(Array.from({length:n}, function(){
+      step('démarrage du moteur de lecture');
+      return Tesseract.createWorker('fra',1,{}).then(function(w){
+        // Espaces inter-mots conservés et résolution déclarée : deux réglages
+        // qui améliorent nettement la lecture des tableaux. Réglages
+        // facultatifs : si le moteur ne les accepte pas, on continue sans.
+        if(!w || typeof w.setParameters!=='function') return w;
+        try{
+          var r=w.setParameters({preserve_interword_spaces:'1', user_defined_dpi:'300'});
+          return (r&&r.then) ? r.then(function(){return w;}, function(){return w;}) : w;
+        }catch(e){ return w; }
+      });
+    }));
+  })
+  .then(function(workers){
+    var results=new Array(canvases.length);
+    var next=0, done=0;
+
+    function runOn(worker){
+      if(next>=canvases.length) return Promise.resolve();
+      var idx=next++;
+      return worker.recognize(canvases[idx], {}, {text:true, blocks:true}).then(function(r){
+        results[idx]=r;
+        done++;
+        logLine('  lu '+done+'/'+canvases.length);
+        return runOn(worker);   // ce worker enchaîne sur la page suivante libre
+      });
+    }
+
+    return Promise.all(workers.map(runOn))
+      .then(function(){
+        return Promise.all(workers.map(function(w){ return w.terminate(); }));
+      })
+      .then(function(){
+        var texts=[],confs=[],blocks=[],pageTexts=[],geoPages=0,altLegacy=[],altPlain=[];
+        results.forEach(function(r,pi){
+          if(!r) return;
+          texts.push(r.data.text);
+
+          // Reconstruction à partir de la position des mots — prioritaire,
+          // car elle seule sépare correctement deux tableaux côte à côte.
+          var words=wordsFromResult(r);
+          var geo = words.length>=6 ? pageLinesFromWords(words) : [];
+          pageTexts.push(geo.length ? geo.join('\n') : (r.data.text||''));
+          var lg = words.length>=6 ? pageLinesLegacy(words) : [];
+          var pl = words.length>=6 ? wordsToLines(words) : [];
+          altLegacy.push(lg.length ? lg.join('\n') : (r.data.text||''));
+          altPlain.push(pl.length ? pl.join('\n') : (r.data.text||''));
+          if(geo.length) geoPages++;
+
+          (r.data.lines||[]).forEach(function(l){
+            confs.push(Math.round(l.confidence));
+            var bb=l.bbox||{};
+            blocks.push({text:(l.text||'').trim(), page:pi+1,
+              x:bb.x0, y:bb.y0, w:(bb.x1-bb.x0), h:(bb.y1-bb.y0),
+              confidence:Math.round(l.confidence)});
+          });
+        });
+        if(geoPages) logLine('  mise en page reconstruite ('+geoPages+'/'+results.length+' page(s))');
+        var layout = blocks.length ? linesFromBlocks(blocks) : null;
+        return {text: pageTexts.length ? pageTexts.join('\n')
+                     : (layout ? layout.join('\n') : texts.join('\n')),
+                pageTexts: pageTexts.length?pageTexts:texts,
+                rawText: texts.join('\n'), blocks:blocks,
+                confs:confs, pages:canvases.length, thumb:srcThumb, warn:pdfWarn, pageOffset:pdfOffset,
+                alts:[altLegacy, altPlain],
+                fileName:files.map(function(f){return f.name;}).join(', ')};
+      });
+  });
+}
+// Miniature compressée du document source (le fichier complet ferait exploser le stockage)
+function makeThumb(img){
+  var max=900;
+  var w=img.naturalWidth||img.width, h=img.naturalHeight||img.height;
+  var sc=Math.min(1,max/Math.max(w,h));
+  var c=document.createElement('canvas'); c.width=w*sc; c.height=h*sc;
+  c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+  try { return c.toDataURL('image/jpeg',0.6); } catch(e){ return null; }
+}
+
+// ── 6. BROUILLON ──────────────────────────────────────────────
+function mkLine(it,subName){
+  // Le texte lu par l'OCR est conservé tel quel ; la correction n'est
+  // qu'une proposition, l'utilisateur tranche à l'écran de vérification.
+  var fix=proposeFix(it.detectedName);
+  var shown=fix.normalized;
+  var m=findMatches(shown);
+  var best=m.length?m[0]:null;
+  // Sous 70 %, aucune correspondance n'est présélectionnée : le choix revient
+  // à l'utilisateur plutôt qu'à une ressemblance approximative.
+  var auto=(best&&best.score>=0.70)?best:null;
+  var conf=it.confidence;
+  if(fix.corrected) conf=Math.min(conf,80);   // correction appliquée : à vérifier
+  return {
+    id:uid(), sel:(it.confidence>=CONF_MIN),
+    name:shown, originalName:it.detectedName,
+    corrected:!!fix.corrected, fixSource:fix.source,
+    qty:it.quantity, unit:it.unit,
+    unitDetected:it.unitDetected!==false, unitInferred:!!it.unitInferred, unitGuessedKg:!!it.unitGuessedKg,
+    confidence:conf,
+    matchId:auto?auto.ing.id:'',
+    matchScore:auto?auto.score:(best?best.score:0),
+    candidates:m,
+    subName:subName||'', useRecipeId:'',
+    newCat:'Autre', newPrice:0, newUnit:'kg', newUnitWeight:0, newSupplier:''
+  };
+}
+function buildDraft(parsed,res,files){
+  var d={ name:parsed.recipeName||'', cat:(parsed.category?addCatIfNew('rec',parsed.category):'')||'Boulangerie', emoji:'📖',
+    lines:[], subs:[], process:parsed.process||[], blocks:parsed.blocks||[],
+    src:{thumb:res.thumb, fileName:res.fileName, ts:now()}, raw:res.text };
+  parsed.main.forEach(function(it){ d.lines.push(mkLine(it,'')); });
+  parsed.subRecipes.forEach(function(s){
+    // Une « finition » (2-3 ingrédients QS) n'a pas vocation à devenir une
+    // recette à part : ses ingrédients rejoignent la recette principale.
+    d.subs.push({ name:s.name, create:cslug(s.name)!=='finition', id:uid() });
+    s.items.forEach(function(it){ d.lines.push(mkLine(it,s.name)); });
+  });
+  // La recette principale cite souvent la sous-recette comme un ingrédient
+  // (« Rafraîchi 2800 G ») : on la rattache au lieu de créer un faux
+  // ingrédient, et la quantité donne le poids de sous-recette utilisé.
+  d.subs.forEach(function(s){
+    if(!s.create) return;
+    var key=cslug(s.name), idx=-1;
+    d.lines.forEach(function(l,i){
+      if(idx<0 && !l.subName && (cslug(l.name)===key || cslug(l.originalName)===key)) idx=i;
+    });
+    // Nom approchant (« Sirop » ↔ « Sirop d'anis », « Levain de seigle » ↔
+    // « Rafraîchis levain ») : un mot commun, et soit le même poids, soit un levain.
+    if(idx<0){
+      var STOP={de:1,du:1,des:1,la:1,le:1,les:1,au:1,aux:1,et:1,a:1,d:1,l:1,en:1};
+      var sw=key.split(' ').filter(function(w){ return w.length>=4 && !STOP[w]; });
+      var sb=0; d.lines.forEach(function(x){ if(x.subName===s.name && x.sel) sb+=lineTotals(x).kg; });
+      var cand=[];
+      d.lines.forEach(function(l,i){
+        if(l.subName) return;
+        var lw=cslug(l.name).split(' ');
+        if(!sw.some(function(w){ return lw.indexOf(w)>=0; })) return;
+        var kg=toKg(l.qty,l.unit,{unit:l.unit});
+        var sameWeight=sb>0 && kg>0 && Math.abs(kg-sb)<=sb*0.1;
+        var levain=/levain|rafra/.test(key) && lw.indexOf('levain')>=0;
+        if(sameWeight||levain) cand.push(i);
+      });
+      if(cand.length===1) idx=cand[0];
+    }
+    if(idx<0) return;
+    var l=d.lines[idx];
+    var target=toKg(l.qty,l.unit,{unit:l.unit});
+    var base=0; d.lines.forEach(function(x){ if(x.subName===s.name && x.sel) base+=lineTotals(x).kg; });
+    if(target>0 && base>0) s.mult=Math.round(target/base*10000)/10000;
+    d.lines.splice(idx,1);
+  });
+  return d;
+}
+
+
+// Brouillon multi-recettes : une entrée par recette détectée,
+// chacune sélectionnable indépendamment.
+function buildMultiDraft(docs,res,files){
+  var d={ multi:true, cat:'Boulangerie', emoji:'📖', recipes:[], lines:[], subs:[], process:[],
+          src:{thumb:res.thumb, fileName:res.fileName, ts:now()}, raw:res.text };
+  docs.forEach(function(doc,ri){
+    var rec={ idx:ri, sel:true, name:doc.name, cat:'Boulangerie', emoji:'📖',
+              page:doc.page, subs:[], process:doc.parsed.process||[] };
+    doc.parsed.main.forEach(function(it){
+      var l=mkLine(it,''); l.recipeIdx=ri; d.lines.push(l);
+    });
+    doc.parsed.subRecipes.forEach(function(s){
+      rec.subs.push({name:s.name, create:true, id:uid()});
+      s.items.forEach(function(it){ var l=mkLine(it,s.name); l.recipeIdx=ri; d.lines.push(l); });
+    });
+    d.recipes.push(rec);
+  });
+  return d;
+}
+
+// Liste des recettes détectées, avec case à cocher et nom modifiable
+
+function renderSrc(){
+  var el2=document.getElementById('ri-src'); if(!el2) return;
+  el2.innerHTML=(draft.src.thumb?'<img src="'+draft.src.thumb+'" style="width:38px;height:38px;object-fit:cover;border-radius:6px">':'📄')+
+    '<div><div style="font-weight:600;color:var(--i)">Document source conservé</div>'+
+    '<div>'+esc(draft.src.fileName)+'</div></div>';
+  var warnBox=document.getElementById('ri-aiwarn');
+  if(!warnBox){
+    warnBox=document.createElement('div'); warnBox.id='ri-aiwarn';
+    el2.parentNode.insertBefore(warnBox, el2.nextSibling);
+  }
+  warnBox.innerHTML = (draft.aiWarning
+    ? '<div class="cw" style="border-color:#F5C2C7;background:#FFF8F8;margin-bottom:11px"><div style="font-size:12px;color:#B42318;line-height:1.5">'+esc(draft.aiWarning)+'</div></div>'
+    : '');
+}
+
+function renderRecipeList(){
+  persistDraft();
+  var box=document.getElementById('ri-reclist');
+  if(!box) return;
+  if(!draft.multi){ box.innerHTML=''; return; }
+  var nSel=draft.recipes.filter(function(r){return r.sel;}).length;
+  box.innerHTML='<div class="cw"><div class="cw-t" style="margin-bottom:8px">'+
+    draft.recipes.length+' recettes détectées '+
+    '<span style="font-size:11px;font-weight:400;color:var(--i4)">'+nSel+' sélectionnée(s)</span></div>'+
+    '<div class="inv-bar"><button class="btn btn-ghost btn-sm" onclick="RIMP.allRec(true)">Tout sélectionner</button>'+
+    '<button class="btn btn-ghost btn-sm" onclick="RIMP.allRec(false)">Tout désélectionner</button></div>'+
+    draft.recipes.map(function(r,i){
+      var mine=draft.lines.filter(function(l){return l.recipeIdx===i;});
+      var cnt=mine.length;
+      var w=0,cst=0;
+      mine.filter(function(l){return l.sel;}).forEach(function(l){ var t=lineTotals(l); w+=t.kg; cst+=t.cost; });
+      return '<div class="ri-row '+(r.sel?'ok':'off')+'" style="margin-bottom:7px">'+
+        '<div class="ri-head">'+
+          '<input type="checkbox" '+(r.sel?'checked':'')+' onchange="RIMP.selRec('+i+',this.checked)" style="width:18px;height:18px;accent-color:var(--g);cursor:pointer">'+
+          '<div class="ri-nm">'+esc(r.name)+'</div>'+
+          '<span class="ri-badge b-new">page '+r.page+'</span>'+
+          '<span class="ri-badge b-ok2">'+cnt+' ingr.</span>'+
+          (r.sel&&w>0?'<span class="ri-badge b-warn">'+fQ(w)+' kg · '+fEur(cst)+'</span>':'')+
+        '</div>'+
+        (r.sel?'<div class="ri-grid">'+
+          '<div class="ri-f"><label>Nom de la recette</label><input type="text" value="'+esc(r.name).replace(/"/g,'&quot;')+'" onchange="RIMP.setRecName('+i+',this.value)"></div>'+
+          '<div class="ri-f"><label>Catégorie</label><select onchange="RIMP.setRecCat('+i+',this.value)">'+
+          catOptions('rec',r.cat)+
+          '</select></div>'+
+          (r.subs.length?'<div class="ri-f"><label>Sous-préparations</label><input type="text" disabled value="'+
+            esc(r.subs.map(function(s){return s.name;}).join(', ')).replace(/"/g,'&quot;')+'"></div>':'')+
+        '</div>':'')+
+      '</div>';
+    }).join('')+'</div>';
+}
+
+// ── 7. RENDU ──────────────────────────────────────────────────
+function renderDraft(){
+  renderQueueNav();
+  if(draft.multi){
+    var single=document.getElementById('ri-name');
+    if(single&&single.closest) { var card=single.closest('.cw'); if(card) card.style.display='none'; }
+    renderSrc(); renderRecipeList(); renderProcess(); renderLines(); renderSummary();
+    return;
+  }
+  document.getElementById('ri-name').value=draft.name;
+  fillCatSelect('ri-cat','rec',draft.cat);
+  document.getElementById('ri-emoji').value=draft.emoji;
+  renderSrc();
+  function _unusedSrc(){ document.getElementById('ri-src').innerHTML=
+    (draft.src.thumb?'<img src="'+draft.src.thumb+'" style="width:38px;height:38px;object-fit:cover;border-radius:6px">':'📄')+
+    '<div><div style="font-weight:600;color:var(--i)">Document source conservé</div>'+
+    '<div>'+esc(draft.src.fileName)+'</div></div>'; }
+  renderSubs(); renderWarnings(); renderProcess(); renderLines(); renderSummary();
+}
+function renderSubs(){
+  persistDraft();
+  var box=document.getElementById('ri-subs');
+  if(draft.multi||!draft.subs.length){ box.innerHTML=''; return; }
+  box.innerHTML='<div class="cw"><div class="cw-t" style="margin-bottom:9px">Sous-recettes détectées</div>'+
+    draft.subs.map(function(s,i){
+      var mine=draft.lines.filter(function(l){return l.subName===s.name && l.sel;});
+      // Poids produit par la sous-recette telle qu'elle est écrite sur la fiche
+      var base=0; mine.forEach(function(l){ base+=lineTotals(l).kg; });
+      if(s.mult==null) s.mult=1;
+      var used=base*s.mult;
+      return '<div class="ri-sub"><div class="ri-sub-t">⊛ '+esc(s.name)+'</div>'+
+        '<div style="font-size:11px;color:var(--i4);margin-bottom:7px">'+
+        mine.length+' ingrédient(s)'+(base>0?' · produit '+fQ(base)+' kg':'')+'</div>'+
+        '<label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer">'+
+        '<input type="checkbox" '+(s.create?'checked':'')+' onchange="RIMP.sub('+i+',this.checked)" style="width:17px;height:17px;accent-color:var(--g)">'+
+        'Créer comme recette séparée et l\'utiliser dans la recette principale</label>'+
+        // Quantité employée dans la recette principale
+        (s.create&&base>0?
+          '<div style="margin-top:9px;padding-top:9px;border-top:1px dashed var(--bd)">'+
+            '<div style="font-size:11px;color:var(--i4);margin-bottom:6px">Quantité utilisée dans la recette</div>'+
+            '<div class="ri-grid">'+
+              '<div class="ri-f"><label>Poids voulu (kg)</label>'+
+                '<input type="number" step="0.001" min="0" value="'+fQ(used)+'" '+
+                'onchange="RIMP.subKg('+i+',this.value)"></div>'+
+              '<div class="ri-f"><label>Multiplicateur ×</label>'+
+                '<input type="number" step="0.01" min="0" value="'+fQ(s.mult)+'" '+
+                'onchange="RIMP.subMult('+i+',this.value)"></div>'+
+            '</div>'+
+            '<div style="font-size:11px;color:var(--i4);margin-top:5px">'+
+              'Sur la fiche : '+fQ(base)+' kg · retenu : '+fQ(used)+' kg'+
+              (s.mult!==1?' (×'+fQ(s.mult)+')':'')+'</div>'+
+          '</div>':'')+
+      '</div>';
+    }).join('')+'</div>';
+}
+function renderProcess(){
+  var box=document.getElementById('ri-process');
+  if(!box) return;
+  if(draft.multi){
+    draft.process=[];
+    draft.recipes.forEach(function(r){ if(r.sel) draft.process=draft.process.concat(r.process||[]); });
+  }
+  if(!draft.process||!draft.process.length){ box.innerHTML=''; return; }
+  var LBL={process_step:'Étape',process_label:'Phase',temperature:'Température',
+           duration:'Durée',equipment:'Matériel',yield:'Rendement'};
+  box.innerHTML='<div class="cw"><div class="cw-t" style="margin-bottom:8px">Procédé de fabrication '+
+    '<span style="font-size:11px;font-weight:400;color:var(--i4)">'+draft.process.length+' élément(s) — hors catalogue</span></div>'+
+    '<div style="font-size:11px;color:var(--i4);margin-bottom:9px">Ces lignes ont été reconnues comme des étapes, températures ou durées. '+
+    'Elles ne seront jamais créées comme ingrédients. Si l\'une d\'elles est en réalité un ingrédient, basculez-la.</div>'+
+    draft.process.map(function(p,i){
+      return '<div style="display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid var(--bd)">'+
+        '<span class="ri-badge b-warn" style="flex-shrink:0">'+(LBL[p.type]||p.type)+'</span>'+
+        (p.section?'<span class="ri-badge b-new" style="flex-shrink:0">⊛ '+esc(p.section)+'</span>':'')+
+        '<div style="flex:1;font-size:12px;color:var(--i3);min-width:0">'+esc(p.text)+'</div>'+
+        '<button class="btn btn-ghost btn-xs" style="flex-shrink:0" onclick="RIMP.toIng('+i+')">→ Ingrédient</button>'+
+      '</div>';
+    }).join('')+
+    '<div style="margin-top:10px"><label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer">'+
+    '<input type="checkbox" id="ri-keep-proc" checked style="width:17px;height:17px;accent-color:var(--g)">'+
+    'Enregistrer le procédé dans les notes de la recette</label></div></div>';
+}
+
+function renderLines(){
+  persistDraft();
+  var wrap=document.getElementById('ri-lines');
+  if(!draft.lines.length){ wrap.innerHTML='<div class="empty" style="padding:16px"><div class="empty-s">Aucun ingrédient — utilisez ＋ Ligne</div></div>'; return; }
+  var cur='', curRec=-1;
+  var visible=draft.lines;
+  if(draft.multi) visible=draft.lines.filter(function(l){ return draft.recipes[l.recipeIdx].sel; });
+  if(!visible.length){ wrap.innerHTML='<div class="empty" style="padding:16px"><div class="empty-s">Aucune recette sélectionnée</div></div>'; document.getElementById('ri-count').textContent=''; return; }
+  wrap.innerHTML=visible.map(function(l){
+    var idx=draft.lines.indexOf(l);
+    var hdr='';
+    if(draft.multi && l.recipeIdx!==curRec){
+      curRec=l.recipeIdx; cur='\u0000';
+      hdr='<div style="font-family:inherit;font-size:13px;font-weight:700;color:var(--i);margin:16px 0 8px;padding-bottom:5px;border-bottom:2px solid var(--g)">'+
+        esc(draft.recipes[l.recipeIdx].name)+'</div>';
+    }
+    if(l.subName!==cur){ cur=l.subName;
+      hdr=l.subName?'<div style="font-size:11px;font-weight:600;color:var(--bl);margin:12px 0 6px">⊛ '+esc(l.subName)+'</div>':
+                    '<div style="font-size:11px;font-weight:600;color:var(--i4);margin:12px 0 6px">Recette principale</div>';
+    }
+    var ex=l.matchId?ingredients.find(function(i){return i.id===l.matchId;}):null;
+    var subRec=l.useRecipeId?recipes.find(function(r){return r.id===l.useRecipeId;}):null;
+    // Seuils : ≥90 % fiable · 70-89 % à valider · <70 % incertain
+    var sc=Math.round((l.matchScore||0)*100);
+    var cls=subRec?'ok':(ex?(l.matchScore>=0.90?'ok':'warn'):'new');
+    var badge=subRec?'<span class="ri-badge b-new">⊛ Sous-recette</span>'
+              :(ex?(l.matchScore>=0.90?'<span class="ri-badge b-ok2">✓ Correspondance '+sc+' %</span>'
+                   :(l.matchScore>=0.70?'<span class="ri-badge b-warn">⚠ À valider '+sc+' %</span>'
+                                       :'<span class="ri-badge b-warn">❓ Incertain '+sc+' %</span>'))
+                  :'<span class="ri-badge b-new">➕ À créer</span>');
+    var cf=l.confidence>=85?'c-hi':(l.confidence>=60?'c-mid':'c-lo');
+    var opts='<option value=""'+(!l.matchId&&!l.useRecipeId?' selected':'')+'>— Créer un nouvel ingrédient —</option>'+
+      '<optgroup label="Ingrédients du catalogue">'+
+      l.candidates.map(function(c){
+        return '<option value="ing:'+c.ing.id+'"'+(c.ing.id===l.matchId?' selected':'')+'>'+
+          esc(c.ing.name)+' ('+Math.round(c.score*100)+'%)</option>';
+      }).join('')+
+      ingredients.filter(function(i){ return !l.candidates.some(function(c){return c.ing.id===i.id;}); })
+        .map(function(i){ return '<option value="ing:'+i.id+'"'+(i.id===l.matchId?' selected':'')+'>'+esc(i.name)+'</option>'; }).join('')+
+      '</optgroup>'+
+      // Une ligne peut désigner une préparation déjà enregistrée : on la
+      // rattache alors comme sous-recette au lieu de créer une matière première.
+      (recipes.length?'<optgroup label="Utiliser une recette comme sous-recette">'+
+        recipes.map(function(r){
+          return '<option value="rec:'+r.id+'"'+(r.id===l.useRecipeId?' selected':'')+'>⊛ '+esc(r.name)+'</option>';
+        }).join('')+'</optgroup>':'');
+    return hdr+'<div class="ri-row '+cls+' '+(l.sel?'':'off')+'">'+
+      '<div class="ri-head">'+
+        '<input type="checkbox" '+(l.sel?'checked':'')+' onchange="RIMP.sel('+idx+',this.checked)" style="width:18px;height:18px;accent-color:var(--g);cursor:pointer">'+
+        '<div class="ri-nm">'+esc(l.name||'(sans nom)')+'</div>'+badge+
+        '<span class="ri-conf '+cf+'">'+l.confidence+'%</span>'+
+        '<button class="btn btn-ghost btn-xs" onclick="RIMP.toProc('+idx+')">→ Procédé</button>'+
+        '<button class="cat-d cat-del" style="width:24px;height:24px" onclick="RIMP.del('+idx+')">✕</button>'+
+      '</div>'+
+      (l.confidence<60?'<div class="ri-match" style="color:#B42318">⚠ Lecture incertaine — vérifiez quantité et unité</div>':'')+
+      (l.corrected?'<div class="ri-match" style="color:#B54708">✎ Lu « '+esc(l.originalName)+
+        ' » — correction proposée ('+esc(l.fixSource)+'). Corrigez si besoin.</div>':'')+
+      (l.unitInferred?'<div class="ri-match">Unité déduite du nom (dénombrable)</div>':'')+
+      (!l.unitDetected&&!l.unitInferred?'<div class="ri-match" style="color:#B54708">⚠ Aucune unité lue — « g » appliqué par défaut</div>':'')+
+      (l.unitGuessedKg?'<div class="ri-match" style="color:#B54708">⚠ Aucune unité écrite sur la fiche — « '+esc(l.unit)+' » déduit. Vérifiez si c\'est bien le cas.</div>':'')+
+      '<div class="ri-grid">'+
+        rf('Ingrédient','text',l.name,idx,'name')+
+        (subRec
+          // Ligne rattachée à une recette : on peut saisir le poids voulu
+          // en kg, le multiplicateur se calcule à partir du poids de cette
+          // recette — ou saisir directement le multiplicateur.
+          ? '<div class="ri-f"><label>Poids voulu (kg)</label>'+
+              '<input type="number" step="0.001" min="0" value="'+
+              fQ(recWeight(l.useRecipeId)*(l.qty||1))+'" onchange="RIMP.lineKg('+idx+',this.value)"></div>'+
+            rf('Multiplicateur ×','number',l.qty,idx,'qty')
+          : rf('Quantité','number',l.qty,idx,'qty')+ru(l.unit,idx))+
+      '</div>'+
+      '<div class="ri-f" style="margin-top:8px"><label>Ingrédient du catalogue</label>'+
+      '<select onchange="RIMP.match('+idx+',this.value)">'+opts+'</select></div>'+
+      (subRec?'<div class="ri-match" style="color:var(--bl)">⊛ Rattaché à la recette « '+esc(subRec.name)+' » — aucun ingrédient ne sera créé'+
+        (recWeight(l.useRecipeId)>0?' · elle produit '+fQ(recWeight(l.useRecipeId))+' kg · retenu '+
+          fQ(recWeight(l.useRecipeId)*(l.qty||1))+' kg':'')+'</div>':'')+
+      ((!ex&&!subRec)?'<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--bd)">'+
+        '<div style="font-size:11px;color:var(--bl);font-weight:600;margin-bottom:7px">Nouvel ingrédient — informations pour le catalogue</div>'+
+        '<div class="ri-grid">'+
+          rcat(l.newCat,idx)+
+          rf('Prix TTC / '+(l.newUnit||'kg'),'number',l.newPrice,idx,'newPrice')+
+          runit(l.newUnit,idx)+
+          (isCountable(l.newUnit)?rf('Poids d\'une '+l.newUnit+' (kg)','number',l.newUnitWeight,idx,'newUnitWeight'):'')+
+        '</div>'+
+        '<div style="font-size:10px;color:var(--i4);margin-top:6px">Champs facultatifs — vous pourrez les compléter plus tard dans le catalogue.</div>'+
+      '</div>':'')+
+    '</div>';
+  }).join('');
+}
+function rf(label,type,v,idx,key){
+  return '<div class="ri-f"><label>'+label+'</label><input type="'+type+'" '+(type==='number'?'step="any" ':'')+
+    'value="'+String(v==null?'':v).replace(/"/g,'&quot;')+'" onchange="RIMP.set('+idx+',\''+key+'\',this.value)"></div>';
+}
+function ru(v,idx){
+  return '<div class="ri-f"><label>Unité</label><select onchange="RIMP.set('+idx+',\'unit\',this.value)">'+
+    ALLUNITS.map(function(u){return'<option'+(u===v?' selected':'')+'>'+u+'</option>';}).join('')+'</select></div>';
+}
+function runit(v,idx){
+  return '<div class="ri-f"><label>Unité d\'achat</label><select onchange="RIMP.set('+idx+',\'newUnit\',this.value)">'+
+    ALLUNITS.map(function(u){return'<option'+(u===v?' selected':'')+'>'+u+'</option>';}).join('')+'</select></div>';
+}
+function rcat(v,idx){
+  return '<div class="ri-f"><label>Catégorie</label><select onchange="RIMP.set('+idx+',\'newCat\',this.value)">'+
+    catOptions('ing',v)+'</select></div>';
+}
+
+
+// Poids et coût d'une ligne, quelle que soit sa nature
+function lineTotals(l){
+  if(l.useRecipeId){
+    var m=l.qty||1;
+    return {kg:recWeight(l.useRecipeId)*m, cost:recCost(l.useRecipeId)*m, unknown:false};
+  }
+  var ing=l.matchId?ingredients.find(function(i){return i.id===l.matchId;}):null;
+  var ref=ing||{unit:l.newUnit,unitWeight:l.newUnitWeight,
+    price:(l.newPrice&&unitFactor(l.newUnit,{unit:l.newUnit,unitWeight:l.newUnitWeight}))
+      ? l.newPrice/unitFactor(l.newUnit,{unit:l.newUnit,unitWeight:l.newUnitWeight}) : 0};
+  var kg=toKg(l.qty,l.unit,ref);
+  return {kg:kg, cost:kg*(ref.price||0), unknown:(!ing&&!l.newPrice)};
+}
+
+// Récapitulatif détaillé : un bloc par recette, puis le cumul
+function renderSummaryMulti(){
+  var box=document.getElementById('ri-sum');
+  var rows='', W=0, C=0, nSel=0, created=0, unknown=0;
+  draft.recipes.forEach(function(r,i){
+    if(!r.sel) return;
+    var mine=draft.lines.filter(function(l){ return l.recipeIdx===i && l.sel; });
+    if(!mine.length) return;
+    var w=0,cst=0;
+    mine.forEach(function(l){ var t=lineTotals(l); w+=t.kg; cst+=t.cost;
+      if(t.unknown) unknown++; if(!l.matchId&&!l.useRecipeId) created++; });
+    W+=w; C+=cst; nSel++;
+    rows+='<div class="ri-sum-r" style="border-top:1px solid rgba(255,255,255,.12);padding-top:7px;margin-top:5px">'+
+      '<span style="font-weight:600">'+esc(r.name)+'</span>'+
+      '<span>'+mine.length+' ingr.</span></div>'+
+      '<div class="ri-sum-r" style="opacity:.8"><span>Poids</span><b>'+fQ(w)+' kg</b></div>'+
+      '<div class="ri-sum-r" style="opacity:.8"><span>Coût TTC</span><b>'+fEur(cst)+'</b></div>'+
+      (w>0?'<div class="ri-sum-r" style="opacity:.65"><span>au kg</span><span>'+fEur(cst/w)+'</span></div>':'');
+  });
+  box.innerHTML=
+    '<div class="ri-sum-r"><span>Recettes à enregistrer</span><b>'+nSel+'</b></div>'+
+    rows+
+    '<div class="ri-sum-r" style="border-top:2px solid rgba(255,255,255,.25);padding-top:8px;margin-top:8px">'+
+      '<span>Cumul</span><b>'+fQ(W)+' kg · '+fEur(C)+'</b></div>'+
+    (created?'<div class="ri-sum-r" style="opacity:.75"><span>Nouveaux ingrédients à créer</span><span>'+created+'</span></div>':'')+
+    (unknown?'<div class="ri-sum-r" style="opacity:.75"><span>Sans prix renseigné</span><span>'+unknown+'</span></div>':'');
+}
+
+
+// ── ALERTES DE COHÉRENCE ──────────────────────────────────────
+// Signaler sans jamais corriger en silence : doublons, quantités
+// invraisemblables, lignes sans quantité.
+function importWarnings(lines){
+  var w=[], seen={};
+  lines.filter(function(l){return l.sel;}).forEach(function(l){
+    if(l.useRecipeId) return;
+    var key=rslug(l.name)+'|'+(l.subName||'');
+    if(seen[key]!==undefined){
+      var other=seen[key];
+      w.push({type:'doublon',
+        msg:'« '+l.name+' » apparaît deux fois'+(l.subName?' dans « '+l.subName+' »':'')+
+            ' ('+fQ(other.qty)+' '+other.unit+' et '+fQ(l.qty)+' '+l.unit+')',
+        merge:(other.unit===l.unit)?{a:other,b:l}:null});
+    } else seen[key]=l;
+
+    if(!l.qty||l.qty<=0) w.push({type:'sans quantité', msg:'« '+l.name+' » n\'a pas de quantité'});
+    var kg=toKg(l.qty,l.unit,{unit:l.unit});
+    if(kg>50) w.push({type:'quantité élevée', msg:'« '+l.name+' » : '+fQ(kg)+' kg — vérifiez l\'unité'});
+  });
+  return w;
+}
+
+function renderWarnings(){
+  var box=document.getElementById('ri-warn');
+  if(!box) return;
+  var w=importWarnings(draft.lines);
+  if(!w.length){ box.innerHTML=''; return; }
+  box.innerHTML='<div class="cw" style="border-color:#F5C2C7;background:#FFF8F8">'+
+    '<div class="cw-t" style="color:#B42318">⚠ '+w.length+' point(s) à vérifier</div>'+
+    w.map(function(x,i){
+      return '<div style="font-size:12px;color:#B42318;line-height:1.6;padding:3px 0">'+
+        '<b>'+esc(x.type)+'</b> — '+esc(x.msg)+
+        (x.merge?' <button class="btn btn-ghost btn-sm" style="margin-left:6px" onclick="RIMP.merge('+
+          draft.lines.indexOf(x.merge.a)+','+draft.lines.indexOf(x.merge.b)+')">Regrouper</button>':'')+
+        '</div>';
+    }).join('')+
+    '<div style="font-size:11px;color:var(--i4);margin-top:6px">Aucune correction n\'est appliquée automatiquement.</div></div>';
+}
+
+function renderSummary(){
+  persistDraft();
+  if(draft.multi) return renderSummaryMulti();
+  var W=0,C=0,unknown=0;
+  // Coefficient appliqué aux lignes d'une sous-recette créée séparément
+  function subMultOf(name){
+    if(!name||!draft.subs) return 1;
+    var s=draft.subs.find(function(x){ return x.name===name && x.create; });
+    return (s&&s.mult!=null)?s.mult:1;
+  }
+  draft.lines.filter(function(l){return l.sel && (!draft.multi||draft.recipes[l.recipeIdx].sel);}).forEach(function(l){
+    if(l.useRecipeId){                       // sous-recette : on développe son contenu
+      var mult=l.qty||1;
+      W+=recWeight(l.useRecipeId)*mult;
+      C+=recCost(l.useRecipeId)*mult;
+      return;
+    }
+    var ing=l.matchId?ingredients.find(function(i){return i.id===l.matchId;}):null;
+    var ref=ing||{unit:l.newUnit,unitWeight:l.newUnitWeight,
+      price:(l.newPrice&&unitFactor(l.newUnit,{unit:l.newUnit,unitWeight:l.newUnitWeight}))?
+        l.newPrice/unitFactor(l.newUnit,{unit:l.newUnit,unitWeight:l.newUnitWeight}):0};
+    var kg=toKg(l.qty,l.unit,ref);
+    W+=kg; C+=kg*(ref.price||0);
+    if(!ing&&!l.newPrice) unknown++;
+  });
+  var n=draft.lines.filter(function(l){return l.sel;}).length;
+  var created=draft.lines.filter(function(l){return l.sel&&!l.matchId&&!l.useRecipeId;}).length;
+  document.getElementById('ri-sum').innerHTML=
+    '<div class="ri-sum-r"><span>Ingrédients retenus</span><b>'+n+'</b></div>'+
+    '<div class="ri-sum-r"><span>Poids total</span><b>'+fQ(W)+' kg</b></div>'+
+    '<div class="ri-sum-r"><span>Coût total TTC</span><b>'+fEur(C)+'</b></div>'+
+    (W>0?'<div class="ri-sum-r"><span>Coût au kg</span><b>'+fEur(C/W)+'</b></div>':'')+
+    (created?'<div class="ri-sum-r" style="opacity:.75;border-top:1px solid rgba(255,255,255,.15);margin-top:6px;padding-top:8px"><span>Nouveaux ingrédients à créer</span><span>'+created+'</span></div>':'')+
+    (unknown?'<div class="ri-sum-r" style="opacity:.75"><span>Sans prix renseigné</span><span>'+unknown+'</span></div>':'');
+}
+
+// Le brouillon en cours de vérification est sauvegardé à chaque
+// modification : si l'appli se ferme ou est quittée par erreur en
+// plein import, rien n'est perdu — un bandeau propose de reprendre.
+// Le texte brut et les fiches complètes du catalogue ne sont pas recopiés :
+// seules les références sont gardées, ce qui reste léger même pour un livre.
+function draftReplacer(k,v){
+  if(k==='raw'||k==='blocks') return undefined;
+  if(k==='candidates' && Array.isArray(v)) return v.map(function(c){ return {id:(c&&c.ing)?c.ing.id:(c&&c.id), score:c&&c.score}; });
+  return v;
+}
+var _persistT=null;
+function persistNow(){
+  clearTimeout(_persistT); _persistT=null;
+  try{
+    if(draftQueue){
+      localStorage.setItem('v4_ridraft', JSON.stringify({queue:draftQueue, idx:draftQueueIdx}, draftReplacer));
+      return;
+    }
+    if(!draft){ localStorage.removeItem('v4_ridraft'); return; }
+    localStorage.setItem('v4_ridraft', JSON.stringify({single:draft}, draftReplacer));
+  }catch(e){}
+}
+function persistDraft(){
+  if(!draft && !draftQueue){ persistNow(); return; }
+  clearTimeout(_persistT); _persistT=setTimeout(persistNow, 400);
+}
+try{
+  window.addEventListener('pagehide', function(){ if(_persistT) persistNow(); });
+  document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden' && _persistT) persistNow(); });
+}catch(e){}
+function rehydrateDraft(d){
+  (d&&d.lines||[]).forEach(function(l){
+    l.candidates=(l.candidates||[]).map(function(c){
+      if(c&&c.ing) return c;
+      var ing=ingredients.find(function(i){ return c && i.id===c.id; });
+      return ing?{ing:ing, score:c.score}:null;
+    }).filter(Boolean);
+  });
+  return d;
+}
+// Navigation « une recette à la fois » au-dessus de l'écran de vérification,
+// visible uniquement pendant l'import de plusieurs recettes.
+function renderQueueNav(){
+  var page=document.getElementById('p-rec-valid');
+  var box=document.getElementById('ri-queuenav');
+  if(!box && page){
+    box=document.createElement('div'); box.id='ri-queuenav';
+    var stepEl=page.querySelector('.ri-step');
+    if(stepEl && stepEl.nextSibling) page.insertBefore(box, stepEl.nextSibling);
+    else if(stepEl) page.appendChild(box);
+    else page.insertBefore(box, page.firstChild);
+  }
+  if(!box) return;
+  if(!draftQueue){ box.innerHTML=''; return; }
+  var total=draftQueue.length;
+  var doneCount=draftQueue.filter(function(d){return d.queueDone;}).length;
+  box.innerHTML='<div class="cw" style="margin-bottom:11px">'+
+    '<div class="cw-t" style="display:flex;align-items:center;justify-content:space-between">'+
+      '<span>📑 Recette '+(draftQueueIdx+1)+' / '+total+'</span>'+
+      '<span style="font-size:11px;font-weight:400;color:var(--i4)">'+doneCount+' enregistrée(s)</span>'+
+    '</div>'+
+    '<div class="inv-bar" style="margin-bottom:8px">'+
+      '<button class="btn btn-ghost btn-sm"'+(draftQueueIdx<=0?' disabled':'')+' onclick="RIMP.queuePrev()">← Précédente</button>'+
+      '<button class="btn btn-ghost btn-sm"'+(draftQueueIdx>=total-1?' disabled':'')+' onclick="RIMP.queueNext()">Suivante →</button>'+
+      '<button class="btn btn-ghost btn-sm" onclick="RIMP.queueSkip()">Passer sans enregistrer</button>'+
+    '</div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:5px">'+
+      draftQueue.map(function(d,i){
+        var cls=d.queueDone?'b-ok2':(i===draftQueueIdx?'b-warn':'b-new');
+        return '<span class="ri-badge '+cls+'" style="cursor:pointer" onclick="RIMP.queueGo('+i+')">'+
+          (d.queueDone?'✓ ':'')+esc(d.name||('Recette '+(i+1)))+'</span>';
+      }).join('')+
+    '</div>'+
+  '</div>';
+}
+function refreshResumeBanner(){
+  var box=document.getElementById('ri-resume');
+  if(!box) return;
+  var saved=null;
+  try{ var raw=localStorage.getItem('v4_ridraft'); if(raw) saved=JSON.parse(raw); }catch(e){ saved=null; }
+  if(!saved){ box.innerHTML=''; return; }
+  var label, count;
+  if(saved.queue){
+    var remaining=saved.queue.filter(function(d){return !d.queueDone;}).length;
+    if(!remaining){ box.innerHTML=''; return; }
+    label=saved.queue.length+' recette(s) détectée(s) — '+remaining+' restante(s)';
+    count=saved.queue.reduce(function(a,d){return a+(d.lines?d.lines.length:0);},0);
+  } else {
+    var d=saved.single||(saved.lines?saved:null);
+    if(!d||!d.lines||!d.lines.length){ box.innerHTML=''; return; }
+    label=d.name||'Recette sans nom'; count=d.lines.length;
+  }
+  box.innerHTML='<div class="cw" style="border-color:var(--g)"><div class="cw-t">↻ Vérification interrompue</div>'+
+    '<div style="font-size:12px;color:var(--i4);margin:4px 0 9px">'+esc(label)+' — '+count+
+    ' ligne(s) — reprenez où vous en étiez, ou abandonnez.</div>'+
+    '<div class="inv-bar"><button class="btn btn-green btn-sm" onclick="RIMP.resumeDraft()">↻ Reprendre</button>'+
+    '<button class="btn btn-ghost btn-sm" onclick="RIMP.discardDraft()">Abandonner</button></div></div>';
+}
+function renderFixesList(){
+  var box=document.getElementById('fixes-list');
+  if(!box) return;
+  var f=loadFixes();
+  var keys=Object.keys(f);
+  if(!keys.length){ box.innerHTML='<div class="empty" style="padding:14px"><div class="empty-s">Aucune correction apprise pour l\'instant</div></div>'; return; }
+  keys.sort(function(a,b){ return (f[b].n||0)-(f[a].n||0); });
+  box.innerHTML=keys.map(function(k){
+    return '<div class="ri-row" style="margin-bottom:7px"><div class="ri-head">'+
+      '<div class="ri-nm">'+esc(k)+' → <b>'+esc(f[k].to)+'</b></div>'+
+      '<span class="ri-badge b-ok2">×'+(f[k].n||1)+'</span>'+
+      '<button class="cat-d cat-del" style="width:24px;height:24px" onclick="RIMP.delFix(\''+k.replace(/'/g,"\\'")+'\')">✕</button>'+
+    '</div></div>';
+  }).join('');
+}
+
+window.RIMP={
+  retry:function(){ draft=null; goPage('rec-import'); },
+  saveKey:function(){
+    var v=(document.getElementById('ri-aikey').value||'').trim();
+    // Aucun contrôle de forme : les formats de clés changent souvent.
+    // Seule la longueur écarte une saisie manifestement incomplète.
+    if(v && v.length<20){ toast('Cette clé semble incomplète — recopiez-la en entier','err'); return; }
+    setAiKey(v);
+    document.getElementById('ri-aikey').value='';
+    refreshAiState();
+    toast(v?'✓ Analyse par IA activée':'Analyse par IA désactivée','ok');
+  },
+  clearKey:function(){
+    setAiKey('');
+    document.getElementById('ri-aikey').value='';
+    refreshAiState();
+    toast('Clé retirée — analyse hors ligne','ok');
+  },
+
+  selRec:function(i,v){
+    draft.recipes[i].sel=v;
+    draft.lines.forEach(function(l){ if(l.recipeIdx===i) l.sel=v && l.confidence>=CONF_MIN; });
+    renderRecipeList(); renderLines(); renderSummary();
+  },
+  allRec:function(v){
+    draft.recipes.forEach(function(r,i){ r.sel=v;
+      draft.lines.forEach(function(l){ if(l.recipeIdx===i) l.sel=v && l.confidence>=CONF_MIN; });
+    });
+    renderRecipeList(); renderLines(); renderSummary();
+  },
+  lineKg:function(i,v){
+    var l=draft.lines[i];
+    if(!l||!l.useRecipeId) return;
+    var base=recWeight(l.useRecipeId);
+    var kg=parseFloat(v)||0;
+    l.qty = base>0 ? Math.round((kg/base)*10000)/10000 : 1;
+    renderLines(); renderSummary();
+  },
+  subKg:function(i,v){
+    var s=draft.subs[i];
+    var mine=draft.lines.filter(function(l){return l.subName===s.name && l.sel;});
+    var base=0; mine.forEach(function(l){ base+=lineTotals(l).kg; });
+    var kg=parseFloat(v)||0;
+    s.mult = base>0 ? Math.round((kg/base)*10000)/10000 : 1;
+    renderSubs(); renderSummary();
+  },
+  subMult:function(i,v){
+    draft.subs[i].mult = Math.max(0, parseFloat(v)||0);
+    renderSubs(); renderSummary();
+  },
+  setRecName:function(i,v){ draft.recipes[i].name=v; renderRecipeList(); },
+  merge:function(ia,ib){
+    var a=draft.lines[ia], b=draft.lines[ib];
+    if(!a||!b||a.unit!==b.unit) return;
+    a.qty=Math.round((a.qty+b.qty)*1e4)/1e4;
+    b.sel=false;
+    toast('✓ Regroupé : '+a.name+' = '+fQ(a.qty)+' '+a.unit,'ok');
+    renderLines(); renderSummary(); renderWarnings();
+  },
+  setRecCat:function(i,v){
+    if(v==='__new__'){
+      askText('Nouvelle catégorie','Ex: Snacking salé…',function(nm){
+        if(nm){ draft.recipes[i].cat=addCatIfNew('rec',nm); toast('✓ Catégorie ajoutée','ok'); }
+        renderRecipeList();
+      });
+      return;
+    }
+    draft.recipes[i].cat=v; renderRecipeList();
+  },
+  setSub:function(i,v){ draft.lines[i].subName=v; renderLines(); renderSummary(); },
+  sel:function(i,v){draft.lines[i].sel=v;renderLines();renderSummary();},
+  toIng:function(i){
+    var p=draft.process[i]; if(!p) return;
+    var ing=extractIngredient(p.text)||{name:p.text,qty:0,unit:'g',unitDetected:false};
+    draft.process.splice(i,1);
+    draft.lines.push(mkLine({detectedName:ing.name,quantity:ing.qty,unit:ing.unit,
+      unitDetected:ing.unitDetected,confidence:55},p.section||''));
+    renderProcess(); renderLines(); renderSummary();
+    toast('Basculé en ingrédient — vérifiez la ligne','info');
+  },
+  toProc:function(i){
+    var l=draft.lines[i]; if(!l) return;
+    draft.lines.splice(i,1);
+    draft.process.push({type:'process_step',text:l.name+(l.qty?' '+l.qty+' '+l.unit:''),
+      confidence:0.9,section:l.subName||''});
+    renderProcess(); renderLines(); renderSummary();
+    toast('Basculé en étape de procédé','info');
+  },
+  del:function(i){draft.lines.splice(i,1);renderLines();renderSummary();},
+  sub:function(i,v){draft.subs[i].create=v;renderSubs();},
+  match:function(i,v){
+    var l=draft.lines[i];
+    if(v && v.indexOf('rec:')===0){          // rattachement à une recette
+      l.useRecipeId=v.slice(4); l.matchId=''; l.matchScore=0;
+      if(!l.qty||l.qty>50) l.qty=1;          // la quantité devient un multiplicateur
+    } else {
+      l.useRecipeId='';
+      l.matchId=v ? v.replace(/^ing:/,'') : '';
+      if(l.matchId){ var ing=ingredients.find(function(x){return x.id===l.matchId;}); l.matchScore=ing?rdice(ing.name,l.name):1; }
+    }
+    renderLines(); renderSummary();
+  },
+  set:function(i,k,v){
+    var l=draft.lines[i];
+    if(k==='newCat'&&v==='__new__'){
+      askText('Nouvelle catégorie','Ex: Chocolats…',function(nm){
+        if(nm){ l.newCat=addCatIfNew('ing',nm); toast('✓ Catégorie ajoutée','ok'); }
+        renderLines(); renderSummary();
+      });
+      return;
+    }
+    l[k]=(k==='qty'||k==='newPrice'||k==='newUnitWeight')?(parseFloat(v)||0):v;
+    if(k==='name'){ l.candidates=findMatches(v);
+      var b=l.candidates[0];
+      if(!l.matchId&&b&&b.score>=0.62){ l.matchId=b.ing.id; l.matchScore=b.score; } }
+    renderLines(); renderSummary();
+  },
+  resumeDraft:function(){
+    var saved=null;
+    try{ var raw=localStorage.getItem('v4_ridraft'); if(raw) saved=JSON.parse(raw); }catch(e){ saved=null; }
+    if(!saved){ toast('Rien à reprendre','err'); return; }
+    if(saved.queue){
+      draftQueue=saved.queue;
+      draftQueueIdx=Math.min(saved.idx||0, draftQueue.length-1);
+      if(draftQueue[draftQueueIdx] && draftQueue[draftQueueIdx].queueDone){
+        var found=-1;
+        for(var i=0;i<draftQueue.length;i++){ if(!draftQueue[i].queueDone){ found=i; break; } }
+        if(found>=0) draftQueueIdx=found;
+      }
+      draftQueue.forEach(rehydrateDraft);
+      draft=draftQueue[draftQueueIdx];
+    } else if(saved.single){
+      draft=rehydrateDraft(saved.single); draftQueue=null; draftQueueIdx=0;
+    } else if(saved.lines){
+      draft=rehydrateDraft(saved); draftQueue=null; draftQueueIdx=0;   // format historique
+    } else { toast('Brouillon illisible','err'); return; }
+    goPage('rec-valid');
+    document.getElementById('ri-loading').style.display='none';
+    var f=document.getElementById('ri-fail'); if(f) f.style.display='none';
+    document.getElementById('ri-result').style.display='block';
+    renderDraft();
+    toast('✓ Import repris','ok');
+  },
+  discardDraft:function(){
+    try{ localStorage.removeItem('v4_ridraft'); }catch(e){}
+    draftQueue=null; draftQueueIdx=0;
+    refreshResumeBanner();
+    toast('Brouillon abandonné','info');
+  },
+  queueGo:function(i){
+    if(!draftQueue || i<0 || i>=draftQueue.length) return;
+    draftQueueIdx=i;
+    draft=draftQueue[i];
+    persistDraft();
+    renderDraft();
+  },
+  queuePrev:function(){ RIMP.queueGo(draftQueueIdx-1); },
+  queueNext:function(){ RIMP.queueGo(draftQueueIdx+1); },
+  queueSkip:function(){
+    if(!draftQueue) return;
+    var n=draftQueue.length;
+    for(var k=1;k<=n;k++){
+      var j=(draftQueueIdx+k)%n;
+      if(!draftQueue[j].queueDone){ RIMP.queueGo(j); return; }
+    }
+    toast('Toutes les recettes ont déjà été traitées','info');
+  },
+  openFixes:function(){
+    renderFixesList();
+    var m=document.getElementById('m-fixes'); if(m) m.classList.add('show');
+  },
+  closeFixes:function(){
+    var m=document.getElementById('m-fixes'); if(m) m.classList.remove('show');
+  },
+  delFix:function(key){
+    var f=loadFixes(); delete f[key]; saveFixes(f); renderFixesList();
+  },
+  clearFixes:function(){
+    if(!confirm('Supprimer toutes les corrections apprises ?')) return;
+    saveFixes({}); renderFixesList(); toast('Corrections effacées','ok');
+  }
+};
+
+
+function createdSubNames(){
+  return (draft.subs||[]).filter(function(s){ return s.create; }).map(function(s){ return s.name; });
+}
+function buildNotes(){
+  var keep=document.getElementById('ri-keep-proc');
+  var base='Importée depuis '+draft.src.fileName;
+  if(!keep||!keep.checked||!draft.process.length) return base;
+  var own=createdSubNames();
+  var steps=draft.process.filter(function(p){ return !p.section || own.indexOf(p.section)<0; });
+  if(!steps.length) return base;
+  return base+'\n\nProcédé :\n'+steps.map(function(p){ return '• '+p.text; }).join('\n');
+}
+function buildSubNotes(name){
+  var keep=document.getElementById('ri-keep-proc');
+  var base='Importée depuis '+draft.src.fileName;
+  if(!keep||!keep.checked||!draft.process) return base;
+  var steps=draft.process.filter(function(p){ return p.section===name && !/^pr[ée]paration\b/i.test(p.text); });
+  if(!steps.length) return base;
+  return base+'\n\nPréparation :\n'+steps.map(function(p){ return '• '+p.text; }).join('\n');
+}
+
+// ── 8. VALIDATION FINALE — SEUL POINT D'ÉCRITURE ──────────────
+function commitRecipe(){
+  if(draft.multi) return commitMultiple();
+  var name=document.getElementById('ri-name').value.trim();
+  if(!name){ toast('Donnez un nom à la recette','err'); return; }
+  var sel=draft.lines.filter(function(l){return l.sel;});
+  if(!sel.length){ toast('Aucun ingrédient sélectionné','err'); return; }
+  var noName=sel.filter(function(l){return !l.useRecipeId&&(!l.name||l.name.length<2);});
+  if(noName.length){ toast(noName.length+' ligne(s) sans nom — corrigez avant d\'enregistrer','err'); return; }
+
+  var toCreate=sel.filter(function(l){return !l.matchId && !l.useRecipeId;});
+  if(toCreate.length){
+    if(!confirm(toCreate.length+' nouvel(s) ingrédient(s) seront ajoutés au catalogue :\n\n'+
+       toCreate.map(function(l){return '• '+l.name;}).join('\n')+
+       '\n\nConfirmer la création ?')) return;
+  }
+
+  // Mémoriser les corrections de nom : elles serviront aux imports suivants
+  sel.forEach(function(l){
+    if(l.originalName && cslug(l.originalName)!==cslug(l.name)) learnCorrection(l.originalName,l.name);
+    if(l.matchId){
+      var ing=ingredients.find(function(i){return i.id===l.matchId;});
+      if(ing && l.originalName && cslug(l.originalName)!==cslug(ing.name)) learnCorrection(l.originalName,ing.name);
+    }
+  });
+
+  // a) création des ingrédients manquants
+  var createdCount=0;
+  sel.forEach(function(l){
+    if(l.matchId||l.useRecipeId) return;   // rattachée à une recette : rien à créer
+    var dup=ingredients.find(function(i){ return rslug(i.name)===rslug(l.name); });
+    if(dup){ l.matchId=dup.id; return; }   // garde-fou anti-doublon
+    var f=unitFactor(l.newUnit,{unit:l.newUnit,unitWeight:l.newUnitWeight});
+    var ing={ id:uid(), name:l.name, cat:l.newCat||'Autre',
+      unit:l.newUnit||'kg', unitWeight:l.newUnitWeight||null,
+      buyPrice:l.newPrice||0, price:l.newPrice?rnd(l.newPrice/f):0,
+      priceHistory:l.newPrice?[{ts:now(),price:rnd(l.newPrice/f),src:'import recette'}]:[] };
+    ingredients.push(ing);
+    l.matchId=ing.id; createdCount++;
+  });
+
+  // b) sous-recettes créées d'abord (elles doivent exister avant d'être référencées)
+  var subIds={};
+  draft.subs.filter(function(s){return s.create;}).forEach(function(s){
+    var items=sel.filter(function(l){return l.subName===s.name;})
+      .map(function(l){ return l.useRecipeId
+        ? {id:uid(),type:'recipe',refId:l.useRecipeId,qty:l.qty||1,unit:'x'}
+        : {id:uid(),type:'ingredient',refId:l.matchId,qty:l.qty,unit:l.unit}; });
+    if(!items.length) return;
+    var rec={ id:uid(), name:s.name, cat:draft.cat, image:'⊛', notes:buildSubNotes(s.name),
+      items:items, createdAt:now(),
+      source:{fileName:draft.src.fileName, thumb:draft.src.thumb, importedAt:draft.src.ts} };
+    recipes.unshift(rec);
+    subIds[s.name]=rec.id;
+  });
+
+  // c) recette principale
+  var mainItems=[];
+  sel.filter(function(l){return !l.subName;}).forEach(function(l){
+    mainItems.push(l.useRecipeId
+      ? {id:uid(),type:'recipe',refId:l.useRecipeId,qty:l.qty||1,unit:'x'}
+      : {id:uid(),type:'ingredient',refId:l.matchId,qty:l.qty,unit:l.unit});
+  });
+  draft.subs.forEach(function(s){
+    if(s.create&&subIds[s.name]) mainItems.push({id:uid(),type:'recipe',refId:subIds[s.name],qty:(s.mult!=null?s.mult:1),unit:'x'});
+    else sel.filter(function(l){return l.subName===s.name;}).forEach(function(l){
+      mainItems.push(l.useRecipeId
+        ? {id:uid(),type:'recipe',refId:l.useRecipeId,qty:l.qty||1,unit:'x'}
+        : {id:uid(),type:'ingredient',refId:l.matchId,qty:l.qty,unit:l.unit});
+    });
+  });
+
+  var rec={ id:uid(), name:name, cat:document.getElementById('ri-cat').value,
+    image:document.getElementById('ri-emoji').value.trim()||'📖',
+    notes:buildNotes(), items:mainItems, createdAt:now(),
+    source:{fileName:draft.src.fileName, thumb:draft.src.thumb, importedAt:draft.src.ts} };
+  recipes.unshift(rec);
+
+  persist(); updBadges();
+  var subCount=Object.keys(subIds).length;
+  renderCat(); renderRec(); renderHome();
+  var msg='✓ « '+name+' » enregistrée'+(createdCount?' · '+createdCount+' ingrédient(s) créé(s)':'')+
+        (subCount?' · '+subCount+' sous-recette(s)':'');
+
+  if(draftQueue){
+    draftQueue[draftQueueIdx].queueDone=true;
+    var nextIdx=-1;
+    for(var k=1;k<=draftQueue.length;k++){
+      var j=(draftQueueIdx+k)%draftQueue.length;
+      if(!draftQueue[j].queueDone){ nextIdx=j; break; }
+    }
+    if(nextIdx>=0){
+      draftQueueIdx=nextIdx;
+      draft=draftQueue[nextIdx];
+      persistDraft();
+      renderDraft();
+      toast(msg,'ok');
+      return;
+    }
+    var doneTotal=draftQueue.length;
+    draft=null; draftQueue=null; draftQueueIdx=0;
+    persistDraft();
+    goPage('recettes');
+    toast('✓ '+doneTotal+' recette(s) importée(s)','ok');
+    return;
+  }
+
+  draft=null;
+  persistDraft();
+  goPage('recettes');
+  toast(msg,'ok');
+}
+
+
+// ── Enregistrement de plusieurs recettes en une fois ──────────
+function commitMultiple(){
+  var chosen=draft.recipes.filter(function(r){ return r.sel; });
+  if(!chosen.length){ toast('Aucune recette sélectionnée','err'); return; }
+  var sel=draft.lines.filter(function(l){ return l.sel && draft.recipes[l.recipeIdx].sel; });
+  if(!sel.length){ toast('Aucun ingrédient sélectionné','err'); return; }
+  var noName=sel.filter(function(l){ return !l.useRecipeId && (!l.name||l.name.length<2); });
+  if(noName.length){ toast(noName.length+' ligne(s) sans nom — corrigez avant d\'enregistrer','err'); return; }
+  var blank=chosen.filter(function(r){ return !r.name || !r.name.trim(); });
+  if(blank.length){ toast('Une recette sélectionnée n\'a pas de nom','err'); return; }
+
+  var toCreate=sel.filter(function(l){ return !l.matchId && !l.useRecipeId; });
+  if(toCreate.length){
+    var uniq=[]; toCreate.forEach(function(l){ if(uniq.indexOf(l.name)<0) uniq.push(l.name); });
+    if(!confirm(chosen.length+' recette(s) seront enregistrées.\n\n'+
+      uniq.length+' nouvel(s) ingrédient(s) seront ajoutés au catalogue :\n'+
+      uniq.slice(0,15).join('\n')+(uniq.length>15?'\n… et '+(uniq.length-15)+' autres':'')+
+      '\n\nConfirmer ?')) return;
+  }
+
+  // Corrections mémorisées pour les prochains imports
+  sel.forEach(function(l){
+    if(l.originalName && cslug(l.originalName)!==cslug(l.name)) learnCorrection(l.originalName,l.name);
+  });
+
+  // a) ingrédients manquants — créés une seule fois même s'ils reviennent
+  var createdCount=0;
+  sel.forEach(function(l){
+    if(l.matchId||l.useRecipeId) return;
+    var dup=ingredients.find(function(i){ return rslug(i.name)===rslug(l.name); });
+    if(dup){ l.matchId=dup.id; return; }
+    var f=unitFactor(l.newUnit,{unit:l.newUnit,unitWeight:l.newUnitWeight});
+    var ing={ id:uid(), name:l.name, cat:l.newCat||'Autre',
+      unit:l.newUnit||'kg', unitWeight:l.newUnitWeight||null,
+      buyPrice:l.newPrice||0, price:l.newPrice?rnd(l.newPrice/f):0,
+      priceHistory:l.newPrice?[{ts:now(),price:rnd(l.newPrice/f),src:'import recette'}]:[] };
+    ingredients.push(ing); l.matchId=ing.id; createdCount++;
+  });
+
+  // b) chaque recette, avec ses sous-préparations
+  var madeRec=0, madeSub=0;
+  chosen.forEach(function(r){
+    var mine=sel.filter(function(l){ return l.recipeIdx===r.idx; });
+    var subIds={};
+    (r.subs||[]).filter(function(s){ return s.create; }).forEach(function(s){
+      var items=mine.filter(function(l){ return l.subName===s.name; }).map(function(l){
+        return l.useRecipeId ? {id:uid(),type:'recipe',refId:l.useRecipeId,qty:l.qty||1,unit:'x'}
+                             : {id:uid(),type:'ingredient',refId:l.matchId,qty:l.qty,unit:l.unit};
+      });
+      if(!items.length) return;
+      var sr={ id:uid(), name:s.name, cat:r.cat, image:'⊛',
+        notes:'Importée depuis '+draft.src.fileName+' (page '+r.page+')',
+        items:items, createdAt:now(),
+        source:{fileName:draft.src.fileName, thumb:draft.src.thumb, importedAt:draft.src.ts, page:r.page} };
+      recipes.unshift(sr); subIds[s.name]=sr.id; madeSub++;
+    });
+
+    var items=[];
+    mine.filter(function(l){ return !l.subName; }).forEach(function(l){
+      items.push(l.useRecipeId ? {id:uid(),type:'recipe',refId:l.useRecipeId,qty:l.qty||1,unit:'x'}
+                               : {id:uid(),type:'ingredient',refId:l.matchId,qty:l.qty,unit:l.unit});
+    });
+    (r.subs||[]).forEach(function(s){
+      if(subIds[s.name]) items.push({id:uid(),type:'recipe',refId:subIds[s.name],qty:(s.mult!=null?s.mult:1),unit:'x'});
+      else mine.filter(function(l){ return l.subName===s.name; }).forEach(function(l){
+        items.push(l.useRecipeId ? {id:uid(),type:'recipe',refId:l.useRecipeId,qty:l.qty||1,unit:'x'}
+                                 : {id:uid(),type:'ingredient',refId:l.matchId,qty:l.qty,unit:l.unit});
+      });
+    });
+    if(!items.length) return;
+
+    var notes='Importée depuis '+draft.src.fileName+' (page '+r.page+')';
+    var keep=document.getElementById('ri-keep-proc');
+    if(keep&&keep.checked&&(r.process||[]).length)
+      notes+='\n\nProcédé :\n'+r.process.map(function(x){ return '• '+x.text; }).join('\n');
+
+    recipes.unshift({ id:uid(), name:r.name.trim(), cat:r.cat, image:r.emoji||'📖',
+      notes:notes, items:items, createdAt:now(),
+      source:{fileName:draft.src.fileName, thumb:draft.src.thumb, importedAt:draft.src.ts, page:r.page} });
+    madeRec++;
+  });
+
+  persist(); updBadges();
+  draft=null;
+  renderCat(); renderRec(); renderHome();
+  goPage('recettes');
+  toast('✓ '+madeRec+' recette(s) enregistrée(s)'+
+    (madeSub?' · '+madeSub+' sous-recette(s)':'')+
+    (createdCount?' · '+createdCount+' ingrédient(s) créé(s)':''),'ok');
+}
+
+// ── 9. NAVIGATION ─────────────────────────────────────────────
+var _goPage=goPage;
+goPage=function(p){
+  if(p==='rec-import'||p==='rec-valid'){
+    ['home','bons','edit','recettes','rec-edit','catalogue','backup','rec-import','rec-valid'].forEach(function(id){
+      var e=document.getElementById('p-'+id); if(e) e.style.display=(id===p?'block':'none');
+    });
+    CUR=p;
+    var sc=document.getElementById('scroll'); if(sc) sc.scrollTop=0;
+    ['home','bons','recettes','catalogue'].forEach(function(id){
+      var a=document.getElementById('nav-'+id),b=document.getElementById('bn-'+id);
+      var on=(id==='recettes');
+      if(a)a.classList.toggle('on',on); if(b)b.classList.toggle('on',on);
+    });
+    var back=document.getElementById('tb-back'),bc=document.getElementById('tb-bc'),
+        ti=document.getElementById('tb-title'),act=document.getElementById('tb-act');
+    if(back)back.className='show';
+    if(bc)bc.style.display='none';
+    if(ti){ti.style.display='block';ti.textContent=(p==='rec-import'?'Importer une recette':'Vérification de la recette');}
+    if(act)act.innerHTML='';
+    if(p==='rec-import') refreshResumeBanner();
+    return;
+  }
+  _goPage(p);
+};
+var _goBack=goBack;
+goBack=function(){
+  if(CUR==='rec-import'){ goPage('recettes'); return; }
+  if(CUR==='rec-valid'){ draft=null; draftQueue=null; draftQueueIdx=0; persistDraft(); goPage('rec-import'); return; }
+  _goBack();
+};
+
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',buildUI);
+else buildUI();
+
+})();
+

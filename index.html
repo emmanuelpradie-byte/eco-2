@@ -975,7 +975,7 @@ html.lay-mob .gate-crest{width:110px}
 /* ══ ÉDITEUR DE RECETTE (plein écran, 3 colonnes) ═══════════ */
 html.re-full #sidebar,html.re-full #topbar,html.re-full #bnav{display:none!important;}
 html.re-full #scroll{overflow:hidden;}
-html.re-full #p-rec-edit{padding:0;max-width:none;height:100%;position:relative;}
+html.re-full #p-rec-edit,html.re-full #p-edit{padding:0;max-width:none;height:100%;position:relative;}
 .re-top{height:56px;display:flex;align-items:center;gap:14px;padding:0 14px;background:var(--beige);border-bottom:1px solid var(--beige2);}
 .re-x,.re-ib{width:36px;height:36px;border-radius:999px;border:0;background:var(--card);color:var(--i);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
 .re-x .ic,.re-ib .ic{font-size:18px;}
@@ -1100,7 +1100,7 @@ html.re-full #p-rec-edit{padding:0;max-width:none;height:100%;position:relative;
 }
 @media (max-width:820px){
   html.re-full #scroll{overflow-y:auto;}
-  html.re-full #p-rec-edit{height:auto;min-height:100%;padding-bottom:calc(84px + env(safe-area-inset-bottom,0px));}
+  html.re-full #p-rec-edit,html.re-full #p-edit{height:auto;min-height:100%;padding-bottom:calc(84px + env(safe-area-inset-bottom,0px));}
   .re-top{position:sticky;top:0;z-index:20;height:auto;min-height:54px;padding:env(safe-area-inset-top,0px) 10px 0;gap:8px;}
   .re-top .dsk{display:none;}
   .re-tabs button{height:40px;padding:0 14px;font-size:13.5px;}
@@ -1178,6 +1178,153 @@ html.re-full #p-rec-edit{padding:0;max-width:none;height:100%;position:relative;
 .shr-c{display:block;font-size:11px;font-weight:500;color:var(--i4);text-align:right;}
 .part-acts{flex-wrap:wrap;}
 
+/* ══ ÉDITEUR DE BON (même style que l'éditeur de recette) ═══ */
+.re-pillb{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:999px;border:0;background:var(--card);color:var(--i);font-size:13px;font-weight:600;cursor:pointer;}
+.re-pillb .ic{font-size:16px;}
+.re-pillb:hover{box-shadow:0 0 0 2px rgba(var(--ink-rgb),.12);}
+.be-ic{color:var(--i3);border-style:solid;font-size:26px;}
+#p-edit .re-box .fi{height:38px;}
+#p-edit .re-box .filebtn{margin:0;}
+#p-edit #e-status .badge{font-size:11px;}
+#p-edit .seg{width:100%;}
+#p-edit .seg button{flex:1;}
+#p-edit .ustrip{margin-bottom:10px;}
+#p-edit .tots{margin-top:12px;}
+#e-items-empty[style*="block"]{display:flex!important;}
+.re-card:has(#e-items-empty[style*="block"]) .re-card-a,.re-card:has(#e-items-empty[style*="block"]) .ustrip,.re-card:has(#e-items-empty[style*="block"]) .tots{display:none;}
+#be-pane-prev .prev-wrap{display:block!important;margin:0;}
+#be-pane-prev .prev-btn{display:none!important;}
+#be-pane-prev .pdoc{max-height:none!important;border-radius:14px;overflow:hidden;box-shadow:0 8px 30px var(--sh);border:1px solid var(--bd);}
+.be-rc{display:flex;flex-direction:column;}
+.be-rr{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--bd);font-size:13px;}
+.be-rr b{font-size:13px;white-space:nowrap;}
+.be-rn{position:relative;flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;padding-bottom:6px;font-weight:500;}
+.be-rn .ic{font-size:14px;color:var(--i3);}
+.be-rn small{width:100%;font-size:11px;color:var(--i4);}
+.be-rn i{position:absolute;left:0;bottom:0;height:3px;border-radius:2px;background:var(--beige2);}
+.be-rr.tt{border-bottom:0;font-weight:700;padding-top:10px;}
+.be-rr.tt b{font-size:15px;}
+.be-recs{display:flex;flex-wrap:wrap;gap:5px;}
+.be-recs span{display:inline-flex;align-items:center;gap:5px;padding:4px 10px 4px 8px;border-radius:999px;background:var(--beige);font-size:11.5px;font-weight:600;}
+.be-recs .ic{font-size:13px;}
+.be-acts{display:flex;flex-direction:column;gap:6px;}
+.be-acts .re-add{width:100%;}
+/* bon et fiche : couleur du thème (version claire) */
+.bx-band,.bx-tb tr.ct td{background:var(--bx-beige,#F2DCBA)!important;}
+.bx-tb tr.al td{background:var(--bx-alt,#FAF4EA)!important;}
+.bx-tb td.p,.bx-tb td.k{border-left-color:var(--bx-sep,#E4DCCF)!important;}
+@media (max-width:820px){
+  #p-edit .re-top .re-save{width:auto;padding:0 12px;font-size:12.5px;}
+  #p-edit .re-top .re-save .ic{font-size:15px;}
+  #be-pane-prev .pdoc{overflow-x:auto;}
+}
+
+/* ══ FINITIONS : animations, squelettes, mise à jour ════════ */
+@keyframes ovIn{from{opacity:0}to{opacity:1}}
+@keyframes pgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes sheetIn{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+.ov.show{animation:ovIn .18s ease;}
+#scroll>.pg{animation:pgIn .22s ease;}
+html.re-full #scroll>.pg{animation:ovIn .18s ease;}
+.rt,.pf,.adm-u,.bc{transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease;}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;}}
+@media (max-width:820px){ .ov.show .modal{animation:sheetIn .24s cubic-bezier(.2,.8,.2,1);} }
+@keyframes skPulse{0%{background-position:100% 0}100%{background-position:-100% 0}}
+.sk{background:linear-gradient(90deg,var(--p2) 25%,var(--p3) 50%,var(--p2) 75%);background-size:200% 100%;animation:skPulse 1.3s ease-in-out infinite;border-radius:8px;}
+.sk-h{height:16px;width:140px;margin:6px 0 14px;}
+.sk-tile{background:var(--card);border:1px solid var(--bd);border-radius:14px;overflow:hidden;padding-bottom:12px;}
+.sk-ph{aspect-ratio:4/3;border-radius:0;margin-bottom:12px;}
+.sk-l1{height:12px;width:70%;margin:0 12px 8px;}
+.sk-l2{height:10px;width:45%;margin:0 12px;}
+.sk-rows{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
+.sk-row{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;}
+.sk-row .sk-l1,.sk-row .sk-l2{margin-left:0;}
+.sk-av{width:38px;height:38px;border-radius:999px;flex:none;}
+.sk-card{height:120px;border-radius:14px;margin-bottom:12px;}
+.cn-more{grid-column:1/-1;display:flex;justify-content:center;padding:18px 0;}
+.upd-bar{position:fixed;left:50%;bottom:22px;transform:translate(-50%,30px);opacity:0;z-index:1500;display:flex;align-items:center;gap:12px;padding:10px 10px 10px 14px;border-radius:14px;background:var(--card);border:1px solid var(--bd2);box-shadow:0 14px 40px rgba(var(--ink-rgb),.22);transition:all .3s ease;max-width:calc(100vw - 24px);}
+.upd-bar.show{transform:translate(-50%,0);opacity:1;}
+.upd-ic{width:36px;height:36px;border-radius:10px;background:var(--beige);display:flex;align-items:center;justify-content:center;font-size:18px;flex:none;}
+.upd-t{display:flex;flex-direction:column;min-width:0;}
+.upd-t b{font-size:13.5px;}
+.upd-t small{font-size:11.5px;color:var(--i3);}
+.upd-x{width:30px;height:30px;border:0;background:transparent;border-radius:8px;cursor:pointer;color:var(--i3);display:flex;align-items:center;justify-content:center;}
+@media (max-width:820px){ .upd-bar{bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 10px);width:calc(100vw - 24px);} .upd-t small{display:none;} }
+
+/* ══ PHOTOS : grandes vignettes, couverture, feuilleter ══════ */
+.cn-plus{font-style:normal;font-size:11px;font-weight:800;margin-left:-3px;margin-top:-10px;}
+.cn-flipb{width:auto!important;padding:0 14px 0 12px;gap:7px;font-size:13px;font-weight:600;}
+.cn-flipb .ic{font-size:16px!important;}
+.rgrid.tiles.big{grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px;}
+.rgrid.tiles.big .rt-ph{aspect-ratio:4/3.2;}
+.rgrid.tiles.big .rt-em{font-size:64px;}
+.rgrid.tiles.big .rt-n{font-size:15.5px;}
+.rgrid.tiles.big .rt-b{padding:12px 14px 14px;}
+.re-thumb.cover{width:min(100%,560px);height:220px;border-radius:18px;border:0;box-shadow:0 8px 26px var(--sh);}
+html.flip-on{overflow:hidden;}
+.flip{position:fixed;inset:0;z-index:1200;display:none;background:rgba(20,17,17,.78);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:64px 70px 46px;}
+.flip.show{display:flex;animation:ovIn .2s ease;}
+.flip-top{position:absolute;top:0;left:0;right:0;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;color:#fff;}
+.flip-n{font-size:13px;font-weight:600;opacity:.85;}
+.flip-acts{display:flex;gap:8px;}
+.flip-b{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:999px;border:0;background:rgba(255,255,255,.14);color:#fff;font-size:13px;font-weight:600;cursor:pointer;}
+.flip-b:hover{background:rgba(255,255,255,.24);}
+.flip-b.x{width:36px;padding:0;justify-content:center;}
+.flip-b .ic{font-size:16px;}
+.flip-nav{position:absolute;top:50%;margin-top:-26px;width:52px;height:52px;border-radius:999px;border:0;background:rgba(255,255,255,.14);color:#fff;font-size:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;}
+.flip-nav:hover{background:rgba(255,255,255,.26);}
+.flip-nav.prev{left:12px;}.flip-nav.next{right:12px;}
+.flip-stage{position:relative;width:min(100%,980px);height:100%;max-height:640px;perspective:1800px;}
+.flip-page{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1.1fr;background:var(--card);border-radius:20px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);transform-origin:center;backface-visibility:hidden;}
+.flip-page::after{content:"";position:absolute;top:0;bottom:0;left:47.6%;width:28px;background:linear-gradient(90deg,transparent,rgba(var(--ink-rgb),.06),transparent);pointer-events:none;}
+.flip-l{padding:22px;display:flex;flex-direction:column;gap:10px;overflow:auto;background:var(--alt);}
+.flip-ph{border-radius:14px;overflow:hidden;aspect-ratio:4/3;background:hsla(var(--ch),50%,55%,.16);display:flex;align-items:center;justify-content:center;flex:none;}
+.flip-ph img{width:100%;height:100%;object-fit:cover;}
+.flip-em{font-size:84px;line-height:1;color:var(--i3);}
+.flip-em .ic{width:80px;height:80px;stroke-width:1.2;}
+.flip-cat{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--i3);text-transform:uppercase;letter-spacing:.6px;margin-top:6px;}
+.flip-t{font-size:28px;line-height:1.1;font-weight:700;letter-spacing:-.4px;}
+.flip-chips,.flip-tags{display:flex;flex-wrap:wrap;gap:6px;}
+.flip-chips span{padding:5px 11px;border-radius:999px;background:var(--card);border:1px solid var(--bd);font-size:12px;font-weight:600;}
+.flip-tags span{display:inline-flex;align-items:center;gap:4px;padding:3px 10px 3px 8px;border-radius:999px;background:var(--beige);font-size:11.5px;font-weight:600;}
+.flip-tags .ic{font-size:12px;}
+.flip-r{padding:24px 26px;overflow:auto;}
+.flip-h{font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--i3);margin:0 0 8px;}
+.flip-h:not(:first-child){margin-top:18px;}
+.flip-items{list-style:none;margin:0;padding:0;}
+.flip-items li{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dashed var(--bd2);font-size:14px;}
+.flip-items li span{display:flex;align-items:center;gap:7px;min-width:0;}
+.flip-items li b{white-space:nowrap;font-weight:600;}
+.flip-items li.sub span{font-weight:600;}
+.flip-notes{white-space:pre-wrap;font-size:14px;line-height:1.6;color:var(--i2);}
+.flip-dots{position:absolute;bottom:16px;left:0;right:0;display:flex;justify-content:center;gap:6px;}
+.flip-dots i{width:7px;height:7px;border-radius:999px;background:rgba(255,255,255,.35);cursor:pointer;}
+.flip-dots i.on{background:#fff;width:18px;}
+@keyframes fInR{from{transform:translateX(60px) rotateY(-14deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes fInL{from{transform:translateX(-60px) rotateY(14deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes fOutL{to{transform:translateX(-80px) rotateY(18deg);opacity:0}}
+@keyframes fOutR{to{transform:translateX(80px) rotateY(-18deg);opacity:0}}
+.flip-page.in-r{animation:fInR .36s cubic-bezier(.2,.8,.2,1);}
+.flip-page.in-l{animation:fInL .36s cubic-bezier(.2,.8,.2,1);}
+.flip-page.out-l{animation:fOutL .36s ease forwards;}
+.flip-page.out-r{animation:fOutR .36s ease forwards;}
+@media (max-width:820px){
+  .cn-flipb span{display:none;}
+  .cn-flipb{width:36px!important;padding:0;justify-content:center;}
+  .rgrid.tiles.big{grid-template-columns:1fr;}
+  .re-thumb.cover{height:180px;}
+  .flip{padding:56px 10px 40px;}
+  .flip-nav{display:none;}
+  .flip-b span{display:none;}
+  .flip-b{width:36px;padding:0;justify-content:center;}
+  .flip-stage{max-height:none;}
+  .flip-page{grid-template-columns:1fr;overflow-y:auto;display:block;}
+  .flip-page::after{display:none;}
+  .flip-l{padding:14px;}
+  .flip-r{padding:16px 16px 24px;overflow:visible;}
+  .flip-t{font-size:22px;}
+}
+
 /* mode mobile forcé */
 html.lay-mob .esplit{grid-template-columns:minmax(0,1fr) minmax(0,440px);}
 html.lay-mob .re-side{width:256px;}html.lay-mob .re-fold.l{left:243px;}html.lay-mob .re-fold.r{right:243px;}html.lay-mob .re-mid{padding:22px 24px 110px;}
@@ -1195,10 +1342,14 @@ html.lay-mob .sb-tog{display:none}
 html.lay-mob .adm-u .adm-acts{width:100%;justify-content:flex-end}
 html.lay-mob.gated #gate{flex-direction:column}html.lay-mob .gate-art{flex:none;max-width:none;padding:26px 20px 22px;justify-content:center}html.lay-mob .gate-crest{width:110px;margin-bottom:10px}html.lay-mob .gate-name{font-size:22px}html.lay-mob .gate-card{display:none}html.lay-mob .gate-side{align-items:flex-start;padding:26px 20px calc(30px + env(safe-area-inset-bottom,0px))}html.lay-mob .gate-logo{display:none}html.lay-mob .gate-btn{width:100%;min-width:0}
 html.lay-mob .cn-bar{gap:8px;}html.lay-mob .cn-srch{height:40px;padding:0 12px 0 16px;margin:0;}html.lay-mob .cn-new{height:40px;padding:0 14px 0 11px;font-size:14px;}html.lay-mob .cn-az{width:auto;justify-content:flex-start;margin:0 -14px 10px;border-radius:0;padding:4px 14px;background:transparent;}html.lay-mob .cn-l{min-width:26px;height:26px;font-size:12.5px;}html.lay-mob .cn-row{flex-wrap:wrap;gap:8px 10px;}html.lay-mob .cn-cnt{flex:1;order:1;}html.lay-mob .cn-view{order:2;width:36px;height:36px;}html.lay-mob .cn-filters{order:3;flex:0 0 calc(100% + 28px);margin:0 -14px;padding:0 14px 2px;flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;scrollbar-width:none;}html.lay-mob .cn-filters::-webkit-scrollbar{display:none;}html.lay-mob .cn-f{position:static;}html.lay-mob .cn-pop{position:fixed;top:auto;left:10px!important;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px) + var(--nav-h));max-width:none;min-width:0;max-height:58vh;border-radius:18px;z-index:900;}html.lay-mob .cn-active{justify-content:flex-start;}html.lay-mob .cn-imp{padding:11px 10px 11px 12px;gap:10px;}html.lay-mob .cn-imp-b{padding:0 9px 0 11px;}html.lay-mob .cn-empty{padding:56px 10px;}
-html.lay-mob.re-full #scroll{overflow-y:auto;}html.lay-mob.re-full #p-rec-edit{height:auto;min-height:100%;padding-bottom:calc(84px + env(safe-area-inset-bottom,0px));}html.lay-mob .re-top{position:sticky;top:0;z-index:20;height:auto;min-height:54px;padding:env(safe-area-inset-top,0px) 10px 0;gap:8px;}html.lay-mob .re-top .dsk{display:none;}html.lay-mob .re-tabs button{height:40px;padding:0 14px;font-size:13.5px;}html.lay-mob .re-pair .re-ib{width:32px;}html.lay-mob .re-top .re-save{width:36px;padding:0;font-size:0;gap:0;justify-content:center;}html.lay-mob .re-top .re-save .ic{font-size:18px;}html.lay-mob .re-body{flex-direction:column;height:auto;}html.lay-mob .re-body.l-off .re-l,html.lay-mob .re-body.r-off .re-r{display:block;}html.lay-mob .re-fold{display:none!important;}html.lay-mob .re-mid{order:1;overflow:visible;padding:18px 14px 6px;}html.lay-mob .re-l{order:2;}html.lay-mob .re-r{order:3;}html.lay-mob .re-side,html.lay-mob .re-body:not(.r-off) .re-r{width:auto;overflow:visible;padding:0 14px;border:0;background:transparent;}html.lay-mob .re-sec{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:0 14px 12px;margin-bottom:10px;}html.lay-mob .re-sec:not([open]){padding-bottom:0;}html.lay-mob .re-head{margin-bottom:16px;}html.lay-mob .re-title{font-size:19px;}html.lay-mob .re-card{padding:14px;border-radius:14px;}html.lay-mob .re-card-t{flex-wrap:wrap;}html.lay-mob .re-empty{flex-direction:column;padding:16px 0 8px;gap:10px;}html.lay-mob .re-big{justify-content:center;height:48px;font-size:14px;}html.lay-mob .re-dock{position:fixed;bottom:calc(12px + env(safe-area-inset-bottom,0px));}html.lay-mob .re-kpis{grid-template-columns:1fr 1fr 1fr;gap:6px;}html.lay-mob .re-kpi{padding:10px;}html.lay-mob .re-kpi b{font-size:15px;}html.lay-mob .re-kpi small{display:none;}html.lay-mob .re-pr{grid-template-columns:minmax(0,1fr) auto auto;}html.lay-mob .re-pr .re-pu,html.lay-mob .re-pr.hd>span:nth-child(3),html.lay-mob .re-pr.tt>span:nth-child(3){display:none;}html.lay-mob .re-sell{grid-template-columns:1fr;gap:10px;}
+html.lay-mob.re-full #scroll{overflow-y:auto;}html.lay-mob.re-full #p-rec-edit,html.lay-mob.re-full #p-edit{height:auto;min-height:100%;padding-bottom:calc(84px + env(safe-area-inset-bottom,0px));}html.lay-mob .re-top{position:sticky;top:0;z-index:20;height:auto;min-height:54px;padding:env(safe-area-inset-top,0px) 10px 0;gap:8px;}html.lay-mob .re-top .dsk{display:none;}html.lay-mob .re-tabs button{height:40px;padding:0 14px;font-size:13.5px;}html.lay-mob .re-pair .re-ib{width:32px;}html.lay-mob .re-top .re-save{width:36px;padding:0;font-size:0;gap:0;justify-content:center;}html.lay-mob .re-top .re-save .ic{font-size:18px;}html.lay-mob .re-body{flex-direction:column;height:auto;}html.lay-mob .re-body.l-off .re-l,html.lay-mob .re-body.r-off .re-r{display:block;}html.lay-mob .re-fold{display:none!important;}html.lay-mob .re-mid{order:1;overflow:visible;padding:18px 14px 6px;}html.lay-mob .re-l{order:2;}html.lay-mob .re-r{order:3;}html.lay-mob .re-side,html.lay-mob .re-body:not(.r-off) .re-r{width:auto;overflow:visible;padding:0 14px;border:0;background:transparent;}html.lay-mob .re-sec{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:0 14px 12px;margin-bottom:10px;}html.lay-mob .re-sec:not([open]){padding-bottom:0;}html.lay-mob .re-head{margin-bottom:16px;}html.lay-mob .re-title{font-size:19px;}html.lay-mob .re-card{padding:14px;border-radius:14px;}html.lay-mob .re-card-t{flex-wrap:wrap;}html.lay-mob .re-empty{flex-direction:column;padding:16px 0 8px;gap:10px;}html.lay-mob .re-big{justify-content:center;height:48px;font-size:14px;}html.lay-mob .re-dock{position:fixed;bottom:calc(12px + env(safe-area-inset-bottom,0px));}html.lay-mob .re-kpis{grid-template-columns:1fr 1fr 1fr;gap:6px;}html.lay-mob .re-kpi{padding:10px;}html.lay-mob .re-kpi b{font-size:15px;}html.lay-mob .re-kpi small{display:none;}html.lay-mob .re-pr{grid-template-columns:minmax(0,1fr) auto auto;}html.lay-mob .re-pr .re-pu,html.lay-mob .re-pr.hd>span:nth-child(3),html.lay-mob .re-pr.tt>span:nth-child(3){display:none;}html.lay-mob .re-sell{grid-template-columns:1fr;gap:10px;}
 html.lay-mob .adm-sec>summary{padding:12px 14px}html.lay-mob .adm-sb{padding:12px 12px 14px}
+html.lay-mob #p-edit .re-top .re-save{width:auto;padding:0 12px;font-size:12.5px;}html.lay-mob #p-edit .re-top .re-save .ic{font-size:15px;}html.lay-mob #be-pane-prev .pdoc{overflow-x:auto;}
+html.lay-mob .ov.show .modal{animation:sheetIn .24s cubic-bezier(.2,.8,.2,1);}
+html.lay-mob .upd-bar{bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 10px);width:calc(100vw - 24px);}html.lay-mob .upd-t small{display:none;}
+html.lay-mob .cn-flipb span{display:none;}html.lay-mob .cn-flipb{width:36px!important;padding:0;justify-content:center;}html.lay-mob .rgrid.tiles.big{grid-template-columns:1fr;}html.lay-mob .re-thumb.cover{height:180px;}html.lay-mob .flip{padding:56px 10px 40px;}html.lay-mob .flip-nav{display:none;}html.lay-mob .flip-b span{display:none;}html.lay-mob .flip-b{width:36px;padding:0;justify-content:center;}html.lay-mob .flip-stage{max-height:none;}html.lay-mob .flip-page{grid-template-columns:1fr;overflow-y:auto;display:block;}html.lay-mob .flip-page::after{display:none;}html.lay-mob .flip-l{padding:14px;}html.lay-mob .flip-r{padding:16px 16px 24px;overflow:visible;}html.lay-mob .flip-t{font-size:22px;}
 </style>
-<script>window.ECO_SERVER={url:"",key:""};</script>
+<script>window.ECO_SERVER={url:"",key:""};window.ECO_BUILD="1eba256a76";</script>
 <script>/* Apparence : mode clair / sombre et couleur de l'application.
    Lu de façon synchrone au chargement pour éviter un flash de couleur. */
 (function(){
@@ -1343,51 +1494,95 @@ html.lay-mob .adm-sec>summary{padding:12px 14px}html.lay-mob .adm-sb{padding:12p
 
     <!-- ÉDITEUR DE BON -->
     <div id="p-edit" class="pg" style="display:none;">
-      <div class="esplit">
-        <div class="eleft">
-          <div class="cw">
-            <div class="cw-t">Informations <div id="e-status"></div></div>
-            <div class="fg3">
-              <div class="field"><div class="fl">Nom du bon</div><input class="fi" type="text" id="e-name" placeholder="Commande semaine…" oninput="livePreview();syncTitle()"></div>
-              <div class="field"><div class="fl">Date</div><input class="fi" type="date" id="e-date" onchange="livePreview()"></div>
-              <div class="field"><div class="fl">Image</div><label class="filebtn"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="m21 16-5-5-9 9"/></svg><span id="e-img-lbl">Choisir…</span><input type="file" id="e-img-file" accept="image/*" onchange="handleImg(this)"></label></div>
-            </div>
-            <div class="field"><div class="fl">Notes</div><textarea class="fi" id="e-notes" placeholder="Remarques…" style="min-height:50px;" oninput="livePreview()"></textarea></div>
-            <div class="field" style="margin-bottom:0"><div class="fl">Regrouper le bon par</div>
-              <div class="seg" id="e-group"><button class="on" data-g="cat" onclick="setBonGroup('cat')">Catégorie</button><button data-g="sup" onclick="setBonGroup('sup')">Fournisseur</button></div>
-            </div>
-          </div>
-          <div class="cw">
-            <div class="cw-t">Ingrédients <div class="cw-acts"><button class="btn btn-ghost btn-sm" onclick="openMod('m-ing')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Ingrédient</button><button class="btn btn-beige btn-sm" onclick="openMod('m-rec')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19"/><path d="M9 7.5h6"/></svg> Recette</button></div></div>
-            <div class="ustrip"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.9v.1"/></svg> Quantités en kg — liquides inclus</div>
-            <div id="e-items"></div>
-            <div id="e-items-empty" class="empty" style="padding:14px;display:none;"><div class="empty-s">Ajoutez des ingrédients ou une recette</div></div>
-            <div class="tots"><div class="ti"><span class="tv" id="t-l">0</span><div class="tl">Lignes</div></div><div class="ti"><span class="tv" id="t-w">0</span><div class="tl">Poids</div></div><div class="ti big"><span class="tv" id="t-c">0,00 €</span><div class="tl">Total TTC</div></div></div>
-          </div>
+      <div class="re-top">
+        <button class="re-x" onclick="goBack()" title="Fermer" aria-label="Fermer"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+        <div class="re-tabs" role="tablist"><button id="be-t-items" class="on" onclick="beTab('items')">Articles</button><button id="be-t-prev" onclick="beTab('prev')">Aperçu</button></div>
+        <div class="re-top-r">
+          <button class="re-ib dsk" onclick="printBon()" title="PDF" aria-label="PDF"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/><path d="M8.5 16.5v-4h1.5a1.2 1.2 0 0 1 0 2.4H8.5M13 12.5v4h1a2 2 0 0 0 0-4z"/></svg></button>
+          <button class="re-ib dsk" onclick="exportCSV()" title="Export CSV" aria-label="Export CSV"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M4 15h16M10 4v16"/></svg></button>
+          <button class="re-pillb dsk" onclick="saveBon()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v5h7V3"/><path d="M8 21v-7h8v7"/></svg> Sauvegarder</button>
+          <button class="btn btn-gold btn-full re-save" onclick="validateBon()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg> Valider</button>
         </div>
-        <div class="eright">
-          <button class="prev-btn" onclick="togglePrev()"><span class="prev-lbl"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg> Aperçu du bon</span><span class="prev-arr" id="prev-arr"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button>
-          <div class="prev-wrap" id="prev-wrap">
-            <div class="pd-lbl">Aperçu en direct</div>
-            <div class="pdoc">
-              <div class="pd-head" id="pd-top"><div class="pd-thumb" id="pd-thumb"></div><div class="pd-hinfo"><div class="pd-hname" id="pd-hname">—</div><div class="pd-hsub" id="pd-hsub"></div></div><div class="pd-n" id="pd-num">—</div></div>
-              <div class="pd-b" id="pd-body"><div class="pd-empty">Remplissez le formulaire</div></div>
+      </div>
+      <div class="re-body" id="be-body">
+        <aside class="re-side re-l" id="be-l">
+          <details class="re-sec" open><summary>Informations <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="re-box">
+              <div class="re-kv"><span>Statut</span><b id="e-status"></b></div>
+              <div class="re-lb">Date</div>
+              <input class="fi" type="date" id="e-date" onchange="livePreview();beMeta()">
+              <div class="re-lb">Image du bon</div>
+              <label class="filebtn"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="m21 16-5-5-9 9"/></svg><span id="e-img-lbl">Choisir…</span><input type="file" id="e-img-file" accept="image/*" onchange="handleImg(this)"></label>
+            </div>
+          </details>
+          <details class="re-sec" open><summary>Regrouper le bon par <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="seg" id="e-group"><button class="on" data-g="cat" onclick="setBonGroup('cat');beRecap()">Catégorie</button><button data-g="sup" onclick="setBonGroup('sup');beRecap()">Fournisseur</button></div>
+          </details>
+          <details class="re-sec" open><summary>Ajouter <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="re-adds">
+              <button class="re-add pri" onclick="openMod('m-ing')"><span>Ingrédient</span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg></button>
+              <button class="re-add" onclick="openMod('m-rec')"><span>Recette</span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19"/><path d="M9 7.5h6"/></svg></button>
+            </div>
+          </details>
+          <details class="re-sec" open><summary>Notes <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <textarea class="fi" id="e-notes" placeholder="Remarques…" style="min-height:80px;" oninput="livePreview()"></textarea>
+          </details>
+        </aside>
+        <button class="re-fold l" onclick="reFold('l','be-body')" title="Masquer le panneau" aria-label="Masquer le panneau de gauche"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+        <main class="re-mid" id="be-mid">
+          <div class="re-head">
+            <div class="re-thumb be-ic"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5.5" y="4" width="13" height="17" rx="2"/><path d="M9 4.5V3h6v1.5"/><path d="M9 10h6M9 14h6M9 18h3.5"/></svg></div>
+            <input class="re-title" type="text" id="e-name" placeholder="NOM DU BON" autocomplete="off" oninput="livePreview();syncTitle();beMeta()">
+            <div class="re-meta" id="be-meta"></div>
+          </div>
+          <div id="be-pane-items">
+            <section class="re-card">
+              <div class="re-card-t">Articles <span class="re-card-a"><button class="btn btn-ghost btn-sm" onclick="openMod('m-ing')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Ingrédient</button><button class="btn btn-beige btn-sm" onclick="openMod('m-rec')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19"/><path d="M9 7.5h6"/></svg> Recette</button></span></div>
+              <div class="ustrip"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.9v.1"/></svg> Quantités en kg — liquides inclus</div>
+              <div id="e-items"></div>
+              <div id="e-items-empty" class="re-empty" style="display:none;">
+                <button class="re-big pri" onclick="openMod('m-ing')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg> Ajouter un ingrédient</button>
+                <button class="re-big" onclick="openMod('m-rec')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19"/><path d="M9 7.5h6"/></svg> Ajouter une recette</button>
+              </div>
+              <div class="tots"><div class="ti"><span class="tv" id="t-l">0</span><div class="tl">Lignes</div></div><div class="ti"><span class="tv" id="t-w">0</span><div class="tl">Poids</div></div><div class="ti big"><span class="tv" id="t-c">0,00 €</span><div class="tl">Total TTC</div></div></div>
+            </section>
+          </div>
+          <div id="be-pane-prev" style="display:none">
+            <button class="prev-btn" style="display:none" onclick="togglePrev()"><span class="prev-lbl">Aperçu</span><span class="prev-arr" id="prev-arr"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button>
+            <div class="prev-wrap show" id="prev-wrap">
+              <div class="pdoc">
+                <div class="pd-head" id="pd-top"><div class="pd-thumb" id="pd-thumb"></div><div class="pd-hinfo"><div class="pd-hname" id="pd-hname">—</div><div class="pd-hsub" id="pd-hsub"></div></div><div class="pd-n" id="pd-num">—</div></div>
+                <div class="pd-b" id="pd-body"><div class="pd-empty">Remplissez le formulaire</div></div>
+              </div>
             </div>
           </div>
-          <div class="eacts">
-            <button class="btn btn-gold btn-full" onclick="validateBon()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg> Valider le bon</button>
-            <button class="btn btn-ghost btn-full" onclick="saveBon()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v5h7V3"/><path d="M8 21v-7h8v7"/></svg> Sauvegarder</button>
-            <div class="g2">
-              <button class="btn btn-ghost" onclick="printBon()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/><path d="M8.5 16.5v-4h1.5a1.2 1.2 0 0 1 0 2.4H8.5M13 12.5v4h1a2 2 0 0 0 0-4z"/></svg> PDF</button>
-              <button class="btn btn-ghost" onclick="exportCSV()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M4 15h16M10 4v16"/></svg> CSV</button>
+        </main>
+        <button class="re-fold r" onclick="reFold('r','be-body')" title="Masquer le panneau" aria-label="Masquer le panneau de droite"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+        <aside class="re-side re-r" id="be-r">
+          <details class="re-sec" open><summary>Récapitulatif <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div id="be-recap"></div>
+          </details>
+          <details class="re-sec" open><summary>Exporter <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="be-acts">
+              <button class="re-add" onclick="printBon()"><span>PDF du bon</span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/><path d="M8.5 16.5v-4h1.5a1.2 1.2 0 0 1 0 2.4H8.5M13 12.5v4h1a2 2 0 0 0 0-4z"/></svg></button>
+              <button class="re-add" onclick="printBonBySupplier()"><span>PDF par fournisseur</span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 6h11.5v10H2.5z"/><path d="M14 9h4l3.5 3.5V16H14"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/></svg></button>
+              <button class="re-add" onclick="exportCSV()"><span>Fichier CSV</span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M4 15h16M10 4v16"/></svg></button>
+              <button class="re-add" onclick="dupBon()"><span>Dupliquer le bon</span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg></button>
             </div>
-            <div class="g2">
-              <button class="btn btn-ghost" onclick="printBonBySupplier()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 6h11.5v10H2.5z"/><path d="M14 9h4l3.5 3.5V16H14"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/></svg> Par fournisseur</button>
-              <button class="btn btn-ghost" onclick="dupBon()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg> Dupliquer</button>
-            </div>
-          </div>
-          <div class="cw" style="margin-top:12px"><div class="cw-t sm">Historique</div><div class="mlog" id="e-mlog"></div></div>
-        </div>
+          </details>
+          <details class="re-sec"><summary>Historique <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="mlog" id="e-mlog"></div>
+          </details>
+        </aside>
+      </div>
+      <div class="re-dock">
+        <button onclick="openMod('m-ing')" title="Ajouter un ingrédient" aria-label="Ajouter un ingrédient"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg></button>
+        <button onclick="openMod('m-rec')" title="Ajouter une recette" aria-label="Ajouter une recette"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19"/><path d="M9 7.5h6"/></svg></button>
+        <span class="re-dock-s"></span>
+        <button onclick="beTab(BE_TAB==='prev'?'items':'prev')" title="Aperçu du bon" aria-label="Aperçu du bon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        <button onclick="printBon()" title="PDF" aria-label="PDF"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/><path d="M8.5 16.5v-4h1.5a1.2 1.2 0 0 1 0 2.4H8.5M13 12.5v4h1a2 2 0 0 0 0-4z"/></svg></button>
+        <span class="re-dock-s"></span>
+        <button onclick="saveBon()" title="Sauvegarder" aria-label="Sauvegarder"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v5h7V3"/><path d="M8 21v-7h8v7"/></svg></button>
       </div>
     </div>
 
@@ -1396,14 +1591,15 @@ html.lay-mob .adm-sec>summary{padding:12px 14px}html.lay-mob .adm-sb{padding:12p
       <div class="seg rec-tabs" id="rec-tabs" style="display:none"><button id="rt-mine" class="on" onclick="setRecTab('mine')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19"/><path d="M9 7.5h6"/></svg> Mes recettes</button><button id="rt-shared" onclick="setRecTab('shared')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.7a3.5 3.5 0 0 1 0 6.6M18 14.3c2.2.7 3.5 2.8 3.5 5.7"/></svg> Partagées<span id="rt-shared-n"></span></button></div>
       <div id="rec-mine">
       <div class="cn-bar">
-        <label class="cn-srch"><input id="rec-srch" type="search" placeholder="Rechercher …" oninput="renderRec()" autocomplete="off"><span class="cn-srch-x" onclick="cnClearSearch()" title="Effacer"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg></label>
+        <label class="cn-srch"><input id="rec-srch" type="search" placeholder="Rechercher …" oninput="cnSearchIn()" autocomplete="off"><span class="cn-srch-x" onclick="cnClearSearch()" title="Effacer"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg></label>
         <button class="cn-new" onclick="openNewRec()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span>Créer</span></button>
       </div>
       <div class="cn-az" id="rec-az"></div>
       <div class="cn-row">
         <div class="cn-cnt" id="rec-count"></div>
         <div class="cn-filters" id="rec-filters"></div>
-        <button class="cn-view" id="rv-tog" onclick="setRecView(recView()==='grid'?'list':'grid')" title="Changer d’affichage"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg></button>
+        <button class="cn-view cn-flipb" id="rv-flip" onclick="flipOpen()" title="Feuilleter le carnet"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19"/><path d="M9 7.5h6"/></svg><span>Feuilleter</span></button>
+        <button class="cn-view" id="rv-tog" onclick="cnCycleView()" title="Changer d’affichage"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg></button>
       </div>
       <div class="cn-active" id="rec-active"></div>
       <div class="chips" id="rec-chips" style="display:none"></div><div class="chips" id="rec-subchips" style="display:none"></div>
@@ -2052,7 +2248,7 @@ function doPDF(d){
     var F=bonPdfFonts(doc);
     var PW=595.28, PH=841.89, L=40, R=513, BAND=539, BOTTOM=792;
     var X={name:44, qtyR:218, use:226, useW:100, price:336, cost:424, sep1:331, sep2:419};
-    var INK=[35,31,32], GREY=[140,140,140], LGREY=[150,150,150], BEIGE=[242,220,186], ALT=[250,244,234], SEP=[228,220,207];
+    var INK=[35,31,32], GREY=[140,140,140], LGREY=[150,150,150], BEIGE=bonPal().beige, ALT=bonPal().alt, SEP=bonPal().sep;
     var page=1, y=0, hasQS=false;
     function rgb(fn,c){ doc[fn](c[0],c[1],c[2]); }
     // Bandeau beige à droite : emblèmes et « ÉCONOMAT » vertical, numéro de page
@@ -3566,7 +3762,7 @@ function ficheDoPDF(f){
     var F=bonPdfFonts(doc);
     var PW=595.28, PH=841.89, L=40, R=513, BAND=539, BOTTOM=792;
     var X={name:44, qtyR:318, price:330, costR:507, sep1:325, sep2:418};
-    var INK=[35,31,32], GREY=[140,140,140], LGREY=[150,150,150], BEIGE=[242,220,186], ALT=[250,244,234], SEP=[228,220,207];
+    var INK=[35,31,32], GREY=[140,140,140], LGREY=[150,150,150], BEIGE=bonPal().beige, ALT=bonPal().alt, SEP=bonPal().sep;
     var page=1, y=0;
     function rgb(fn,c){ doc[fn](c[0],c[1],c[2]); }
     function chrome(){
@@ -6139,8 +6335,8 @@ function renderRec(){
   var rc=document.getElementById('rec-count');
   if(rc) rc.innerHTML='Mes recettes <b>('+(list.length===recipes.length?list.length:list.length+' / '+recipes.length)+')</b>';
   renderRecFilters(); renderRecActive();
-  var tog=document.getElementById('rv-tog'), view=recView();
-  if(tog){ tog.innerHTML=ic(view==='grid'?'list':'grid'); tog.title=view==='grid'?'Afficher en liste':'Afficher en vignettes'; }
+  var tog=document.getElementById('rv-tog'), view=recView(), nxt=RV_NEXT[view];
+  if(tog){ tog.innerHTML=ic(nxt==='list'?'list':'grid')+(nxt==='big'?'<i class="cn-plus">+</i>':''); tog.title='Afficher : '+RV_LBL[nxt]; }
   var grid=document.getElementById('rec-grid'), emp=document.getElementById('rec-empty');
   if(!list.length){
     grid.innerHTML=''; emp.style.display='';
@@ -6153,9 +6349,40 @@ function renderRec(){
     return;
   }
   emp.style.display='none';
-  grid.classList.toggle('tiles',view==='grid');
-  grid.innerHTML=list.map(view==='grid'?recTile:recRow).join('');
+  grid.classList.toggle('tiles',view!=='list'); grid.classList.toggle('big',view==='big');
+  cnPaint(grid,list,view==='list'?recRow:recTile);
 }
+// vues : vignettes → grandes vignettes → liste
+var RV_NEXT={grid:'big',big:'list',list:'grid'}, RV_LBL={grid:'vignettes',big:'grandes vignettes',list:'liste détaillée'};
+function recView(){ var v=LS.getItem('v4_recview'); return v==='list'||v==='big'?v:'grid'; }
+function cnCycleView(){ setRecView(RV_NEXT[recView()]); }
+// grandes listes : affichage par paquets, la suite arrive en faisant défiler
+var CN_CHUNK=40, _cnObs=null;
+function cnPaint(grid,list,fn){
+  grid._rest=list.slice(CN_CHUNK); grid._fn=fn;
+  grid.innerHTML=list.slice(0,CN_CHUNK).map(fn).join('');
+  cnSentinel(grid);
+}
+function cnPaintMore(grid){
+  if(!grid||!grid._rest||!grid._rest.length) return false;
+  var s=grid.querySelector('.cn-more'); if(s) s.remove();
+  var part=grid._rest.splice(0,CN_CHUNK);
+  grid.insertAdjacentHTML('beforeend',part.map(grid._fn).join(''));
+  cnSentinel(grid); return true;
+}
+function cnSentinel(grid){
+  if(!grid._rest||!grid._rest.length) return;
+  grid.insertAdjacentHTML('beforeend','<div class="cn-more"><div class="inv-spin"></div></div>');
+  var s=grid.querySelector('.cn-more');
+  if('IntersectionObserver' in window){
+    if(_cnObs) _cnObs.disconnect();
+    _cnObs=new IntersectionObserver(function(es){ if(es.some(function(e){ return e.isIntersecting; })) cnPaintMore(grid); },{root:document.getElementById('scroll'),rootMargin:'600px'});
+    _cnObs.observe(s);
+  } else { while(cnPaintMore(grid)){} }
+}
+// recherche : on attend la fin de la frappe (120 ms) avant de recalculer
+var _cnSearchT=null;
+function cnSearchIn(){ clearTimeout(_cnSearchT); _cnSearchT=setTimeout(renderRec,120); }
 
 // ── filtres ──
 function rfPill(key,label,on,pop){
@@ -6279,7 +6506,7 @@ function recEdApply(rec){
   var _p=showRecImgPrev; showRecImgPrev=function(){ var r=_p.apply(this,arguments); reThumb(); return r; };
   var _g=goPage; goPage=function(p){
     var r=_g.apply(this,arguments);
-    document.documentElement.classList.toggle('re-full',CUR==='rec-edit');
+    document.documentElement.classList.toggle('re-full',CUR==='rec-edit'||CUR==='edit');
     if(CUR!=='recettes') RF_OPEN='';
     return r;
   };
@@ -6299,17 +6526,19 @@ function reTab(t){
   document.getElementById('re-pane-prix').style.display=t==='prix'?'':'none';
   if(t==='prix') renderRePrix();
 }
-function reFold(side){
-  var b=document.getElementById('re-body'); if(!b) return;
+function reFold(side,bodyId){
+  var b=document.getElementById(bodyId||'re-body'); if(!b) return;
   b.classList.toggle(side+'-off');
-  try{ LS.setItem('v4_refold',JSON.stringify({l:b.classList.contains('l-off'),r:b.classList.contains('r-off')})); }catch(e){}
+  var k=bodyId==='be-body'?'v4_befold':'v4_refold';
+  try{ LS.setItem(k,JSON.stringify({l:b.classList.contains('l-off'),r:b.classList.contains('r-off')})); }catch(e){}
 }
+(function(){ try{ var f=JSON.parse(LS.getItem('v4_befold')||'{}'), b=document.getElementById('be-body'); if(b){ b.classList.toggle('l-off',!!f.l); b.classList.toggle('r-off',!!f.r); } }catch(e){} })();
 
 // en-tête : vignette + ligne d'infos
 function reThumb(){
   var t=document.getElementById('re-thumb'); if(!t) return;
   var em=reVal('r-img').trim();
-  if(curRecImg){ t.innerHTML='<img src="'+esc(curRecImg)+'" alt="">'; t.className='re-thumb img'; }
+  if(curRecImg){ t.innerHTML='<img src="'+esc(curRecImg)+'" alt="">'; t.className='re-thumb img cover'; t.title='Changer la photo'; }
   else if(em){ t.textContent=em; t.className='re-thumb em'; }
   else { t.innerHTML=ic('camera'); t.className='re-thumb'; }
 }
@@ -6422,6 +6651,241 @@ function reSellHTML(tot,pcs,coef){
   return '<div class="re-kv"><span>Prix de la recette</span><b>'+fEur(s)+'</b></div>'+(pcs?'<div class="re-kv"><span>Prix par pièce</span><b>'+fEur(s/pcs)+'</b></div>':'')+'<div class="re-kv"><span>Marge brute</span><b>'+fEur(s-tot)+'</b></div>';
 }
 function reSetCoef(v){ var c=parseFloat(String(v).replace(',','.'))||0; REC_ED.coef=c>0?c:0; var b=document.getElementById('re-sell-r'); if(b) b.innerHTML=reSellHTML(reCostAll(),REC_ED.pcs||0,REC_ED.coef); }
+
+// ══ ÉDITEUR DE BON (plein écran, même logique que l'éditeur de recette) ══
+var BE_TAB='items';
+function beTab(t){
+  BE_TAB=t;
+  var a=document.getElementById('be-t-items'), b=document.getElementById('be-t-prev');
+  if(a) a.classList.toggle('on',t==='items'); if(b) b.classList.toggle('on',t==='prev');
+  document.getElementById('be-pane-items').style.display=t==='items'?'':'none';
+  document.getElementById('be-pane-prev').style.display=t==='prev'?'':'none';
+  if(t==='prev') livePreview();
+  var m=document.getElementById('be-mid'); if(m) m.scrollTop=0;
+}
+function beMeta(){
+  var m=document.getElementById('be-meta'); if(!m||!curBon) return;
+  var d=document.getElementById('e-date').value||curBon.date, n=curBon.items.length;
+  var c=curBon.items.reduce(function(s,i){ return s+(i.cost||0); },0);
+  m.innerHTML='<span>'+ic('calendar')+' '+esc(fDate(d))+'</span>'+
+    '<span>'+(curBon.status==='validated'?ic('check-circle')+' Validé':ic('edit')+' Brouillon')+'</span>'+
+    '<span>'+n+' article'+(n>1?'s':'')+' · <b>'+fEur(c)+'</b></span>'+
+    (curBon.shared?'<span>'+ic('users')+' Partagé</span>':'');
+}
+function beRecap(){
+  var box=document.getElementById('be-recap'); if(!box||!curBon) return;
+  if(!curBon.items.length){ box.innerHTML='<div class="re-hint">Ajoute des ingrédients ou une recette : le récapitulatif s’affiche ici.</div>'; return; }
+  var d=buildData(), mode=curBon.groupBy||'cat', gs;
+  try{ gs=groupBonItems(d.items,mode); }catch(e){ gs=groupItemsByCat(d.items); }
+  var tot=d.totalCost||0;
+  box.innerHTML='<div class="be-rc">'+gs.map(function(g){
+      var c=g.items.reduce(function(s,i){ return s+(i.cost||0); },0), pc=tot>0?c/tot:0;
+      return '<div class="be-rr"><span class="be-rn">'+(mode==='sup'?ic('truck'):catDot(g.cat))+esc(g.cat)+'<small>'+g.items.length+' article'+(g.items.length>1?'s':'')+'</small><i style="width:'+(pc*100).toFixed(1)+'%"></i></span><b>'+fEur(c)+'</b></div>';
+    }).join('')+
+    '<div class="be-rr tt"><span>Total TTC</span><b>'+fEur(tot)+'</b></div></div>'+
+    ((d.recipesUsed||[]).length?'<div class="re-lb" style="margin-top:12px">Recettes incluses</div><div class="be-recs">'+d.recipesUsed.map(function(r){ return '<span>'+ic('book')+esc(r)+'</span>'; }).join('')+'</div>':'');
+}
+(function(){
+  function after(name,fn){ var _f=window[name]; if(typeof _f!=='function') return; window[name]=function(){ var r=_f.apply(this,arguments); try{ fn(); }catch(e){ console.warn(e); } return r; }; }
+  after('renderEd',function(){ beTab('items'); beMeta(); beRecap(); });
+  after('renderItems',function(){ beMeta(); beRecap(); });
+  after('calcTots',function(){ beMeta(); });
+  after('validateBon',function(){ beMeta(); });
+  after('saveBon',function(){ beMeta(); });
+})();
+
+// ── Couleur du bon et des fiches (écran + PDF) : celle du thème, version claire ──
+function bonHslRgb(h,s,l){
+  s/=100; l/=100; var k=function(n){ return (n+h/30)%12; }, a=s*Math.min(l,1-l);
+  var f=function(n){ return l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1))); };
+  return [Math.round(f(0)*255),Math.round(f(8)*255),Math.round(f(4)*255)];
+}
+function bonPal(){
+  var t={}; try{ t=(window.loadTheme&&loadTheme())||{}; }catch(e){}
+  var key=(window.THEME_PAL&&THEME_PAL[t.accent])?t.accent:'ble';
+  if(key==='ble') return {beige:[242,220,186],alt:[250,244,234],sep:[228,220,207]};
+  var p=THEME_PAL[key];
+  return {beige:bonHslRgb(p.h,p.s,84),alt:bonHslRgb(p.h,p.s*.89,95),sep:bonHslRgb(p.h,p.s*.5,86)};
+}
+function bonPalApply(){
+  var p=bonPal(), r=document.documentElement.style, c=function(a){ return 'rgb('+a.join(',')+')'; };
+  r.setProperty('--bx-beige',c(p.beige)); r.setProperty('--bx-alt',c(p.alt)); r.setProperty('--bx-sep',c(p.sep));
+}
+(function(){
+  var _a=window.applyTheme;
+  if(typeof _a==='function') window.applyTheme=function(){ var r=_a.apply(this,arguments); bonPalApply(); try{ if(typeof CUR!=='undefined'&&CUR==='edit') livePreview(); }catch(e){} return r; };
+  bonPalApply();
+})();
+
+// ══ FLUIDITÉ ET FINITIONS ═════════════════════════════════════
+
+// ── 1. Nouvelle version disponible ──
+// Chaque version de l'appli porte un numéro (window.ECO_BUILD). De temps en
+// temps, on relit la page sur le site : si le numéro a changé, un bandeau
+// propose de recharger.
+var UPD={last:0,shown:false};
+function updCheck(force){
+  if(UPD.shown||!/^https?:$/.test(location.protocol)||!window.ECO_BUILD) return;
+  if(!force&&Date.now()-UPD.last<5*60000) return;
+  UPD.last=Date.now();
+  fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){ return r.ok?r.text():''; }).then(function(t){
+    var m=/window\.ECO_BUILD="([^"]+)"/.exec(t||'');
+    if(m&&m[1]!==window.ECO_BUILD) updBanner();
+  }).catch(function(){});
+}
+function updBanner(){
+  if(UPD.shown) return; UPD.shown=true;
+  var b=document.createElement('div'); b.id='upd-bar'; b.className='upd-bar'; b.setAttribute('role','status');
+  b.innerHTML='<span class="upd-ic">'+ic('sparkle')+'</span><span class="upd-t"><b>Nouvelle version disponible</b><small>Recharge pour en profiter (rien n’est perdu).</small></span>'+
+    '<button class="btn btn-gold btn-sm" onclick="updReload()">'+ic('refresh')+' Recharger</button><button class="upd-x" onclick="updHide()" aria-label="Plus tard" title="Plus tard">'+ic('x')+'</button>';
+  document.body.appendChild(b); requestAnimationFrame(function(){ b.classList.add('show'); });
+}
+function updHide(){ var b=document.getElementById('upd-bar'); if(b){ b.classList.remove('show'); setTimeout(function(){ b.remove(); },300); } }
+function updReload(){
+  try{ if(typeof persist==='function') persist(); }catch(e){}
+  var go=function(){ location.reload(); };
+  if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration){
+    navigator.serviceWorker.getRegistration().then(function(r){ return r&&r.update(); }).then(go,go);
+  } else go();
+}
+setTimeout(function(){ updCheck(true); },20000);
+setInterval(function(){ if(document.visibilityState!=='hidden') updCheck(); },15*60000);
+document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible') updCheck(); });
+
+// ── 2. Calculs gardés en mémoire pendant qu'on parcourt les recettes ──
+// (composition aplatie des recettes : poids, coût, allergènes, filtres).
+// Oubliés dès qu'une donnée change ou qu'on change de page.
+var MEMO={fl:{}};
+function memoClear(){ MEMO.fl={}; }
+(function(){
+  var _fl=flatten;
+  flatten=function(id,mult,vis){
+    if(mult!=null||vis!=null||typeof CUR==='undefined'||CUR!=='recettes'||String(id).indexOf('__')===0) return _fl.apply(this,arguments);
+    var c=MEMO.fl[id]; if(!c) c=MEMO.fl[id]=_fl(id);
+    return c.map(function(o){ return {ingId:o.ingId,qty:o.qty,from:o.from}; });
+  };
+  var _p=persist; persist=function(){ memoClear(); return _p.apply(this,arguments); };
+  if(typeof clAfterRemote==='function'){ var _r=clAfterRemote; clAfterRemote=function(){ memoClear(); return _r.apply(this,arguments); }; }
+})();
+
+// ── 3. Retour au bon endroit + transitions ──
+var SCROLLS={};
+(function(){
+  var _g=goPage;
+  goPage=function(p){
+    var from=typeof CUR!=='undefined'?CUR:'', sc=document.getElementById('scroll');
+    if(sc&&from) SCROLLS[from]=sc.scrollTop;
+    memoClear();
+    var r=_g.apply(this,arguments);
+    var back=(from==='rec-edit'&&p==='recettes')||(from==='edit'&&p==='bons')||(from==='partage'&&p==='partage');
+    if(sc&&back&&SCROLLS[p]){
+      var want=SCROLLS[p], n=0;
+      (function restore(){
+        sc.scrollTop=want;
+        if(sc.scrollTop<want-4&&n++<20&&cnPaintMore(document.getElementById('rec-grid'))) return requestAnimationFrame(restore);
+      })();
+    }
+    return r;
+  };
+})();
+
+// ── 4. Squelettes pendant les chargements ──
+function skelTiles(n){ var h=''; for(var i=0;i<n;i++) h+='<div class="sk-tile"><div class="sk sk-ph"></div><div class="sk sk-l1"></div><div class="sk sk-l2"></div></div>'; return '<div class="rgrid tiles sk-grid">'+h+'</div>'; }
+function skelRows(n){ var h=''; for(var i=0;i<n;i++) h+='<div class="sk-row"><div class="sk sk-av"></div><div style="flex:1"><div class="sk sk-l1"></div><div class="sk sk-l2"></div></div></div>'; return '<div class="sk-rows">'+h+'</div>'; }
+(function(){
+  var _pb=partBody;
+  partBody=function(){
+    var b=document.getElementById('part-body');
+    var first=typeof CLOUD!=='undefined'&&CLOUD.st&&!(CLOUD.st.since&&CLOUD.st.since.shared)&&!sharedList().length&&CLOUD.status!=='offline'&&CLOUD.status!=='error';
+    if(b&&PART.tab==='others'&&first&&clActive()){ b.innerHTML='<div class="sk sk-h"></div>'+skelTiles(6); return; }
+    return _pb.apply(this,arguments);
+  };
+  var _ra=renderAdmin;
+  renderAdmin=function(){
+    var r=_ra.apply(this,arguments), w=document.getElementById('adm-wrap');
+    if(w&&w.querySelector('.inv-spin')&&ADM.users==null) w.innerHTML='<div class="sk sk-card"></div><div class="sk sk-card"></div>'+skelRows(4);
+    return r;
+  };
+})();
+
+// ── 5. Feuilleter le carnet ──
+var FLIP={list:[],i:0,busy:false};
+function flipOpen(id){
+  var list=typeof recFiltered==='function'?recFiltered(true):recipes.slice();
+  if(!list.length){ toast('Aucune recette à feuilleter','info'); return; }
+  FLIP.list=list.map(function(r){ return r.id; });
+  FLIP.i=Math.max(0,id?FLIP.list.indexOf(id):0);
+  var o=document.getElementById('flip');
+  if(!o){
+    o=document.createElement('div'); o.id='flip'; o.className='flip'; o.setAttribute('role','dialog'); o.setAttribute('aria-label','Carnet de recettes');
+    o.innerHTML='<div class="flip-top"><span class="flip-n" id="flip-n"></span><div class="flip-acts">'+
+        '<button class="flip-b" onclick="flipFiche()" title="Fiche technique">'+ic('file')+'<span>Fiche</span></button>'+
+        '<button class="flip-b" onclick="flipEdit()" title="Modifier">'+ic('edit')+'<span>Modifier</span></button>'+
+        '<button class="flip-b x" onclick="flipClose()" title="Fermer (Échap)" aria-label="Fermer">'+ic('x')+'</button></div></div>'+
+      '<button class="flip-nav prev" onclick="flipGo(-1)" aria-label="Recette précédente">'+ic('chev-left')+'</button>'+
+      '<div class="flip-stage" id="flip-stage"></div>'+
+      '<button class="flip-nav next" onclick="flipGo(1)" aria-label="Recette suivante">'+ic('chev-right')+'</button>'+
+      '<div class="flip-dots" id="flip-dots"></div>';
+    document.body.appendChild(o);
+    var sx=0, sy=0;
+    o.addEventListener('touchstart',function(e){ var t=e.touches[0]; sx=t.clientX; sy=t.clientY; },{passive:true});
+    o.addEventListener('touchend',function(e){ var t=e.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy; if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.4) flipGo(dx<0?1:-1); },{passive:true});
+  }
+  flipRender(0); o.classList.add('show'); document.documentElement.classList.add('flip-on');
+}
+function flipClose(){ var o=document.getElementById('flip'); if(o) o.classList.remove('show'); document.documentElement.classList.remove('flip-on'); }
+function flipCur(){ return recipes.find(function(r){ return r.id===FLIP.list[FLIP.i]; }); }
+function flipEdit(){ var r=flipCur(); flipClose(); if(r) openEditRec(r.id); }
+function flipFiche(){ var r=flipCur(); if(r) ficheFromCard(r.id); }
+function flipGo(d){
+  var n=FLIP.list.length; if(n<2||FLIP.busy) return;
+  FLIP.i=(FLIP.i+d+n)%n; flipRender(d);
+}
+function flipQ(q){ var t=fNum(q,3); if(t.indexOf(',')>=0) t=t.replace(/0+$/,'').replace(/,$/,''); return t; }
+function flipPage(r){
+  var flat=flatten(r.id), w=flat.reduce(function(s,i){ return s+i.qty; },0);
+  var cost=flat.reduce(function(s,i){ var g=ingredients.find(function(x){ return x.id===i.ingId; }); return s+(g?g.price*i.qty:0); },0);
+  var a=allergensOfFlat(flat);
+  var ph=recHasPhoto(r)?'<img src="'+esc(r.image)+'" alt="">':'<span class="flip-em">'+(recEmoji(r)||ic('book'))+'</span>';
+  var items=(r.items||[]).map(function(it){
+    if(it.type==='ingredient'){ var g=ingredients.find(function(x){ return x.id===it.refId; }); return '<li><span>'+catDot(g&&g.cat||'')+esc(g?g.name:'?')+'</span><b>'+esc(flipQ(it.qty))+' '+esc(it.unit||'')+'</b></li>'; }
+    var s=recipes.find(function(x){ return x.id===it.refId; });
+    return '<li class="sub"><span>'+ic('sub')+' '+esc(s?s.name:'?')+'</span><b>× '+esc(fNum(it.qty,2))+'</b></li>';
+  }).join('');
+  var chips=[fKg(w),fEur(cost)+' TTC'];
+  if(r.pcs) chips.push(r.pcs+' pièce'+(r.pcs>1?'s':''));
+  if(r.time) chips.push(fDur(r.time));
+  return '<article class="flip-page">'+
+    '<div class="flip-l"><div class="flip-ph'+(recHasPhoto(r)?' img':'')+'" style="--ch:'+catHue(r.cat||'')+'">'+ph+'</div>'+
+      '<div class="flip-cat">'+catDot(r.cat||'')+esc(r.cat||'')+'</div><h2 class="flip-t">'+esc(r.name)+'</h2>'+
+      '<div class="flip-chips">'+chips.map(function(c){ return '<span>'+esc(c)+'</span>'; }).join('')+'</div>'+
+      ((r.tags||[]).length?'<div class="flip-tags">'+r.tags.map(function(t){ return '<span>'+ic('tag')+esc(t)+'</span>'; }).join('')+'</div>':'')+
+      (a.keys.length?'<div class="flip-alg">'+algChips(a.keys,'sm')+'</div>':'')+
+    '</div>'+
+    '<div class="flip-r"><div class="flip-h">Composition</div><ul class="flip-items">'+(items||'<li><span>—</span></li>')+'</ul>'+
+      (r.notes?'<div class="flip-h">Procédé</div><div class="flip-notes">'+esc(r.notes)+'</div>':'')+
+    '</div></article>';
+}
+function flipRender(d){
+  var st=document.getElementById('flip-stage'), r=flipCur(); if(!st||!r) return;
+  document.getElementById('flip-n').textContent=(FLIP.i+1)+' / '+FLIP.list.length;
+  var n=FLIP.list.length, dots=document.getElementById('flip-dots');
+  dots.innerHTML=n>1&&n<=30?FLIP.list.map(function(id,i){ return '<i class="'+(i===FLIP.i?'on':'')+'" onclick="flipGo('+(i-FLIP.i)+')"></i>'; }).join(''):'';
+  var old=st.firstChild;
+  if(!d||!old){ st.innerHTML=flipPage(r); return; }
+  FLIP.busy=true;
+  st.insertAdjacentHTML('beforeend',flipPage(r));
+  var nw=st.lastChild;
+  nw.classList.add(d>0?'in-r':'in-l'); old.classList.add(d>0?'out-l':'out-r');
+  setTimeout(function(){ if(old.parentNode) old.remove(); nw.classList.remove('in-r','in-l'); FLIP.busy=false; },380);
+}
+document.addEventListener('keydown',function(e){
+  var o=document.getElementById('flip'); if(!o||!o.classList.contains('show')||document.querySelector('.ov.show')) return;
+  if(e.key==='ArrowRight'){ e.preventDefault(); flipGo(1); }
+  else if(e.key==='ArrowLeft'){ e.preventDefault(); flipGo(-1); }
+  else if(e.key==='Escape'){ e.preventDefault(); flipClose(); }
+});
+(function(){ var _g=goPage; goPage=function(){ flipClose(); return _g.apply(this,arguments); }; })();
 
 // ── BOOT ──────────────────────────────────────────────────────
 initApp();var _acctNew=!ingredients.length;loadDefaults();migrateUnits();if(_acctNew)acctMarkPristine();cloudInit();updBadges();renderHome();

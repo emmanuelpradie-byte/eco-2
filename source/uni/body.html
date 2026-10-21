@@ -1,0 +1,357 @@
+<body>
+<div id="gate" role="dialog" aria-modal="true" aria-label="Connexion"></div>
+<div id="shell">
+<aside id="sidebar">
+  <div class="sb-logo">
+    <img class="sb-crest" data-crest alt="">
+    <div class="sb-name">Économat Pro</div>
+    <div class="sb-sub">Boulangerie · Pâtisserie</div>
+  </div>
+  <button class="sb-tog" id="sb-tog" onclick="toggleSidebar()" title="Réduire le menu (Ctrl+B)" aria-label="Réduire le menu">{{ic:panel}}</button>
+  <button class="sb-srch" onclick="openSearch()" title="Rechercher">{{ic:search}}<span>Rechercher…</span><kbd>Ctrl K</kbd></button>
+  <nav class="sb-nav">
+    <div class="sbi on" id="nav-home" title="Accueil" onclick="goPage('home')"><span class="sb-ic">{{ic:home}}</span><span class="sb-lb">Accueil</span></div>
+    <div class="sbi" id="nav-bons" title="Bons d’économat" onclick="goPage('bons')"><span class="sb-ic">{{ic:bon}}</span><span class="sb-lb">Bons d’économat</span><span class="sb-bd" id="nd-bons">0</span></div>
+    <div class="sbi" id="nav-recettes" title="Recettes" onclick="goPage('recettes')"><span class="sb-ic">{{ic:book}}</span><span class="sb-lb">Recettes</span><span class="sb-bd" id="nd-rec">0</span></div>
+    <div class="sbi" id="nav-partage" title="Partage" onclick="goPage('partage')"><span class="sb-ic">{{ic:users}}</span><span class="sb-lb">Partage</span></div>
+    <div class="sbi" id="nav-catalogue" title="Catalogue" onclick="goPage('catalogue')"><span class="sb-ic">{{ic:box}}</span><span class="sb-lb">Catalogue</span></div>
+    <div class="sbi" id="nav-fournisseurs" title="Fournisseurs" onclick="goPage('fournisseurs')"><span class="sb-ic">{{ic:truck}}</span><span class="sb-lb">Fournisseurs</span></div>
+    <div class="sb-div"></div>
+    <div class="sbi" id="nav-admin" title="Administration" style="display:none" onclick="goPage('admin')"><span class="sb-ic">{{ic:shield}}</span><span class="sb-lb">Administration</span><span class="sb-bd warn" id="nd-admin"></span></div>
+    <div class="sbi" id="nav-backup" title="Réglages &amp; sauvegarde" onclick="goPage('backup')"><span class="sb-ic">{{ic:settings}}</span><span class="sb-lb">Réglages &amp; sauvegarde</span><span class="sb-bd warn" id="nd-bk">!</span></div>
+  </nav>
+  <div class="sb-cloud" id="sb-cloud" style="display:none" onclick="goPage('backup')"></div>
+  <button class="sb-new" onclick="openNewBon()" title="Nouveau bon">{{ic:plus}}<span class="sb-nl">Nouveau bon</span></button>
+  <div class="sb-date" id="sb-date"></div>
+</aside>
+
+<div id="main">
+  <header id="topbar">
+    <div id="tb-back" onclick="goBack()">{{ic:back}}</div>
+    <div id="tb-bc">Accueil</div>
+    <div id="tb-title"></div>
+    <div id="tb-act"></div>
+    <button class="tb-cloud" id="tb-cloud" style="display:none" onclick="goPage('backup');setTimeout(function(){var c=document.getElementById('cl-card');if(c)c.scrollIntoView({block:'start'});},60)" aria-label="Équipe"></button>
+    <button class="tb-srch tb-lay" id="tb-lay" onclick="toggleLayout()" title="Passer en affichage mobile" aria-label="Changer d’affichage">{{ic:mobile}}</button>
+    <button class="tb-srch" id="tb-srch" onclick="openSearch()" title="Rechercher (Ctrl+K)" aria-label="Rechercher">{{ic:search}}</button>
+  </header>
+  <div id="scroll">
+
+    <!-- ACCUEIL -->
+    <div id="p-home" class="pg">
+      <div class="h-hello">
+        <div style="flex:1;min-width:0"><div class="h-hi" id="h-hi">Bonjour</div><div class="h-date" id="h-date"></div></div>
+        <button class="icbtn mob-only" onclick="goPage('backup')" title="Réglages">{{ic:settings}}</button>
+      </div>
+      <div id="h-backup"></div>
+      <div class="qa">
+        <button class="qa-b pr" onclick="openNewBon()"><span class="qa-ic">{{ic:bon}}</span><span class="qa-t">Nouveau bon</span></button>
+        <button class="qa-b" onclick="openNewRec()"><span class="qa-ic">{{ic:book}}</span><span class="qa-t">Nouvelle recette</span></button>
+        <button class="qa-b" onclick="goPage('rec-import')"><span class="qa-ic">{{ic:upload}}</span><span class="qa-t">Importer une recette</span></button>
+        <button class="qa-b" onclick="goPage('catalogue');openMod('m-addcat')"><span class="qa-ic">{{ic:box}}</span><span class="qa-t">Nouvel ingrédient</span></button>
+      </div>
+      <div class="hgrid2">
+        <div class="cw h-card" id="h-cur"></div>
+        <div class="cw h-card" id="h-week"></div>
+        <div class="cw h-card" id="h-todo"></div>
+        <div class="cw h-card" id="h-recrec"></div>
+      </div>
+      <div class="sh"><div class="sh-t">Derniers bons</div><div class="sh-m" onclick="goPage('bons')">Voir tout {{ic:arrow-right}}</div></div>
+      <div class="bgrid" id="h-recents"></div>
+    </div>
+
+    <!-- BONS -->
+    <div id="p-bons" class="pg" style="display:none;">
+      <div class="sbar" id="bons-sbar"></div>
+      <div class="srch">{{ic:search}}<input class="sinp" id="bon-srch" placeholder="Rechercher un bon…" oninput="renderBons()"></div>
+      <div class="bgrid" id="bons-list"></div>
+      <div id="bons-empty" class="empty" style="display:none;"><span class="empty-i">{{ic:bon}}</span><div class="empty-t">Aucun bon</div><div class="empty-s">Créez votre premier bon d’économat</div></div>
+    </div>
+
+    <!-- ÉDITEUR DE BON -->
+    <div id="p-edit" class="pg" style="display:none;">
+      <div class="re-top">
+        <button class="re-x" onclick="goBack()" title="Fermer" aria-label="Fermer">{{ic:x}}</button>
+        <div class="re-tabs" role="tablist"><button id="be-t-items" class="on" onclick="beTab('items')">Articles</button><button id="be-t-prev" onclick="beTab('prev')">Aperçu</button></div>
+        <div class="re-top-r">
+          <button class="re-ib dsk" onclick="printBon()" title="PDF" aria-label="PDF">{{ic:pdf}}</button>
+          <button class="re-ib dsk" onclick="exportCSV()" title="Export CSV" aria-label="Export CSV">{{ic:sheet}}</button>
+          <button class="re-pillb dsk" onclick="saveBon()">{{ic:save}} Sauvegarder</button>
+          <button class="btn btn-gold btn-full re-save" onclick="validateBon()">{{ic:check}} Valider</button>
+        </div>
+      </div>
+      <div class="re-body" id="be-body">
+        <aside class="re-side re-l" id="be-l">
+          <details class="re-sec" open><summary>Informations {{ic:chev-down}}</summary>
+            <div class="re-box">
+              <div class="re-kv"><span>Statut</span><b id="e-status"></b></div>
+              <div class="re-lb">Date</div>
+              <input class="fi" type="date" id="e-date" onchange="livePreview();beMeta()">
+              <div class="re-lb">Image du bon</div>
+              <label class="filebtn">{{ic:image}}<span id="e-img-lbl">Choisir…</span><input type="file" id="e-img-file" accept="image/*" onchange="handleImg(this)"></label>
+            </div>
+          </details>
+          <details class="re-sec" open><summary>Regrouper le bon par {{ic:chev-down}}</summary>
+            <div class="seg" id="e-group"><button class="on" data-g="cat" onclick="setBonGroup('cat');beRecap()">Catégorie</button><button data-g="sup" onclick="setBonGroup('sup');beRecap()">Fournisseur</button></div>
+          </details>
+          <details class="re-sec" open><summary>Ajouter {{ic:chev-down}}</summary>
+            <div class="re-adds">
+              <button class="re-add pri" onclick="openMod('m-ing')"><span>Ingrédient</span>{{ic:plus-circle}}</button>
+              <button class="re-add" onclick="openMod('m-rec')"><span>Recette</span>{{ic:book}}</button>
+            </div>
+          </details>
+          <details class="re-sec" open><summary>Notes {{ic:chev-down}}</summary>
+            <textarea class="fi" id="e-notes" placeholder="Remarques…" style="min-height:80px;" oninput="livePreview()"></textarea>
+          </details>
+        </aside>
+        <button class="re-fold l" onclick="reFold('l','be-body')" title="Masquer le panneau" aria-label="Masquer le panneau de gauche">{{ic:chev-left}}</button>
+        <main class="re-mid" id="be-mid">
+          <div class="re-head">
+            <div class="re-thumb be-ic">{{ic:bon}}</div>
+            <input class="re-title" type="text" id="e-name" placeholder="NOM DU BON" autocomplete="off" oninput="livePreview();syncTitle();beMeta()">
+            <div class="re-meta" id="be-meta"></div>
+          </div>
+          <div id="be-pane-items">
+            <section class="re-card">
+              <div class="re-card-t">Articles <span class="re-card-a"><button class="btn btn-ghost btn-sm" onclick="openMod('m-ing')">{{ic:plus}} Ingrédient</button><button class="btn btn-beige btn-sm" onclick="openMod('m-rec')">{{ic:book}} Recette</button></span></div>
+              <div class="ustrip">{{ic:info}} Quantités en kg — liquides inclus</div>
+              <div id="e-items"></div>
+              <div id="e-items-empty" class="re-empty" style="display:none;">
+                <button class="re-big pri" onclick="openMod('m-ing')">{{ic:plus-circle}} Ajouter un ingrédient</button>
+                <button class="re-big" onclick="openMod('m-rec')">{{ic:book}} Ajouter une recette</button>
+              </div>
+              <div class="tots"><div class="ti"><span class="tv" id="t-l">0</span><div class="tl">Lignes</div></div><div class="ti"><span class="tv" id="t-w">0</span><div class="tl">Poids</div></div><div class="ti big"><span class="tv" id="t-c">0,00 €</span><div class="tl">Total TTC</div></div></div>
+            </section>
+          </div>
+          <div id="be-pane-prev" style="display:none">
+            <button class="prev-btn" style="display:none" onclick="togglePrev()"><span class="prev-lbl">Aperçu</span><span class="prev-arr" id="prev-arr">{{ic:chev-down}}</span></button>
+            <div class="prev-wrap show" id="prev-wrap">
+              <div class="pdoc">
+                <div class="pd-head" id="pd-top"><div class="pd-thumb" id="pd-thumb"></div><div class="pd-hinfo"><div class="pd-hname" id="pd-hname">—</div><div class="pd-hsub" id="pd-hsub"></div></div><div class="pd-n" id="pd-num">—</div></div>
+                <div class="pd-b" id="pd-body"><div class="pd-empty">Remplissez le formulaire</div></div>
+              </div>
+            </div>
+          </div>
+        </main>
+        <button class="re-fold r" onclick="reFold('r','be-body')" title="Masquer le panneau" aria-label="Masquer le panneau de droite">{{ic:chev-right}}</button>
+        <aside class="re-side re-r" id="be-r">
+          <details class="re-sec" open><summary>Récapitulatif {{ic:chev-down}}</summary>
+            <div id="be-recap"></div>
+          </details>
+          <details class="re-sec" open><summary>Exporter {{ic:chev-down}}</summary>
+            <div class="be-acts">
+              <button class="re-add" onclick="printBon()"><span>PDF du bon</span>{{ic:pdf}}</button>
+              <button class="re-add" onclick="printBonBySupplier()"><span>PDF par fournisseur</span>{{ic:truck}}</button>
+              <button class="re-add" onclick="exportCSV()"><span>Fichier CSV</span>{{ic:sheet}}</button>
+              <button class="re-add" onclick="dupBon()"><span>Dupliquer le bon</span>{{ic:copy}}</button>
+            </div>
+          </details>
+          <details class="re-sec"><summary>Historique {{ic:chev-down}}</summary>
+            <div class="mlog" id="e-mlog"></div>
+          </details>
+        </aside>
+      </div>
+      <div class="re-dock">
+        <button onclick="openMod('m-ing')" title="Ajouter un ingrédient" aria-label="Ajouter un ingrédient">{{ic:plus-circle}}</button>
+        <button onclick="openMod('m-rec')" title="Ajouter une recette" aria-label="Ajouter une recette">{{ic:book}}</button>
+        <span class="re-dock-s"></span>
+        <button onclick="beTab(BE_TAB==='prev'?'items':'prev')" title="Aperçu du bon" aria-label="Aperçu du bon">{{ic:eye}}</button>
+        <button onclick="printBon()" title="PDF" aria-label="PDF">{{ic:pdf}}</button>
+        <span class="re-dock-s"></span>
+        <button onclick="saveBon()" title="Sauvegarder" aria-label="Sauvegarder">{{ic:save}}</button>
+      </div>
+    </div>
+
+    <!-- RECETTES -->
+    <div id="p-recettes" class="pg" style="display:none;">
+      <div class="seg rec-tabs" id="rec-tabs" style="display:none"><button id="rt-mine" class="on" onclick="setRecTab('mine')">{{ic:book}} Mes recettes</button><button id="rt-shared" onclick="setRecTab('shared')">{{ic:users}} Partagées<span id="rt-shared-n"></span></button></div>
+      <div id="rec-mine">
+      <div class="cn-bar">
+        <label class="cn-srch"><input id="rec-srch" type="search" placeholder="Rechercher …" oninput="cnSearchIn()" autocomplete="off"><span class="cn-srch-x" onclick="cnClearSearch()" title="Effacer">{{ic:x}}</span>{{ic:search}}</label>
+        <button class="cn-new" onclick="openNewRec()">{{ic:plus-circle}}<span>Créer</span></button>
+      </div>
+      <div class="cn-az" id="rec-az"></div>
+      <div class="cn-row">
+        <div class="cn-cnt" id="rec-count"></div>
+        <div class="cn-filters" id="rec-filters"></div>
+        <button class="cn-view cn-flipb" id="rv-flip" onclick="flipOpen()" title="Feuilleter le carnet">{{ic:book}}<span>Feuilleter</span></button>
+        <button class="cn-view" id="rv-tog" onclick="cnCycleView()" title="Changer d’affichage">{{ic:grid}}</button>
+      </div>
+      <div class="cn-active" id="rec-active"></div>
+      <div class="chips" id="rec-chips" style="display:none"></div><div class="chips" id="rec-subchips" style="display:none"></div>
+      <div class="rgrid" id="rec-grid"></div>
+      <div id="rec-empty" class="cn-empty" style="display:none;"><div id="rec-empty-t">Aucun résultat trouvé.</div><button class="cn-reset" id="rec-empty-b" onclick="cnReset()">Effacer les filtres</button></div>
+      </div>
+      <div id="shared-wrap" style="display:none"></div>
+    </div>
+
+    <!-- ÉDITEUR DE RECETTE -->
+    <div id="p-rec-edit" class="pg" style="display:none;">
+      <div class="re-top">
+        <button class="re-x" onclick="reClose()" title="Fermer" aria-label="Fermer">{{ic:x}}</button>
+        <div class="re-tabs" role="tablist"><button id="re-t-rec" class="on" onclick="reTab('rec')">Recette</button><button id="re-t-prix" onclick="reTab('prix')">Prix</button></div>
+        <div class="re-top-r">
+          <span class="re-pair"><button class="re-ib" id="re-undo" onclick="reUndo()" title="Annuler (Ctrl+Z)" aria-label="Annuler" disabled>{{ic:undo}}</button><button class="re-ib" id="re-redo" onclick="reRedo()" title="Rétablir (Ctrl+Y)" aria-label="Rétablir" disabled>{{ic:redo}}</button></span>
+          <button class="re-ib dsk" onclick="ficheFromEditor('preview')" title="Fiche technique" aria-label="Fiche technique">{{ic:eye}}</button>
+          <button class="re-ib dsk" onclick="ficheFromEditor('pdf')" title="PDF" aria-label="PDF">{{ic:pdf}}</button>
+          <button class="btn btn-gold btn-full re-save" onclick="saveRecipe()">{{ic:check}} Enregistrer</button>
+        </div>
+      </div>
+      <div class="re-body" id="re-body">
+        <aside class="re-side re-l" id="re-l">
+          <details class="re-sec" open><summary>Rendement {{ic:chev-down}}</summary>
+            <div class="re-box">
+              <div class="re-kv"><span>Poids total</span><b id="r-w">—</b></div>
+              <div class="re-kv"><span>Coût matière TTC</span><b id="r-c">—</b></div>
+              <div class="re-lb">Multiplicateur</div>
+              <div class="re-inl"><input class="fi" type="number" inputmode="decimal" id="re-mult" value="1" min="0" step="0.1"><button class="btn btn-beige btn-sm" onclick="reMultiply()">Multiplier</button></div>
+              <div class="re-lb">Ajuster au poids (kg)</div>
+              <div class="re-inl"><input class="fi" type="number" inputmode="decimal" id="re-target" placeholder="—" min="0" step="0.01"><button class="btn btn-beige btn-sm" onclick="reScaleTo()">Ajuster</button></div>
+            </div>
+            <div class="re-box">
+              <div class="re-lb">Nombre de pièces</div>
+              <div class="re-inl"><input class="fi" type="number" inputmode="numeric" id="re-pcs" placeholder="—" min="0" step="1" oninput="reSetPcs(this.value)"><span class="re-hint" id="re-pcs-w"></span></div>
+            </div>
+            <div class="re-box">
+              <div class="re-lb">Durée</div>
+              <div class="re-inl"><input class="fi" type="number" inputmode="numeric" id="re-time" placeholder="À définir" min="0" step="1" oninput="reSetTime()"><select class="fi" id="re-time-u" onchange="reSetTime()"><option value="1">minute</option><option value="60">heure</option></select></div>
+            </div>
+          </details>
+          <details class="re-sec" open><summary>Éléments de la recette {{ic:chev-down}}</summary>
+            <div class="re-adds">
+              <button class="re-add pri" onclick="openMod('m-ring')"><span>Ingrédient</span>{{ic:plus-circle}}</button>
+              <button class="re-add" onclick="openMod('m-subrec')"><span>Sous-recette existante</span>{{ic:download}}</button>
+            </div>
+          </details>
+          <details class="re-sec" open><summary>Photo {{ic:chev-down}}</summary>
+            <div class="re-box">
+              <div class="re-lb">Emoji ou photo</div>
+              <div class="re-inl"><input class="fi" type="text" id="r-img" placeholder="—" oninput="clearRecImgFile();reThumb()"><input type="file" id="r-img-file" accept="image/*" onchange="handleRecImg(this)" style="display:none"><button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('r-img-file').click()" title="Photo">{{ic:camera}}</button></div>
+              <div id="r-img-prev" style="display:none;align-items:center;gap:8px;margin-top:8px"><img id="r-img-prev-i" style="width:44px;height:44px;border-radius:10px;object-fit:cover;border:1px solid var(--bd)"><button type="button" class="btn btn-ghost btn-sm" onclick="removeRecImg()">{{ic:x}} Retirer la photo</button></div>
+            </div>
+          </details>
+        </aside>
+        <button class="re-fold l" onclick="reFold('l')" title="Masquer le panneau" aria-label="Masquer le panneau de gauche">{{ic:chev-left}}</button>
+        <main class="re-mid" id="re-mid">
+          <div class="re-head">
+            <div class="re-thumb" id="re-thumb" onclick="document.getElementById('r-img-file').click()" title="Ajouter une photo"></div>
+            <input class="re-title" type="text" id="r-name" placeholder="AJOUTER UN TITRE" autocomplete="off">
+            <div class="re-meta" id="re-meta"></div>
+          </div>
+          <div id="re-pane-rec">
+            <section class="re-card">
+              <div class="re-card-t">Composition <span class="re-card-a"><button class="btn btn-ghost btn-sm" onclick="openMod('m-ring')">{{ic:plus}} Ingrédient</button><button class="btn btn-beige btn-sm" onclick="openMod('m-subrec')">{{ic:sub}} Sous-recette</button></span></div>
+              <div id="r-items"></div>
+              <div id="r-items-empty" class="re-empty" style="display:none;">
+                <button class="re-big pri" onclick="openMod('m-ring')">{{ic:plus-circle}} Ajouter un ingrédient</button>
+                <button class="re-big" onclick="openMod('m-subrec')">{{ic:download}} Ajouter une sous-recette existante</button>
+              </div>
+            </section>
+            <section class="re-card">
+              <div class="re-card-t">Procédé / méthode</div>
+              <textarea class="fi re-notes" id="r-notes" placeholder="Pétrissage, pointage, façonnage, cuisson…"></textarea>
+            </section>
+          </div>
+          <div id="re-pane-prix" style="display:none"></div>
+        </main>
+        <button class="re-fold r" onclick="reFold('r')" title="Masquer le panneau" aria-label="Masquer le panneau de droite">{{ic:chev-right}}</button>
+        <aside class="re-side re-r" id="re-r">
+          <details class="re-sec" open><summary>Catégories {{ic:chev-down}}</summary>
+            <div class="re-cat">
+              <select class="fi re-pill" id="r-cat" onfocus="this.setAttribute('data-prev',this.value)" onchange="handleCatChange(this,'rec');reMeta()"></select>
+              <div class="field" style="display:none"><div class="fl">Sous-catégorie</div><select class="fi" id="r-sub" onchange="handleSubChange(this,'rec','r-cat');reMeta()"></select></div>
+            </div>
+          </details>
+          <details class="re-sec" open><summary>Tags {{ic:chev-down}}</summary>
+            <div class="re-tags" id="re-tags"></div>
+          </details>
+          <details class="re-sec" open><summary>Allergènes {{ic:chev-down}}</summary>
+            <div id="r-allerg"></div>
+          </details>
+          <details class="re-sec" id="r-docs-card" open><summary>Documents {{ic:chev-down}}</summary>
+            <input type="file" id="r-att-file" accept="application/pdf,image/*" multiple style="display:none" onchange="attAddFiles(this)">
+            <div id="r-att"></div>
+            <button class="re-add sm" onclick="document.getElementById('r-att-file').click()"><span>PDF ou image</span>{{ic:plus-circle}}</button>
+          </details>
+          <details class="re-sec sh-card" id="r-share-card" style="display:none" open><summary>Partage {{ic:chev-down}}</summary>
+            <label class="sh-tg"><input type="checkbox" id="r-shared" onchange="REC_ED.shared=this.checked"><span><b>{{ic:users}} Partager cette recette</b><small>Visible par tous dans l’espace Partage. Toi seul peux la modifier : elle se met à jour quand tu enregistres.</small></span></label>
+          </details>
+        </aside>
+      </div>
+      <div class="re-dock" id="re-dock">
+        <button onclick="openMod('m-ring')" title="Ajouter un ingrédient" aria-label="Ajouter un ingrédient">{{ic:plus-circle}}</button>
+        <button onclick="openMod('m-subrec')" title="Ajouter une sous-recette" aria-label="Ajouter une sous-recette">{{ic:download}}</button>
+        <span class="re-dock-s"></span>
+        <button onclick="ficheFromEditor('preview')" title="Fiche technique" aria-label="Fiche technique">{{ic:eye}}</button>
+        <button onclick="ficheFromEditor('pdf')" title="PDF" aria-label="PDF">{{ic:pdf}}</button>
+        <span class="re-dock-s"></span>
+        <button onclick="saveRecipe()" title="Enregistrer" aria-label="Enregistrer">{{ic:save}}</button>
+      </div>
+    </div>
+
+    <!-- PARTAGE -->
+    <div id="p-partage" class="pg" style="display:none;"><div class="narrow wide" id="part-wrap"></div></div>
+
+    <!-- ADMINISTRATION -->
+    <div id="p-admin" class="pg" style="display:none;"><div class="narrow" id="adm-wrap"></div></div>
+
+    <!-- RÉGLAGES & SAUVEGARDE -->
+    <div id="p-backup" class="pg" style="display:none;"><div class="narrow"><div id="bk-body"></div></div></div>
+
+    <!-- CATALOGUE -->
+    <div id="p-catalogue" class="pg" style="display:none;">
+      <div class="narrow wide">
+        <div class="cat-top">
+          <div class="srch" style="flex:1;margin-bottom:0">{{ic:search}}<input class="sinp" id="cat-srch" placeholder="Rechercher un ingrédient…" oninput="renderCat()"></div>
+          <select class="fi cat-supf" id="cat-supf" onchange="renderCat()"></select>
+        </div>
+        <div class="chips" id="cat-chips"></div><div class="chips" id="cat-subchips" style="display:none"></div>
+        <div class="inv-bar" style="margin-bottom:12px"><button class="btn btn-ghost btn-sm" onclick="openSubMgr('ing')">{{ic:folder}} Catégories</button><button class="btn btn-ghost btn-sm" onclick="goPage('fournisseurs')">{{ic:truck}} Fournisseurs</button><button class="btn btn-ghost btn-sm" onclick="autoAllergens()">{{ic:wheat}} Compléter les allergènes</button></div>
+        <div id="cat-list"></div>
+        <div id="cat-empty" class="empty" style="display:none;"><span class="empty-i">{{ic:box}}</span><div class="empty-t">Catalogue vide</div></div>
+      </div>
+    </div>
+
+    <!-- FOURNISSEURS -->
+    <div id="p-fournisseurs" class="pg" style="display:none;">
+      <div class="narrow wide"><div id="sup-list"></div></div>
+    </div>
+
+  </div>
+  <nav id="bnav">
+    <div class="bni on" id="bn-home" onclick="goPage('home')"><div class="bni-ic">{{ic:home}}</div><div class="bni-lb">Accueil</div></div>
+    <div class="bni" id="bn-bons" onclick="goPage('bons')"><div class="bni-ic">{{ic:bon}}</div><div class="bni-lb">Bons</div><div class="bni-bd" id="bnd-bons">0</div></div>
+    <div class="bni" id="bn-recettes" onclick="goPage('recettes')"><div class="bni-ic">{{ic:book}}</div><div class="bni-lb">Recettes</div><div class="bni-bd" id="bnd-rec">0</div></div>
+    <div class="bni" id="bn-partage" onclick="goPage('partage')"><div class="bni-ic">{{ic:users}}</div><div class="bni-lb">Partage</div></div>
+    <div class="bni" id="bn-catalogue" onclick="goPage('catalogue')"><div class="bni-ic">{{ic:box}}</div><div class="bni-lb">Catalogue</div></div>
+    <div class="bni" id="bn-backup" onclick="goPage('backup')"><div class="bni-ic">{{ic:settings}}</div><div class="bni-lb">Réglages</div><div class="bni-bd warn" id="bnd-bk">!</div></div>
+  </nav>
+</div>
+</div>
+
+<!-- FENÊTRES -->
+<div class="ov" id="m-ing"><div class="modal"><div class="m-grip"></div><div class="m-hdr"><h3>Ajouter un ingrédient</h3><button class="m-x" onclick="closeMod('m-ing')">{{ic:x}}</button></div><div class="m-body"><div class="srch" style="margin-bottom:10px;">{{ic:search}}<input class="sinp" id="ing-s" placeholder="Rechercher…" oninput="filterIng()"></div><div id="ing-qty" class="selbox" style="display:none;"><div class="selbox-h"><span class="selbox-n" id="ing-sel-n"></span><button type="button" class="lnk" onclick="unpickIng()">Changer</button></div><div class="frow"><div class="field" style="margin-bottom:0"><div class="fl">Quantité</div><input class="fi" type="number" inputmode="decimal" id="ing-q" placeholder="0" min="0" step="any" onkeydown="if(event.key==='Enter'){event.preventDefault();confirmIng();}"></div><div class="field" style="margin-bottom:0"><div class="fl">Unité</div><div class="upills" id="ing-upills"></div><select class="fi" id="ing-u" style="display:none" onchange="syncUPills('ing')"><option>kg</option><option>g</option></select></div></div></div><div id="ing-list"></div><div id="ing-empty" class="empty" style="display:none;padding:12px;"><div class="empty-s">Catalogue vide — ajoutez des ingrédients</div></div></div><div class="m-foot"><button class="btn btn-ghost" onclick="closeMod('m-ing')">Annuler</button><button class="btn btn-gold" onclick="confirmIng()">Ajouter {{ic:arrow-right}}</button></div></div></div>
+
+<div class="ov" id="m-rec"><div class="modal"><div class="m-grip"></div><div class="m-hdr"><h3>Ajouter une recette</h3><button class="m-x" onclick="closeMod('m-rec')">{{ic:x}}</button></div><div class="m-body"><div id="m-rec-no" class="empty" style="display:none;padding:12px;"><div class="empty-s">Aucune recette — créez-en d’abord</div></div><div id="m-rec-ok"><div id="rec-pick"><div class="srch" style="margin-bottom:8px;">{{ic:search}}<input class="sinp" id="rec-mod-s" placeholder="Rechercher une recette…" oninput="buildRecList()"></div><div id="rec-list-m"></div></div><div id="rec-conf" style="display:none;"><div class="selbox-h rec-selh"><span class="rpe" id="rec-sel-e"></span><span class="selbox-n" id="rec-sel-n"></span><button type="button" class="lnk" onclick="unpickRec()">Changer</button></div><div class="frow" style="margin-bottom:9px;"><div class="field" style="margin-bottom:0"><div class="fl">Poids voulu (kg)</div><input class="fi" type="number" inputmode="decimal" id="rec-kg-custom" placeholder="—" min="0" step="0.01" oninput="setRecKg(this.value)"></div><div class="field" style="margin-bottom:0"><div class="fl">Multiplicateur (×)</div><input class="fi" type="number" inputmode="decimal" id="mult-custom" value="1" min="0.1" step="0.1" oninput="setMultC(this.value)"></div></div><div class="mgrid"><div class="mb on" onclick="setMult(1,this)">×1</div><div class="mb" onclick="setMult(2,this)">×2</div><div class="mb" onclick="setMult(5,this)">×5</div><div class="mb" onclick="setMult(10,this)">×10</div><div class="mb" onclick="setMult(20,this)">×20</div></div><div id="rec-prev-w" style="display:none;"><div class="dvr"></div><div class="lbl rec-incl-h"><span>Ingrédients à mettre sur le bon</span><span class="rec-incl-a"><button type="button" class="lnk" onclick="recInclAll(true)">Tout</button> · <button type="button" class="lnk" onclick="recInclAll(false)">Aucun</button></span></div><div class="prevb" id="rec-prev-b"></div><div class="rec-incl-s" id="rec-incl-s"></div></div></div></div></div><div class="m-foot"><button class="btn btn-ghost" onclick="closeMod('m-rec')">Annuler</button><button class="btn btn-gold" onclick="confirmRec()">{{ic:check}} Ajouter</button></div></div></div>
+
+<div class="ov" id="m-ring"><div class="modal"><div class="m-grip"></div><div class="m-hdr"><h3>Ingrédient de la recette</h3><button class="m-x" onclick="closeMod('m-ring')">{{ic:x}}</button></div><div class="m-body"><div class="srch" style="margin-bottom:10px;">{{ic:search}}<input class="sinp" id="ring-s" placeholder="Rechercher…" oninput="filterRIng()"></div><div id="ring-qty" class="selbox" style="display:none;"><div class="selbox-h"><span class="selbox-n" id="ring-sel-n"></span><button type="button" class="lnk" onclick="unpickRIng()">Changer</button></div><div class="frow"><div class="field" style="margin-bottom:0"><div class="fl">Quantité</div><input class="fi" type="number" inputmode="decimal" id="ring-q" placeholder="0" min="0" step="any" onkeydown="if(event.key==='Enter'){event.preventDefault();confirmRIng();}"></div><div class="field" style="margin-bottom:0"><div class="fl">Unité</div><div class="upills" id="ring-upills"></div><select class="fi" id="ring-u" style="display:none" onchange="syncUPills('ring')"><option>g</option><option>kg</option></select></div></div></div><div id="ring-list"></div></div><div class="m-foot"><button class="btn btn-ghost" onclick="closeMod('m-ring')">Annuler</button><button class="btn btn-gold" onclick="confirmRIng()">Ajouter {{ic:arrow-right}}</button></div></div></div>
+
+<div class="ov" id="m-subrec"><div class="modal"><div class="m-grip"></div><div class="m-hdr"><h3>Sous-recette</h3><button class="m-x" onclick="closeMod('m-subrec')">{{ic:x}}</button></div><div class="m-body"><div id="subrec-list-m"></div><div id="subrec-qty" style="display:none;margin-top:9px;"><div class="dvr"></div><div class="mgrid" style="grid-template-columns:1fr 1fr;margin-bottom:8px"><div class="mb on" id="subrec-mode-mult" onclick="setSubRecMode('mult')">Multiplicateur</div><div class="mb" id="subrec-mode-kg" onclick="setSubRecMode('kg')">Poids visé (kg)</div></div><div class="field" id="subrec-mult-wrap"><div class="fl">Multiplicateur (×1 = poids de base)</div><input class="fi" type="number" id="subrec-mult" value="1" min="0.01" step="0.01" oninput="onSubRecMultInput()"></div><div class="field" id="subrec-kg-wrap" style="display:none"><div class="fl">Poids visé de sous-recette</div><input class="fi" type="number" id="subrec-kg" min="0.001" step="0.001" placeholder="kg" oninput="onSubRecKgInput()"></div><div class="ustrip" id="subrec-hint" style="margin-top:8px"></div></div></div><div class="m-foot"><button class="btn btn-ghost" onclick="closeMod('m-subrec')">Annuler</button><button class="btn btn-gold" onclick="confirmSubRec()">Ajouter</button></div></div></div>
+
+<div class="ov" id="m-addcat"><div class="modal"><div class="m-grip"></div><div class="m-hdr"><h3>Nouvel ingrédient</h3><button class="m-x" onclick="closeMod('m-addcat')">{{ic:x}}</button></div><div class="m-body"><div class="field"><div class="fl">Nom</div><input class="fi" type="text" id="cat-n" placeholder="Ex : Farine T65…" oninput="ingNameTyped('cat')"></div><div class="field"><div class="fl">Emoji ou photo</div><div style="display:flex;gap:6px;align-items:center"><input class="fi" type="text" id="cat-img" placeholder="—" style="flex:1" oninput="clearIngImgFile('cat')"><input type="file" id="cat-img-file" accept="image/*" onchange="handleIngImg('cat',this)" style="display:none"><button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('cat-img-file').click()" title="Photo">{{ic:camera}}</button></div><div id="cat-img-prev" style="display:none;align-items:center;gap:8px;margin-top:6px"><img id="cat-img-prev-i" style="width:36px;height:36px;border-radius:6px;object-fit:cover;border:1px solid var(--bd)"><button type="button" class="btn btn-ghost btn-sm" onclick="removeIngImg('cat')">{{ic:x}} Retirer la photo</button></div></div><div class="field"><div class="fl">Catégorie</div><select class="fi" id="cat-c" onfocus="this.setAttribute('data-prev',this.value)" onchange="handleCatChange(this,'ing')"></select></div><div class="field" style="display:none"><div class="fl">Sous-catégorie</div><select class="fi" id="cat-s" onchange="handleSubChange(this,'ing','cat-c')"></select></div><div class="frow"><div class="field" style="margin-bottom:0"><div class="fl">Unité d’achat</div><select class="fi" id="cat-u" onchange="syncUW('add')"><option value="kg">kg</option><option value="g">g</option><option value="L">L</option><option value="ml">ml</option><option value="cl">cl</option><option value="unité">unité</option><option value="pièce">pièce</option><option value="boîte">boîte</option><option value="sac">sac</option><option value="carton">carton</option><option value="sachet">sachet</option><option value="bouteille">bouteille</option><option value="bidon">bidon</option></select></div><div class="field" style="margin-bottom:0"><div class="fl" id="cat-plabel">Prix TTC / unité</div><input class="fi" type="number" id="cat-p" placeholder="0.00" step="0.0001" min="0" oninput="showPerKg('add')"></div></div><div id="cat-uw-box" style="display:none;margin-top:9px"><div class="field" style="margin-bottom:0"><div class="fl">Poids d’une unité, en kg</div><input class="fi" type="number" id="cat-uw" step="0.0001" min="0" placeholder="kg par unité" oninput="showPerKg('add')"></div></div><div id="cat-hint" class="hint-ok"></div><div class="frow" style="margin-top:10px"><div class="field" style="margin-bottom:0"><div class="fl">Fournisseur</div><select class="fi" id="cat-sup" onchange="handleSupSelect(this)"></select></div><div class="field" style="margin-bottom:0"><div class="fl">Référence</div><input class="fi" type="text" id="cat-ref" placeholder="Code article"></div></div><div class="field" style="margin-top:10px;margin-bottom:0"><div class="fl fl-row">Allergènes <button type="button" class="lnk" onclick="suggestAllerg('cat')">{{ic:sparkle}} Suggérer</button></div><div id="cat-alg"></div></div></div><div class="m-foot"><button class="btn btn-ghost" onclick="closeMod('m-addcat')">Annuler</button><button class="btn btn-gold" onclick="addIng()">{{ic:plus}} Ajouter</button></div></div></div>
+
+<div class="ov" id="m-editcat"><div class="modal"><div class="m-grip"></div><div class="m-hdr"><h3>Modifier l’ingrédient</h3><button class="m-x" onclick="closeMod('m-editcat')">{{ic:x}}</button></div><div class="m-body"><input type="hidden" id="edit-cat-id"><div class="field"><div class="fl">Nom</div><input class="fi" type="text" id="edit-cat-n"></div><div class="field"><div class="fl">Emoji ou photo</div><div style="display:flex;gap:6px;align-items:center"><input class="fi" type="text" id="edit-cat-img" placeholder="—" style="flex:1" oninput="clearIngImgFile('edit-cat')"><input type="file" id="edit-cat-img-file" accept="image/*" onchange="handleIngImg('edit-cat',this)" style="display:none"><button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('edit-cat-img-file').click()" title="Photo">{{ic:camera}}</button></div><div id="edit-cat-img-prev" style="display:none;align-items:center;gap:8px;margin-top:6px"><img id="edit-cat-img-prev-i" style="width:36px;height:36px;border-radius:6px;object-fit:cover;border:1px solid var(--bd)"><button type="button" class="btn btn-ghost btn-sm" onclick="removeIngImg('edit-cat')">{{ic:x}} Retirer la photo</button></div></div><div class="field"><div class="fl">Catégorie</div><select class="fi" id="edit-cat-c" onfocus="this.setAttribute('data-prev',this.value)" onchange="handleCatChange(this,'ing')"></select></div><div class="field" style="display:none"><div class="fl">Sous-catégorie</div><select class="fi" id="edit-cat-s" onchange="handleSubChange(this,'ing','edit-cat-c')"></select></div><div class="frow"><div class="field" style="margin-bottom:0"><div class="fl">Unité d’achat</div><select class="fi" id="edit-cat-u" onchange="syncUW('edit')"><option value="kg">kg</option><option value="g">g</option><option value="L">L</option><option value="ml">ml</option><option value="cl">cl</option><option value="unité">unité</option><option value="pièce">pièce</option><option value="boîte">boîte</option><option value="sac">sac</option><option value="carton">carton</option><option value="sachet">sachet</option><option value="bouteille">bouteille</option><option value="bidon">bidon</option></select></div><div class="field" style="margin-bottom:0"><div class="fl" id="edit-cat-plabel">Prix TTC / unité</div><input class="fi" type="number" id="edit-cat-p" placeholder="0.00" step="0.0001" min="0" oninput="showPerKg('edit')"></div></div><div id="edit-cat-uw-box" style="display:none;margin-top:9px"><div class="field" style="margin-bottom:0"><div class="fl">Poids d’une unité, en kg</div><input class="fi" type="number" id="edit-cat-uw" step="0.0001" min="0" placeholder="kg par unité" oninput="showPerKg('edit')"></div></div><div id="edit-cat-hint" class="hint-ok"></div><div id="edit-cat-hist"></div><div class="frow" style="margin-top:10px"><div class="field" style="margin-bottom:0"><div class="fl">Fournisseur</div><select class="fi" id="edit-cat-sup" onchange="handleSupSelect(this)"></select></div><div class="field" style="margin-bottom:0"><div class="fl">Référence</div><input class="fi" type="text" id="edit-cat-ref" placeholder="Code article"></div></div><div class="field" style="margin-top:10px;margin-bottom:0"><div class="fl fl-row">Allergènes <button type="button" class="lnk" onclick="suggestAllerg('edit-cat')">{{ic:sparkle}} Suggérer</button></div><div id="edit-cat-alg"></div></div></div><div class="m-foot"><button class="btn btn-ghost" onclick="closeMod('m-editcat')">Annuler</button><button class="btn btn-gold" onclick="saveEditIng()">{{ic:check}} Enregistrer</button></div></div></div>
+
+<div class="ov" id="m-del"><div class="modal" style="max-width:380px;"><div class="m-grip"></div><div class="m-hdr"><h3>Supprimer ?</h3><button class="m-x" onclick="closeMod('m-del')">{{ic:x}}</button></div><div class="m-body"><p style="color:var(--i3);font-size:14px;line-height:1.5;" id="del-msg">Irréversible.</p></div><div class="m-foot"><button class="btn btn-ghost" onclick="closeMod('m-del')">Annuler</button><button class="btn btn-red" onclick="confirmDel()">{{ic:trash}} Supprimer</button></div></div></div>
+
+<div class="ov" id="m-sup"><div class="modal" style="max-width:440px;"><div class="m-grip"></div><div class="m-hdr"><h3 id="sup-title">Fournisseur</h3><button class="m-x" onclick="closeMod('m-sup')">{{ic:x}}</button></div><div class="m-body"><input type="hidden" id="sup-id"><div class="field"><div class="fl">Nom</div><input class="fi" type="text" id="sup-n" placeholder="Ex : Moulins Bourgeois"></div><div class="frow"><div class="field"><div class="fl">Contact</div><input class="fi" type="text" id="sup-c" placeholder="Nom du commercial"></div><div class="field"><div class="fl">Téléphone</div><input class="fi" type="tel" id="sup-t"></div></div><div class="field"><div class="fl">E-mail</div><input class="fi" type="email" id="sup-e"></div><div class="field" style="margin-bottom:0"><div class="fl">Notes (jours de livraison, franco…)</div><textarea class="fi" id="sup-o" style="min-height:50px"></textarea></div></div><div class="m-foot"><button class="btn btn-ghost" onclick="closeMod('m-sup')">Annuler</button><button class="btn btn-gold" onclick="saveSupplier()">{{ic:check}} Enregistrer</button></div></div></div>
+
+<div class="ov" id="m-fiche"><div class="modal wide"><div class="m-grip"></div><div class="m-hdr"><h3>Fiche technique</h3><button class="m-x" onclick="closeMod('m-fiche')">{{ic:x}}</button></div><div class="m-body" style="background:var(--p2)"><div id="fiche-body"></div></div><div class="m-foot"><button class="btn btn-ghost" onclick="closeMod('m-fiche')">Fermer</button><button class="btn btn-gold" onclick="ficheDownload()">{{ic:download}} Télécharger le PDF</button></div></div></div>
+
+<div class="toast" id="toast"></div>
+
+<div class="ov" id="m-submgr"><div class="modal"><div class="m-grip"></div><div class="m-hdr"><h3>Catégories et sous-catégories</h3><button class="m-x" onclick="closeMod('m-submgr')">{{ic:x}}</button></div><div class="m-body"><div class="mgrid" style="grid-template-columns:1fr 1fr;margin-bottom:10px"><div class="mb on" id="submgr-tab-ing" onclick="switchSubMgr('ing')">Catalogue</div><div class="mb" id="submgr-tab-rec" onclick="switchSubMgr('rec')">Recettes</div></div><div id="submgr-body"></div><div style="font-size:11px;color:var(--i4);margin-top:10px;line-height:1.5">Une même sous-catégorie peut exister dans plusieurs catégories différentes. Supprimer une sous-catégorie ne supprime jamais les éléments qu’elle contient.</div></div><div class="m-foot"><button class="btn btn-gold btn-full" onclick="closeMod('m-submgr')">Terminé</button></div></div></div>
+<div class="ov gs-ov" id="m-search" onclick="if(event.target===this)closeSearch()"><div class="modal gs-modal"><div class="gs-top">{{ic:search}}<input id="gs-in" class="gs-in" placeholder="Recette, ingrédient, fournisseur, bon…" autocomplete="off" oninput="gsRender()" onkeydown="gsKey(event)"><button class="m-x" onclick="closeSearch()">{{ic:x}}</button></div><div class="gs-res" id="gs-res"></div></div></div>
+<div class="ov" id="m-att"><div class="modal wide att-modal"><div class="m-grip"></div><div class="m-hdr"><h3 id="att-title">Document</h3><button class="m-x" onclick="attClose()">{{ic:x}}</button></div><div class="m-body" id="att-body"></div><div class="m-foot" id="att-foot"></div></div></div>
+<div class="ov" id="m-pick"><div class="modal"><div class="m-grip"></div><div class="m-hdr"><h3 id="pk-title">Dossier</h3><button class="m-x" onclick="closeMod('m-pick')">{{ic:x}}</button></div><div class="m-body" id="pk-body"></div><div class="m-foot" id="pk-foot"></div></div></div>
+<div class="ov" id="m-shr"><div class="modal wide"><div class="m-grip"></div><div class="m-hdr"><h3 id="shr-title">Recette partagée</h3><button class="m-x" onclick="closeMod('m-shr')">{{ic:x}}</button></div><div class="m-body" id="shr-body"></div><div class="m-foot" id="shr-foot"></div></div></div>
