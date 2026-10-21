@@ -1155,6 +1155,29 @@ html.re-full #p-rec-edit{padding:0;max-width:none;height:100%;position:relative;
 .mc-ed .field{margin-bottom:8px;}
 @media (max-width:820px){.adm-sec>summary{padding:12px 14px}.adm-sb{padding:12px 12px 14px}}
 
+/* ══ PARTAGE : mots de passe, bons, documents · DÉCONNEXION ═══ */
+.sb-cloud span{flex:1;}
+.sb-out{margin-left:auto;width:30px;height:30px;flex:none;border:0;border-radius:8px;background:transparent;color:var(--i3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;}
+.sb-out:hover{background:rgba(var(--ink-rgb),.08);color:var(--re);}
+#shell.col .sb-out{display:none;}
+.mc-out{margin-top:10px;}
+.pf-ic{position:relative;}
+.pf-lk{position:absolute;right:-5px;bottom:-5px;width:20px;height:20px;border-radius:999px;background:var(--i);color:var(--on-i);display:flex;align-items:center;justify-content:center;font-style:normal;box-shadow:0 0 0 2px var(--card);}
+.pf-lk svg{width:12px!important;height:12px!important;stroke-width:2.2;}
+.pf.locked{background:var(--alt);border-style:dashed;}
+.pf.locked .pf-s{color:var(--i3);}
+.icbtn.on{background:var(--i);color:var(--on-i);border-color:var(--i);}
+.pk-sec{display:flex;align-items:center;gap:7px;margin:18px 0 4px;padding-top:12px;border-top:1px solid var(--bd);font-size:13px;font-weight:700;color:var(--i);}
+.pk-sec:first-child{margin-top:4px;border-top:0;padding-top:0;}
+.pk-none{font-size:12.5px;color:var(--i4);padding:8px 4px;}
+.pk-add{margin-top:10px;}
+.pk-r span small{display:block;font-size:11.5px;color:var(--i4);font-weight:400;}
+.lk-pw{display:flex;gap:6px;align-items:center;}
+.lk-pw .fi{flex:1;}
+.rt-ic svg{width:42px;height:42px;stroke-width:1.4;opacity:.75;}
+.shr-c{display:block;font-size:11px;font-weight:500;color:var(--i4);text-align:right;}
+.part-acts{flex-wrap:wrap;}
+
 /* mode mobile forcé */
 html.lay-mob .esplit{grid-template-columns:minmax(0,1fr) minmax(0,440px);}
 html.lay-mob .re-side{width:256px;}html.lay-mob .re-fold.l{left:243px;}html.lay-mob .re-fold.r{right:243px;}html.lay-mob .re-mid{padding:22px 24px 110px;}
@@ -1175,7 +1198,7 @@ html.lay-mob .cn-bar{gap:8px;}html.lay-mob .cn-srch{height:40px;padding:0 12px 0
 html.lay-mob.re-full #scroll{overflow-y:auto;}html.lay-mob.re-full #p-rec-edit{height:auto;min-height:100%;padding-bottom:calc(84px + env(safe-area-inset-bottom,0px));}html.lay-mob .re-top{position:sticky;top:0;z-index:20;height:auto;min-height:54px;padding:env(safe-area-inset-top,0px) 10px 0;gap:8px;}html.lay-mob .re-top .dsk{display:none;}html.lay-mob .re-tabs button{height:40px;padding:0 14px;font-size:13.5px;}html.lay-mob .re-pair .re-ib{width:32px;}html.lay-mob .re-top .re-save{width:36px;padding:0;font-size:0;gap:0;justify-content:center;}html.lay-mob .re-top .re-save .ic{font-size:18px;}html.lay-mob .re-body{flex-direction:column;height:auto;}html.lay-mob .re-body.l-off .re-l,html.lay-mob .re-body.r-off .re-r{display:block;}html.lay-mob .re-fold{display:none!important;}html.lay-mob .re-mid{order:1;overflow:visible;padding:18px 14px 6px;}html.lay-mob .re-l{order:2;}html.lay-mob .re-r{order:3;}html.lay-mob .re-side,html.lay-mob .re-body:not(.r-off) .re-r{width:auto;overflow:visible;padding:0 14px;border:0;background:transparent;}html.lay-mob .re-sec{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:0 14px 12px;margin-bottom:10px;}html.lay-mob .re-sec:not([open]){padding-bottom:0;}html.lay-mob .re-head{margin-bottom:16px;}html.lay-mob .re-title{font-size:19px;}html.lay-mob .re-card{padding:14px;border-radius:14px;}html.lay-mob .re-card-t{flex-wrap:wrap;}html.lay-mob .re-empty{flex-direction:column;padding:16px 0 8px;gap:10px;}html.lay-mob .re-big{justify-content:center;height:48px;font-size:14px;}html.lay-mob .re-dock{position:fixed;bottom:calc(12px + env(safe-area-inset-bottom,0px));}html.lay-mob .re-kpis{grid-template-columns:1fr 1fr 1fr;gap:6px;}html.lay-mob .re-kpi{padding:10px;}html.lay-mob .re-kpi b{font-size:15px;}html.lay-mob .re-kpi small{display:none;}html.lay-mob .re-pr{grid-template-columns:minmax(0,1fr) auto auto;}html.lay-mob .re-pr .re-pu,html.lay-mob .re-pr.hd>span:nth-child(3),html.lay-mob .re-pr.tt>span:nth-child(3){display:none;}html.lay-mob .re-sell{grid-template-columns:1fr;gap:10px;}
 html.lay-mob .adm-sec>summary{padding:12px 14px}html.lay-mob .adm-sb{padding:12px 12px 14px}
 </style>
-<script>window.ECO_SERVER={"url":"https://fbwuhejcphsjhhkfkjku.supabase.co","key":"sb_publishable_QRPVGvql3M2eSfvwkBDTfw_9Pc8fuo0"};</script>
+<script>window.ECO_SERVER={url:"",key:""};</script>
 <script>/* Apparence : mode clair / sombre et couleur de l'application.
    Lu de façon synchrone au chargement pour éviter un flash de couleur. */
 (function(){
@@ -2860,7 +2883,7 @@ function loadDefaults(){if(ingredients.length)return;ingredients=[{id:'i1',name:
 // ══════════════════════════════════════════════════════════════
 
 // ── Icônes au trait ───────────────────────────────────────────
-var ICONS={"undo": "<path d=\"M9 14 4 9l5-5\"/><path d=\"M4 9h10.5a5.5 5.5 0 0 1 0 11H11\"/>", "redo": "<path d=\"m15 14 5-5-5-5\"/><path d=\"M20 9H9.5a5.5 5.5 0 0 0 0 11H13\"/>", "chev-left": "<path d=\"m15 6-6 6 6 6\"/>", "plus-circle": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 8v8M8 12h8\"/>", "sort": "<path d=\"M7 4v16M3.5 16.5 7 20l3.5-3.5M17 20V4M13.5 7.5 17 4l3.5 3.5\"/>", "eye-off": "<path d=\"M3 3l18 18\"/><path d=\"M10.6 5.1A9.8 9.8 0 0 1 12 5c5 0 9 4.5 10 7-.4 1-1.2 2.3-2.4 3.5M6.6 6.6C4.4 8 2.8 10.2 2 12c1 2.5 5 7 10 7 1.7 0 3.3-.5 4.6-1.3\"/><path d=\"M9.9 9.9a3 3 0 0 0 4.2 4.2\"/>", "mobile": "<rect x=\"7\" y=\"2.5\" width=\"10\" height=\"19\" rx=\"2.5\"/><path d=\"M11 18.5h2\"/>", "monitor": "<rect x=\"2.5\" y=\"4\" width=\"19\" height=\"13\" rx=\"2\"/><path d=\"M8.5 21h7M12 17v4\"/>", "panel": "<rect x=\"3\" y=\"4\" width=\"18\" height=\"16\" rx=\"3\"/><path d=\"M9 4v16\"/>", "home": "<path d=\"M3 10.5 12 3l9 7.5\"/><path d=\"M5 9.5V20h14V9.5\"/><path d=\"M10 20v-6h4v6\"/>", "bon": "<rect x=\"5.5\" y=\"4\" width=\"13\" height=\"17\" rx=\"2\"/><path d=\"M9 4.5V3h6v1.5\"/><path d=\"M9 10h6M9 14h6M9 18h3.5\"/>", "book": "<path d=\"M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z\"/><path d=\"M5 19.5A1.5 1.5 0 0 0 6.5 21H19\"/><path d=\"M9 7.5h6\"/>", "box": "<path d=\"M21 8 12 3 3 8v8l9 5 9-5z\"/><path d=\"M3 8l9 5 9-5M12 13v8\"/>", "truck": "<path d=\"M2.5 6h11.5v10H2.5z\"/><path d=\"M14 9h4l3.5 3.5V16H14\"/><circle cx=\"7\" cy=\"17.5\" r=\"1.8\"/><circle cx=\"17.5\" cy=\"17.5\" r=\"1.8\"/>", "settings": "<path d=\"M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1\"/><circle cx=\"15\" cy=\"6\" r=\"2\"/><circle cx=\"9\" cy=\"12\" r=\"2\"/><circle cx=\"17\" cy=\"18\" r=\"2\"/>", "shield": "<path d=\"M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6z\"/><path d=\"m9 12 2 2 4-4\"/>", "save": "<path d=\"M5 3h11l3 3v15H5z\"/><path d=\"M8 3v5h7V3\"/><path d=\"M8 21v-7h8v7\"/>", "download": "<path d=\"M12 4v11M7 10l5 5 5-5\"/><path d=\"M4 19.5h16\"/>", "upload": "<path d=\"M12 20V9M7 14l5-5 5 5\"/><path d=\"M4 4.5h16\"/>", "plus": "<path d=\"M12 5v14M5 12h14\"/>", "search": "<circle cx=\"11\" cy=\"11\" r=\"6.5\"/><path d=\"m20 20-4.2-4.2\"/>", "edit": "<path d=\"M4 20h4L19 9l-4-4L4 16z\"/><path d=\"m13.5 6.5 4 4\"/>", "copy": "<rect x=\"8\" y=\"8\" width=\"12\" height=\"12\" rx=\"2\"/><path d=\"M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3\"/>", "trash": "<path d=\"M4 7h16M10 11v6M14 11v6\"/><path d=\"M6 7l1 13h10l1-13M9 7V4h6v3\"/>", "x": "<path d=\"M6 6l12 12M18 6 6 18\"/>", "check": "<path d=\"m5 12.5 4.5 4.5L19 7.5\"/>", "check-circle": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"m8 12.5 2.8 2.8 5.2-5.8\"/>", "back": "<path d=\"M15 5l-7 7 7 7\"/>", "chev-down": "<path d=\"m6 9 6 6 6-6\"/>", "chev-right": "<path d=\"m9 6 6 6-6 6\"/>", "arrow-right": "<path d=\"M5 12h14M13 6l6 6-6 6\"/>", "camera": "<path d=\"M3.5 8h3.5l2-3h6l2 3h3.5v11.5h-17z\"/><circle cx=\"12\" cy=\"13.2\" r=\"3.5\"/>", "image": "<rect x=\"3\" y=\"4\" width=\"18\" height=\"16\" rx=\"2\"/><circle cx=\"9\" cy=\"10\" r=\"1.8\"/><path d=\"m21 16-5-5-9 9\"/>", "file": "<path d=\"M14 3H6v18h12V7z\"/><path d=\"M14 3v4h4\"/><path d=\"M9 13h6M9 17h6\"/>", "pdf": "<path d=\"M14 3H6v18h12V7z\"/><path d=\"M14 3v4h4\"/><path d=\"M8.5 16.5v-4h1.5a1.2 1.2 0 0 1 0 2.4H8.5M13 12.5v4h1a2 2 0 0 0 0-4z\"/>", "sheet": "<rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M4 10h16M4 15h16M10 4v16\"/>", "layers": "<path d=\"m12 3 9 5-9 5-9-5z\"/><path d=\"m3 13 9 5 9-5\"/>", "sparkle": "<path d=\"M11 3l1.8 5.2L18 10l-5.2 1.8L11 17l-1.8-5.2L4 10l5.2-1.8z\"/><path d=\"M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z\"/>", "alert": "<path d=\"M12 4 2.5 20h19z\"/><path d=\"M12 10v4.5M12 17.4v.1\"/>", "info": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 11v5M12 7.9v.1\"/>", "help": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 16.9v.1\"/>", "euro": "<path d=\"M17.5 6.5A7 7 0 1 0 17.5 17.5\"/><path d=\"M4 10.5h9M4 13.5h9\"/>", "clock": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/>", "calendar": "<rect x=\"4\" y=\"5\" width=\"16\" height=\"15\" rx=\"2\"/><path d=\"M4 10h16M8 3v4M16 3v4\"/>", "wheat": "<path d=\"M12 21V8\"/><path d=\"M12 8c-2.5 0-4-1.5-4-4 2.5 0 4 1.5 4 4zM12 8c2.5 0 4-1.5 4-4-2.5 0-4 1.5-4 4zM12 13c-2.5 0-4-1.5-4-4 2.5 0 4 1.5 4 4zM12 13c2.5 0 4-1.5 4-4-2.5 0-4 1.5-4 4zM12 18c-2.5 0-4-1.5-4-4 2.5 0 4 1.5 4 4zM12 18c2.5 0 4-1.5 4-4-2.5 0-4 1.5-4 4z\"/>", "droplet": "<path d=\"M12 3s-6 6.5-6 11a6 6 0 0 0 12 0c0-4.5-6-11-6-11z\"/>", "cube": "<path d=\"M12 3 4 7.5v9L12 21l8-4.5v-9z\"/><path d=\"M4 7.5 12 12l8-4.5M12 12v9\"/>", "bubbles": "<circle cx=\"8\" cy=\"14.5\" r=\"4\"/><circle cx=\"16\" cy=\"8.5\" r=\"3\"/><circle cx=\"17\" cy=\"17\" r=\"2\"/>", "egg": "<path d=\"M12 3c-3.5 0-6.5 5.5-6.5 10a6.5 6.5 0 0 0 13 0C18.5 8.5 15.5 3 12 3z\"/>", "salt": "<path d=\"M8 9.5h8l-1.2 11H9.2z\"/><path d=\"M8.5 9.5a3.5 3.5 0 0 1 7 0\"/><path d=\"M10.5 5.5v.1M13.5 5.5v.1M12 3.5v.1\"/>", "cherry": "<circle cx=\"7.5\" cy=\"16.5\" r=\"3.5\"/><circle cx=\"16.5\" cy=\"17.5\" r=\"3.5\"/><path d=\"M7.5 13c1-4 4-7.5 9-9.5M16.5 14c-1-3-1.5-6-.5-10.5\"/>", "tag": "<path d=\"M3 12V4h8l10 10-8 8z\"/><circle cx=\"7.5\" cy=\"8.5\" r=\"1.3\"/>", "folder": "<path d=\"M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2.5h8.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z\"/>", "grid": "<rect x=\"4\" y=\"4\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"13\" y=\"4\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"4\" y=\"13\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"13\" y=\"13\" width=\"7\" height=\"7\" rx=\"1.5\"/>", "cloud": "<path d=\"M7 18.5h10.5a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.6 9.2 4.7 4.7 0 0 0 7 18.5z\"/>", "cloud-off": "<path d=\"M7 18.5h10.5M20.6 16.4a4 4 0 0 0-2.5-5.85A6 6 0 0 0 9 6.3M6.3 9.4A4.7 4.7 0 0 0 7 18.5M3 3l18 18\"/>", "users": "<circle cx=\"9\" cy=\"8\" r=\"3.5\"/><path d=\"M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6\"/><path d=\"M16 4.7a3.5 3.5 0 0 1 0 6.6M18 14.3c2.2.7 3.5 2.8 3.5 5.7\"/>", "link": "<path d=\"M10 14a4.5 4.5 0 0 0 6.4 0l3.2-3.2a4.5 4.5 0 0 0-6.4-6.4L12 5.6\"/><path d=\"M14 10a4.5 4.5 0 0 0-6.4 0l-3.2 3.2a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2\"/>", "logout": "<path d=\"M14 4h4.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H14M10 16l-4-4 4-4M6 12h10\"/>", "clip": "<path d=\"M20 11.5l-7.8 7.8a5 5 0 0 1-7.1-7.1l8.2-8.2a3.4 3.4 0 0 1 4.8 4.8l-8.2 8.2a1.7 1.7 0 0 1-2.4-2.4l7.4-7.4\"/>", "list": "<path d=\"M8.5 6H21M8.5 12H21M8.5 18H21M4 6v.1M4 12v.1M4 18v.1\"/>", "eye": "<path d=\"M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>", "chart": "<path d=\"M4 4v16h16\"/><path d=\"M8.5 16v-4M12.5 16V8M16.5 16v-6\"/>", "user": "<circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4 21c0-4 3.5-7 8-7s8 3 8 7\"/>", "refresh": "<path d=\"M20 11a8 8 0 1 0-2.3 5.7\"/><path d=\"M20 4v7h-7\"/>", "sub": "<circle cx=\"12\" cy=\"12\" r=\"8.5\"/><circle cx=\"12\" cy=\"12\" r=\"3.5\"/>", "up": "<path d=\"m4 16 6-6 4 4 6-6\"/><path d=\"M15 8h5v5\"/>", "down": "<path d=\"m4 8 6 6 4-4 6 6\"/><path d=\"M15 16h5v-5\"/>", "mail": "<rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"/><path d=\"m3 7 9 6 9-6\"/>", "phone": "<path d=\"M5 4h3.5l1.5 4-2 1.5a11 11 0 0 0 6.5 6.5l1.5-2 4 1.5V19a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z\"/>", "printer": "<path d=\"M7 9V3.5h10V9\"/><rect x=\"3.5\" y=\"9\" width=\"17\" height=\"8\" rx=\"1.5\"/><path d=\"M7 14h10v6.5H7z\"/>", "scale": "<path d=\"M12 4v16M5 20h14M6 8h12\"/><path d=\"M6 8l-3 6a3 3 0 0 0 6 0zM18 8l-3 6a3 3 0 0 0 6 0z\"/>", "menu": "<path d=\"M4 7h16M4 12h16M4 17h16\"/>", "dots": "<circle cx=\"5.5\" cy=\"12\" r=\"1\"/><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"18.5\" cy=\"12\" r=\"1\"/>"};
+var ICONS={"lock": "<rect x=\"5\" y=\"10.5\" width=\"14\" height=\"10\" rx=\"2.5\"/><path d=\"M8 10.5V7.5a4 4 0 0 1 8 0v3\"/><path d=\"M12 14.5v2.5\"/>", "unlock": "<rect x=\"5\" y=\"10.5\" width=\"14\" height=\"10\" rx=\"2.5\"/><path d=\"M8 10.5V7.5a4 4 0 0 1 7.6-1.7\"/><path d=\"M12 14.5v2.5\"/>", "undo": "<path d=\"M9 14 4 9l5-5\"/><path d=\"M4 9h10.5a5.5 5.5 0 0 1 0 11H11\"/>", "redo": "<path d=\"m15 14 5-5-5-5\"/><path d=\"M20 9H9.5a5.5 5.5 0 0 0 0 11H13\"/>", "chev-left": "<path d=\"m15 6-6 6 6 6\"/>", "plus-circle": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 8v8M8 12h8\"/>", "sort": "<path d=\"M7 4v16M3.5 16.5 7 20l3.5-3.5M17 20V4M13.5 7.5 17 4l3.5 3.5\"/>", "eye-off": "<path d=\"M3 3l18 18\"/><path d=\"M10.6 5.1A9.8 9.8 0 0 1 12 5c5 0 9 4.5 10 7-.4 1-1.2 2.3-2.4 3.5M6.6 6.6C4.4 8 2.8 10.2 2 12c1 2.5 5 7 10 7 1.7 0 3.3-.5 4.6-1.3\"/><path d=\"M9.9 9.9a3 3 0 0 0 4.2 4.2\"/>", "mobile": "<rect x=\"7\" y=\"2.5\" width=\"10\" height=\"19\" rx=\"2.5\"/><path d=\"M11 18.5h2\"/>", "monitor": "<rect x=\"2.5\" y=\"4\" width=\"19\" height=\"13\" rx=\"2\"/><path d=\"M8.5 21h7M12 17v4\"/>", "panel": "<rect x=\"3\" y=\"4\" width=\"18\" height=\"16\" rx=\"3\"/><path d=\"M9 4v16\"/>", "home": "<path d=\"M3 10.5 12 3l9 7.5\"/><path d=\"M5 9.5V20h14V9.5\"/><path d=\"M10 20v-6h4v6\"/>", "bon": "<rect x=\"5.5\" y=\"4\" width=\"13\" height=\"17\" rx=\"2\"/><path d=\"M9 4.5V3h6v1.5\"/><path d=\"M9 10h6M9 14h6M9 18h3.5\"/>", "book": "<path d=\"M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z\"/><path d=\"M5 19.5A1.5 1.5 0 0 0 6.5 21H19\"/><path d=\"M9 7.5h6\"/>", "box": "<path d=\"M21 8 12 3 3 8v8l9 5 9-5z\"/><path d=\"M3 8l9 5 9-5M12 13v8\"/>", "truck": "<path d=\"M2.5 6h11.5v10H2.5z\"/><path d=\"M14 9h4l3.5 3.5V16H14\"/><circle cx=\"7\" cy=\"17.5\" r=\"1.8\"/><circle cx=\"17.5\" cy=\"17.5\" r=\"1.8\"/>", "settings": "<path d=\"M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1\"/><circle cx=\"15\" cy=\"6\" r=\"2\"/><circle cx=\"9\" cy=\"12\" r=\"2\"/><circle cx=\"17\" cy=\"18\" r=\"2\"/>", "shield": "<path d=\"M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6z\"/><path d=\"m9 12 2 2 4-4\"/>", "save": "<path d=\"M5 3h11l3 3v15H5z\"/><path d=\"M8 3v5h7V3\"/><path d=\"M8 21v-7h8v7\"/>", "download": "<path d=\"M12 4v11M7 10l5 5 5-5\"/><path d=\"M4 19.5h16\"/>", "upload": "<path d=\"M12 20V9M7 14l5-5 5 5\"/><path d=\"M4 4.5h16\"/>", "plus": "<path d=\"M12 5v14M5 12h14\"/>", "search": "<circle cx=\"11\" cy=\"11\" r=\"6.5\"/><path d=\"m20 20-4.2-4.2\"/>", "edit": "<path d=\"M4 20h4L19 9l-4-4L4 16z\"/><path d=\"m13.5 6.5 4 4\"/>", "copy": "<rect x=\"8\" y=\"8\" width=\"12\" height=\"12\" rx=\"2\"/><path d=\"M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3\"/>", "trash": "<path d=\"M4 7h16M10 11v6M14 11v6\"/><path d=\"M6 7l1 13h10l1-13M9 7V4h6v3\"/>", "x": "<path d=\"M6 6l12 12M18 6 6 18\"/>", "check": "<path d=\"m5 12.5 4.5 4.5L19 7.5\"/>", "check-circle": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"m8 12.5 2.8 2.8 5.2-5.8\"/>", "back": "<path d=\"M15 5l-7 7 7 7\"/>", "chev-down": "<path d=\"m6 9 6 6 6-6\"/>", "chev-right": "<path d=\"m9 6 6 6-6 6\"/>", "arrow-right": "<path d=\"M5 12h14M13 6l6 6-6 6\"/>", "camera": "<path d=\"M3.5 8h3.5l2-3h6l2 3h3.5v11.5h-17z\"/><circle cx=\"12\" cy=\"13.2\" r=\"3.5\"/>", "image": "<rect x=\"3\" y=\"4\" width=\"18\" height=\"16\" rx=\"2\"/><circle cx=\"9\" cy=\"10\" r=\"1.8\"/><path d=\"m21 16-5-5-9 9\"/>", "file": "<path d=\"M14 3H6v18h12V7z\"/><path d=\"M14 3v4h4\"/><path d=\"M9 13h6M9 17h6\"/>", "pdf": "<path d=\"M14 3H6v18h12V7z\"/><path d=\"M14 3v4h4\"/><path d=\"M8.5 16.5v-4h1.5a1.2 1.2 0 0 1 0 2.4H8.5M13 12.5v4h1a2 2 0 0 0 0-4z\"/>", "sheet": "<rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M4 10h16M4 15h16M10 4v16\"/>", "layers": "<path d=\"m12 3 9 5-9 5-9-5z\"/><path d=\"m3 13 9 5 9-5\"/>", "sparkle": "<path d=\"M11 3l1.8 5.2L18 10l-5.2 1.8L11 17l-1.8-5.2L4 10l5.2-1.8z\"/><path d=\"M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z\"/>", "alert": "<path d=\"M12 4 2.5 20h19z\"/><path d=\"M12 10v4.5M12 17.4v.1\"/>", "info": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 11v5M12 7.9v.1\"/>", "help": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 16.9v.1\"/>", "euro": "<path d=\"M17.5 6.5A7 7 0 1 0 17.5 17.5\"/><path d=\"M4 10.5h9M4 13.5h9\"/>", "clock": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/>", "calendar": "<rect x=\"4\" y=\"5\" width=\"16\" height=\"15\" rx=\"2\"/><path d=\"M4 10h16M8 3v4M16 3v4\"/>", "wheat": "<path d=\"M12 21V8\"/><path d=\"M12 8c-2.5 0-4-1.5-4-4 2.5 0 4 1.5 4 4zM12 8c2.5 0 4-1.5 4-4-2.5 0-4 1.5-4 4zM12 13c-2.5 0-4-1.5-4-4 2.5 0 4 1.5 4 4zM12 13c2.5 0 4-1.5 4-4-2.5 0-4 1.5-4 4zM12 18c-2.5 0-4-1.5-4-4 2.5 0 4 1.5 4 4zM12 18c2.5 0 4-1.5 4-4-2.5 0-4 1.5-4 4z\"/>", "droplet": "<path d=\"M12 3s-6 6.5-6 11a6 6 0 0 0 12 0c0-4.5-6-11-6-11z\"/>", "cube": "<path d=\"M12 3 4 7.5v9L12 21l8-4.5v-9z\"/><path d=\"M4 7.5 12 12l8-4.5M12 12v9\"/>", "bubbles": "<circle cx=\"8\" cy=\"14.5\" r=\"4\"/><circle cx=\"16\" cy=\"8.5\" r=\"3\"/><circle cx=\"17\" cy=\"17\" r=\"2\"/>", "egg": "<path d=\"M12 3c-3.5 0-6.5 5.5-6.5 10a6.5 6.5 0 0 0 13 0C18.5 8.5 15.5 3 12 3z\"/>", "salt": "<path d=\"M8 9.5h8l-1.2 11H9.2z\"/><path d=\"M8.5 9.5a3.5 3.5 0 0 1 7 0\"/><path d=\"M10.5 5.5v.1M13.5 5.5v.1M12 3.5v.1\"/>", "cherry": "<circle cx=\"7.5\" cy=\"16.5\" r=\"3.5\"/><circle cx=\"16.5\" cy=\"17.5\" r=\"3.5\"/><path d=\"M7.5 13c1-4 4-7.5 9-9.5M16.5 14c-1-3-1.5-6-.5-10.5\"/>", "tag": "<path d=\"M3 12V4h8l10 10-8 8z\"/><circle cx=\"7.5\" cy=\"8.5\" r=\"1.3\"/>", "folder": "<path d=\"M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2.5h8.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z\"/>", "grid": "<rect x=\"4\" y=\"4\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"13\" y=\"4\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"4\" y=\"13\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"13\" y=\"13\" width=\"7\" height=\"7\" rx=\"1.5\"/>", "cloud": "<path d=\"M7 18.5h10.5a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.6 9.2 4.7 4.7 0 0 0 7 18.5z\"/>", "cloud-off": "<path d=\"M7 18.5h10.5M20.6 16.4a4 4 0 0 0-2.5-5.85A6 6 0 0 0 9 6.3M6.3 9.4A4.7 4.7 0 0 0 7 18.5M3 3l18 18\"/>", "users": "<circle cx=\"9\" cy=\"8\" r=\"3.5\"/><path d=\"M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6\"/><path d=\"M16 4.7a3.5 3.5 0 0 1 0 6.6M18 14.3c2.2.7 3.5 2.8 3.5 5.7\"/>", "link": "<path d=\"M10 14a4.5 4.5 0 0 0 6.4 0l3.2-3.2a4.5 4.5 0 0 0-6.4-6.4L12 5.6\"/><path d=\"M14 10a4.5 4.5 0 0 0-6.4 0l-3.2 3.2a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2\"/>", "logout": "<path d=\"M14 4h4.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H14M10 16l-4-4 4-4M6 12h10\"/>", "clip": "<path d=\"M20 11.5l-7.8 7.8a5 5 0 0 1-7.1-7.1l8.2-8.2a3.4 3.4 0 0 1 4.8 4.8l-8.2 8.2a1.7 1.7 0 0 1-2.4-2.4l7.4-7.4\"/>", "list": "<path d=\"M8.5 6H21M8.5 12H21M8.5 18H21M4 6v.1M4 12v.1M4 18v.1\"/>", "eye": "<path d=\"M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>", "chart": "<path d=\"M4 4v16h16\"/><path d=\"M8.5 16v-4M12.5 16V8M16.5 16v-6\"/>", "user": "<circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4 21c0-4 3.5-7 8-7s8 3 8 7\"/>", "refresh": "<path d=\"M20 11a8 8 0 1 0-2.3 5.7\"/><path d=\"M20 4v7h-7\"/>", "sub": "<circle cx=\"12\" cy=\"12\" r=\"8.5\"/><circle cx=\"12\" cy=\"12\" r=\"3.5\"/>", "up": "<path d=\"m4 16 6-6 4 4 6-6\"/><path d=\"M15 8h5v5\"/>", "down": "<path d=\"m4 8 6 6 4-4 6 6\"/><path d=\"M15 16h5v-5\"/>", "mail": "<rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"/><path d=\"m3 7 9 6 9-6\"/>", "phone": "<path d=\"M5 4h3.5l1.5 4-2 1.5a11 11 0 0 0 6.5 6.5l1.5-2 4 1.5V19a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z\"/>", "printer": "<path d=\"M7 9V3.5h10V9\"/><rect x=\"3.5\" y=\"9\" width=\"17\" height=\"8\" rx=\"1.5\"/><path d=\"M7 14h10v6.5H7z\"/>", "scale": "<path d=\"M12 4v16M5 20h14M6 8h12\"/><path d=\"M6 8l-3 6a3 3 0 0 0 6 0zM18 8l-3 6a3 3 0 0 0 6 0z\"/>", "menu": "<path d=\"M4 7h16M4 12h16M4 17h16\"/>", "dots": "<circle cx=\"5.5\" cy=\"12\" r=\"1\"/><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"18.5\" cy=\"12\" r=\"1\"/>"};
 function ic(n,c){ return '<svg class="ic'+(c?' '+c:'')+'" viewBox="0 0 24 24" aria-hidden="true">'+(ICONS[n]||ICONS.info)+'</svg>'; }
 function catIcon(cat){
   var k=CATI[cat];
@@ -4013,8 +4036,8 @@ function initApp(){
 // Les données restent sur l'appareil : l'appli marche hors connexion et envoie
 // les modifications au retour du réseau.
 var CLOUD={me:null,inv:null,pendingN:0,cfg:null,sess:null,st:null,shared:{},applying:false,busy:false,again:false,status:'off',msg:'',lastOk:0,pendingInvite:null,timer:null,pushT:null,ui:{}};
-var CL_KEYS={v4_ing:['ing'],v4_rec:['rec'],v4_suppliers:['sup'],v4_ord:['ord'],v4_ingcats:['cfg'],v4_reccats:['cfg'],v4_ingsubs:['cfg'],v4_recsubs:['cfg']};
-var CL_CFG_KEYS=['v4_ingcats','v4_reccats','v4_ingsubs','v4_recsubs'];
+var CL_KEYS={v4_ing:['ing'],v4_rec:['rec'],v4_suppliers:['sup'],v4_ord:['ord'],v4_ingcats:['cfg'],v4_reccats:['cfg'],v4_ingsubs:['cfg'],v4_recsubs:['cfg'],v4_shdocs:['cfg']};
+var CL_CFG_KEYS=['v4_ingcats','v4_reccats','v4_ingsubs','v4_recsubs','v4_shdocs'];
 var CL_KINDS=['ing','rec','sup','ord','cfg'];
 
 function clLoad(k,d){ try{ return JSON.parse(LS.getItem(k)||'null')||d; }catch(e){ return d; } }
@@ -4230,6 +4253,7 @@ function clPush(){
 function clPushAtt(){
   var st=CLOUD.st, up=Object.keys(st.attUp), del=Object.keys(st.attDel);
   var metas={}; recipes.forEach(function(r){ (r.attachments||[]).forEach(function(a){ metas[a.id]=a; }); });
+  if(typeof shDocs==='function') shDocs().forEach(function(d){ if(d.att) metas[d.att.id]=d.att; });
   var p=Promise.resolve();
   up.forEach(function(id){
     p=p.then(function(){
@@ -4248,10 +4272,11 @@ function clPushAtt(){
 // prix, allergènes, documents) dès qu'il change ; on retire celles qui ne sont plus partagées.
 function clPublish(){
   var st=CLOUD.st, rows=[], want={};
-  recipes.forEach(function(r){
-    if(!r.shared) return;
-    var sid=clSharedId(r.id), snap; want[sid]=1;
-    try{ snap=shareSnapshot(r); }catch(e){ console.warn(e); return; }
+  var items=[]; recipes.forEach(function(r){ if(r.shared) items.push({id:r.id,snap:function(){ return shareSnapshot(r); }}); });
+  if(typeof shareExtraItems==='function') items=items.concat(shareExtraItems());
+  items.forEach(function(it){
+    var sid=clSharedId(it.id), snap; want[sid]=1;
+    try{ snap=it.snap(); }catch(e){ console.warn(e); return; }
     var h=clHash(JSON.stringify(snap)+'|'+clMyName());
     if(st.pub[sid]!==h) rows.push({sid:sid,h:h,row:{id:sid,owner:clUid(),owner_name:clMyName(),data:snap,deleted:false}});
   });
@@ -4287,8 +4312,9 @@ function clPull(opts){
       if(r.owner!==clUid()||!r.deleted||!st.pub[r.id]||st.pub[r.id]==='force-delete') return;
       var rec=recipes.find(function(x){ return clSharedId(x.id)===r.id; });
       if(rec&&rec.shared){ delete rec.shared; delete rec.shareFolder; rec.updatedAt=now(); gone.push(rec.name); }
+      else if(typeof shareExtraGone==='function'){ var nm=shareExtraGone(r.id); if(nm) gone.push(nm); }
     });
-    if(gone.length){ persist(); toast((gone.length>1?gone.length+' recettes retirées':'« '+gone[0]+' » retirée')+' du partage par l’administrateur','info'); }
+    if(gone.length){ persist(); toast((gone.length>1?gone.length+' partages retirés':'« '+gone[0]+' » retiré')+' du partage par l’administrateur','info'); }
     // une recette partagée par moi depuis un autre appareil : on garde la trace pour pouvoir la retirer
     res[1].forEach(function(r){ if(r.owner===clUid()&&!r.deleted&&!(r.id in st.pub)) st.pub[r.id]='remote'; if(r.owner===clUid()&&r.deleted) delete st.pub[r.id]; });
     if(ns) clSave('v4_shared_cache',CLOUD.shared);
@@ -4338,9 +4364,11 @@ function clAfterRemote(n,ns){
 }
 
 // ── Connexion ──
+function clAppUrl(){ return /^https?:$/.test(location.protocol)?location.origin+location.pathname:''; }
+function clRedirectQS(){ var u=clAppUrl(); return u?'?redirect_to='+encodeURIComponent(u):''; }
 function clSignIn(email,pw){ return clFetch('/auth/v1/token?grant_type=password',{method:'POST',auth:false,body:{email:email,password:pw}}).then(clSetSession); }
 function clSignUp(email,pw,name){
-  return clFetch('/auth/v1/signup',{method:'POST',auth:false,body:{email:email,password:pw,data:{display_name:name||'',invite:(CLOUD.pendingInvite&&CLOUD.pendingInvite.c)||''}}})
+  return clFetch('/auth/v1/signup'+clRedirectQS(),{method:'POST',auth:false,body:{email:email,password:pw,data:{display_name:name||'',invite:(CLOUD.pendingInvite&&CLOUD.pendingInvite.c)||''}}})
     .then(function(j){ if(j&&j.access_token) return clSetSession(j); var e=new Error('Compte créé. Ouvre le lien reçu par email pour le confirmer, puis connecte-toi.'); e.confirm=true; throw e; });
 }
 function clSignedOut(msg){
@@ -4359,7 +4387,7 @@ function clHasLocalData(){
 // déconnexion, elles sont mises de côté sous « acct:<id>: » et l'appareil se
 // vide ; elles reviennent quand ce compte se reconnecte. Les données sans
 // compte (avant toute connexion) sont rangées sous « acct:_appareil: ».
-var ACCT_KEYS=['v4_ing','v4_rec','v4_ord','v4_suppliers','v4_ingcats','v4_reccats','v4_ingsubs','v4_recsubs','v4_profile','v4_ridraft','v4_ocrfix','v4_safety','v4_lastbackup','v4_bksnooze','v4_cloud_state','v4_shared_cache','v4_aikey','v4_cloud_me','v4_cloud_inv'];
+var ACCT_KEYS=['v4_ing','v4_rec','v4_ord','v4_suppliers','v4_ingcats','v4_reccats','v4_ingsubs','v4_recsubs','v4_profile','v4_ridraft','v4_ocrfix','v4_safety','v4_lastbackup','v4_bksnooze','v4_cloud_state','v4_shared_cache','v4_aikey','v4_cloud_me','v4_cloud_inv','v4_shdocs'];
 function acctIsData(k){ return ACCT_KEYS.indexOf(k)>=0||k.indexOf('v4_att:')===0; }
 function acctOwner(){ return LS.getItem('v4_owner')||''; }
 function acctPfx(id){ return 'acct:'+id+':'; }
@@ -4478,7 +4506,7 @@ function clUI(){
   var cls=!on?'':(CLOUD.status==='blocked'||CLOUD.status==='deleted')?'err':CLOUD.status==='pending'?'off':CLOUD.status==='error'?'err':CLOUD.status==='offline'?'off':(CLOUD.status==='sync'||pend)?'sync':'ok';
   var txt=!on?'':CLOUD.status==='pending'?'En attente de validation':CLOUD.status==='blocked'?'Compte bloqué':CLOUD.status==='deleted'?'Compte supprimé':CLOUD.status==='error'?'Erreur de synchro':CLOUD.status==='offline'?('Hors ligne'+(pend?' · '+pend+' en attente':'')):(CLOUD.status==='sync'?'Synchronisation…':pend?pend+' en attente':'Synchronisé');
   if(b){ b.style.display=on?'':'none'; b.className='tb-cloud '+cls; b.title='Espace en ligne — '+txt; b.innerHTML=ic(CLOUD.status==='offline'?'cloud-off':'cloud')+'<i></i>'; }
-  if(sb){ sb.style.display=on?'':'none'; sb.className='sb-cloud '+cls; sb.innerHTML=on?ic(CLOUD.status==='offline'?'cloud-off':'cloud')+'<span><b>'+esc(clMyName())+'</b>'+esc(txt)+'</span>':''; }
+  if(sb){ sb.style.display=on?'':'none'; sb.className='sb-cloud '+cls; sb.innerHTML=on?ic(CLOUD.status==='offline'?'cloud-off':'cloud')+'<span><b>'+esc(clMyName())+'</b>'+esc(txt)+'</span><button class="sb-out" onclick="event.stopPropagation();clLogout()" title="Se déconnecter" aria-label="Se déconnecter">'+ic('logout')+'</button>':''; }
   var s=document.getElementById('cl-status'); if(s) s.innerHTML=clStatusLine();
 }
 function clStatusLine(){
@@ -4626,7 +4654,7 @@ function clLogoutDo(){
 }
 function clForgot(){
   var e=(document.getElementById('cl-email').value||'').trim(); if(!/^\S+@\S+\.\S+$/.test(e)){ clErr('Entre ton email puis clique à nouveau'); return; }
-  clFetch('/auth/v1/recover',{method:'POST',auth:false,body:{email:e}}).then(function(){ clErr(''); toast('Email de réinitialisation envoyé','ok'); },function(er){ clErr(er.message); });
+  clFetch('/auth/v1/recover'+clRedirectQS(),{method:'POST',auth:false,body:{email:e}}).then(function(){ clErr(''); toast('Email de réinitialisation envoyé','ok'); },function(er){ clErr(er.message); });
 }
 
 // ── Démarrage ──
@@ -4740,7 +4768,7 @@ function attOpen(a){
   }).catch(function(e){ b.innerHTML='<div class="att-load err">'+ic('alert')+' '+esc(e.message)+'</div>'; });
 }
 function attClose(){ document.getElementById('m-att').classList.remove('show'); setTimeout(function(){ ATT_URLS.forEach(function(u){ try{ URL.revokeObjectURL(u); }catch(e){} }); ATT_URLS=[]; document.getElementById('att-body').innerHTML=''; },300); }
-function attReferenced(){ var s={}; recipes.forEach(function(r){ (r.attachments||[]).forEach(function(a){ s[a.id]=1; }); }); return s; }
+function attReferenced(){ var s={}; recipes.forEach(function(r){ (r.attachments||[]).forEach(function(a){ s[a.id]=1; }); }); if(typeof shDocs==='function') shDocs().forEach(function(d){ if(d.att) s[d.att.id]=1; }); return s; }
 function attGc(){
   // documents qui ne sont plus joints à aucune recette (au démarrage : le délai « Annuler » est passé)
   var ref=attReferenced();
@@ -4923,32 +4951,98 @@ function shrCopy(){
   });
 }
 
-// ══ ESPACE PARTAGE (page dédiée, dossiers de recettes) ═══════════
-// Un dossier partagé = un nom (« Stage traiteur ») porté par chaque recette
-// partagée (r.shareFolder). Rien ne change côté serveur : le nom voyage dans
-// l'instantané publié, et chaque recette reste modifiable par son seul auteur.
+// ══ ESPACE PARTAGE (page dédiée, dossiers) ════════════════════════
+// Un dossier partagé = un nom (« Stage traiteur ») porté par chaque élément
+// partagé : recettes (r.shareFolder), bons d'économat (o.shareFolder) et
+// documents PDF / images (liste « v4_shdocs »). Chaque élément reste
+// modifiable par son seul auteur. Un dossier peut avoir un mot de passe :
+// le serveur cache alors son contenu à ceux qui ne l'ont pas saisi.
 var PART={tab:'others',q:'',open:null,acct:null};
+var PT_NAMES={rec:['recette','recettes'],bon:['bon','bons'],doc:['document','documents']};
 
 function partConnectHTML(){
-  return '<div class="empty shr-empty"><span class="empty-i">'+ic('users')+'</span><div class="empty-t">Partage de recettes</div>'+
-    '<div class="empty-s">Connecte-toi à ton espace en ligne pour voir les recettes et dossiers partagés par les autres, et partager les tiens. Chacun garde son espace perso.</div>'+
+  return '<div class="empty shr-empty"><span class="empty-i">'+ic('users')+'</span><div class="empty-t">Partage</div>'+
+    '<div class="empty-s">Connecte-toi à ton espace en ligne pour voir les recettes, bons et documents partagés par les autres, et partager les tiens. Chacun garde son espace perso.</div>'+
     '<button class="btn btn-gold btn-sm" style="margin-top:12px" onclick="goPage(\'backup\');setTimeout(function(){var c=document.getElementById(\'cl-card\');if(c)c.scrollIntoView({block:\'start\'});},60)">'+ic('user')+' Se connecter</button></div>';
 }
+function shType(x){ var t=x&&x.data&&x.data.type; return t==='bon'||t==='doc'?t:'rec'; }
+function partCountLabel(c){
+  var p=[]; ['rec','bon','doc'].forEach(function(k){ var n=c[k]||0; if(n) p.push(n+' '+PT_NAMES[k][n>1?1:0]); });
+  return p.join(' · ')||'vide';
+}
+function partCountRows(rows){ var c={}; rows.forEach(function(x){ var t=shType(x); c[t]=(c[t]||0)+1; }); return c; }
 function partFolderKey(x){ return x.owner+'|'+((x.data&&x.data.folder)||''); }
+
+// ── mes documents partagés (PDF / images) ──
+function shDocs(){ try{ var a=JSON.parse(LS.getItem('v4_shdocs')||'[]'); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+function shDocsSave(a){ LS.setItem('v4_shdocs',JSON.stringify(a)); }
+function shOrderSnap(o){
+  var items=(o.items||[]).map(function(it){
+    var g=ingredients.find(function(x){ return x.id===it.ingId; })||{}, q;
+    try{ q=bonQtyLabel(Object.assign({},it,{ing:g})); }catch(e){ q=fQtyNice(it.qty); }
+    return {n:g.name||it.name||'?',cat:g.cat||'',u:g.unit||'kg',price:g.price||0,buyPrice:g.buyPrice!=null?g.buyPrice:null,unitWeight:g.unitWeight||null,
+      allergens:g.allergens||[],allergensSet:!!g.allergensSet,qty:it.qty,q:q,cost:it.cost||0};
+  });
+  return {type:'bon',name:o.name||'Bon',date:o.date||'',status:o.status||'draft',notes:o.notes||'',recipes:(o.recipesUsed||[]).slice(0,30),
+    items:items,cost:items.reduce(function(s,i){ return s+(i.cost||0); },0),folder:(o.shared&&o.shareFolder)||''};
+}
+function shDocSnap(d){ return {type:'doc',name:d.name,attachments:[{id:d.att.id,name:d.att.name,mime:d.att.mime,size:d.att.size}],size:d.att.size,mime:d.att.mime,folder:d.folder||''}; }
+// éléments publiés en plus des recettes (lu par la synchro)
+function shareExtraItems(){
+  var out=[];
+  orders.forEach(function(o){ if(o.shared) out.push({id:o.id,snap:function(){ return shOrderSnap(o); }}); });
+  shDocs().forEach(function(d){ if(d.att) out.push({id:d.id,snap:function(){ return shDocSnap(d); }}); });
+  return out;
+}
+// l'administrateur a retiré un de mes bons / documents
+function shareExtraGone(sid){
+  var o=orders.find(function(x){ return clSharedId(x.id)===sid; });
+  if(o&&o.shared){ delete o.shared; delete o.shareFolder; o.updatedAt=now(); return o.name; }
+  var ds=shDocs(), i=ds.findIndex(function(d){ return clSharedId(d.id)===sid; });
+  if(i>=0){ var nm=ds[i].name; ds.splice(i,1); shDocsSave(ds); return nm; }
+  return null;
+}
+
+// ── mots de passe des dossiers ──
+function partMyLocked(f){ return (CLOUD.myLocks||[]).indexOf(f)>=0; }
+function partLocksOf(owner){ return (CLOUD.locks||[]).filter(function(l){ return l.owner===owner; }); }
+function partLockFor(owner,f){ return (CLOUD.locks||[]).find(function(l){ return l.owner===owner&&l.folder===f; }); }
+function clLocksTick(){
+  if(!clLive()||!CLOUD.me||CLOUD.me.legacy||CLOUD.me.status!=='active') return Promise.resolve();
+  return Promise.all([clFetch('/rest/v1/rpc/locked_shares',{method:'POST',body:{}}),clFetch('/rest/v1/rpc/my_share_locks',{method:'POST',body:{}})]).then(function(r){
+    CLOUD.locks=r[0]||[]; CLOUD.myLocks=r[1]||[];
+    var sig=JSON.stringify(CLOUD.locks.map(function(l){ return [l.owner,l.folder,!!l.unlocked]; }).sort());
+    if(sig!==CLOUD.lockSig){ CLOUD.lockSig=sig; return clSharedRefresh(); }
+  },function(){ CLOUD.locks=[]; CLOUD.myLocks=[]; });
+}
+// relit tous les partages visibles (après un mot de passe saisi, ajouté ou retiré)
+function clSharedRefresh(){
+  return clPullTable('shared_recipes','id,owner,owner_name,data,deleted,updated_at','deleted=eq.false',null).then(function(rows){
+    var m={}; rows.forEach(function(r){ m[r.id]=r; });
+    CLOUD.shared=m; clSave('v4_shared_cache',m);
+    var mx=clMaxTs(rows,null); if(mx&&(!CLOUD.st.since.shared||mx>CLOUD.st.since.shared)) CLOUD.st.since.shared=mx;
+    clSaveState(); clAfterRemote(0,1);
+  });
+}
+(function(){ var _p=clPull; clPull=function(){ return _p.apply(this,arguments).then(function(r){ return clLocksTick().then(function(){ return r; },function(){ return r; }); }); }; })();
+
 function partMyFolders(){
   var m={};
-  recipes.forEach(function(r){ if(r.shared&&r.shareFolder){ (m[r.shareFolder]=m[r.shareFolder]||[]).push(r); } });
-  return Object.keys(m).sort(function(a,b){ return a.localeCompare(b,'fr'); }).map(function(k){ return {name:k,recs:m[k]}; });
+  function f(n){ return m[n]||(m[n]={name:n,recs:[],bons:[],docs:[]}); }
+  recipes.forEach(function(r){ if(r.shared&&r.shareFolder) f(r.shareFolder).recs.push(r); });
+  orders.forEach(function(o){ if(o.shared&&o.shareFolder) f(o.shareFolder).bons.push(o); });
+  shDocs().forEach(function(d){ if(d.folder) f(d.folder).docs.push(d); });
+  return Object.keys(m).sort(function(a,b){ return a.localeCompare(b,'fr'); }).map(function(k){ return m[k]; });
 }
+function partMineCount(){ return recipes.filter(function(r){ return r.shared; }).length+orders.filter(function(o){ return o.shared; }).length+shDocs().length; }
 function partMatch(txt){ var q=normTxt(PART.q); return !q||normTxt(txt).indexOf(q)>=0; }
 
 function renderPartage(){
   var w=document.getElementById('part-wrap'); if(!w) return;
   if(typeof clActive!=='function'||!clActive()){ w.innerHTML=partConnectHTML(); return; }
-  var others=sharedList().filter(function(x){ return !shrIsMine(x); });
-  var mineN=recipes.filter(function(r){ return r.shared; }).length;
-  var h='<div class="seg part-seg"><button class="'+(PART.tab==='others'?'on':'')+'" onclick="PART.tab=\'others\';PART.open=null;PART.acct=null;renderPartage()">'+ic('users')+' Des autres · '+others.length+'</button>'+
-    '<button class="'+(PART.tab==='mine'?'on':'')+'" onclick="PART.tab=\'mine\';PART.open=null;renderPartage()">'+ic('upload')+' Les miens · '+mineN+'</button></div>'+
+  var others=sharedList().filter(function(x){ return !shrIsMine(x); }).length+(CLOUD.locks||[]).filter(function(l){ return !l.unlocked; }).reduce(function(s,l){ return s+(l.n||0); },0);
+  var h='<div class="seg part-seg"><button class="'+(PART.tab==='others'?'on':'')+'" onclick="PART.tab=\'others\';PART.open=null;PART.acct=null;renderPartage()">'+ic('users')+' Des autres · '+others+'</button>'+
+    '<button class="'+(PART.tab==='mine'?'on':'')+'" onclick="PART.tab=\'mine\';PART.open=null;renderPartage()">'+ic('upload')+' Les miens · '+partMineCount()+'</button></div>'+
     '<div class="srch">'+ic('search')+'<input class="sinp" id="part-q" placeholder="Rechercher…" value="'+esc(PART.q)+'" oninput="PART.q=this.value;partBody()"></div>'+
     '<div id="part-body"></div>';
   w.innerHTML=h; partBody();
@@ -4957,79 +5051,118 @@ function partBody(){
   var b=document.getElementById('part-body'); if(!b) return;
   b.innerHTML=PART.tab==='mine'?partMineHTML():partOthersHTML();
 }
+function partCopiedBon(x){ return orders.some(function(o){ return o.fromShared&&o.fromShared.id===x.id; }); }
 function partTile(x){
-  var d=x.data, img=d.image&&d.image.length>4;
+  var d=x.data, t=shType(x);
+  if(t==='bon'){
+    var n=(d.items||[]).length;
+    return '<div class="rt sh-bon" onclick="openSharedBon(\''+escJS(x.id)+'\')"><div class="rt-ph" style="--ch:35"><span class="rt-em rt-ic">'+ic('bon')+'</span>'+
+      (partCopiedBon(x)?'<span class="rt-badge">'+ic('check')+' Copié</span>':'')+'</div>'+
+      '<div class="rt-b"><div class="rt-n">'+esc(d.name)+'</div><div class="rt-m">'+n+' article'+(n>1?'s':'')+' · '+fEur(d.cost||0)+'</div><div class="rt-c">'+ic('bon')+' Bon d’économat'+(d.date?' · '+fDate(d.date):'')+'</div></div></div>';
+  }
+  if(t==='doc'){
+    var a=(d.attachments||[])[0]||{}, pdf=attIsPdf(a);
+    return '<div class="rt sh-doc" onclick="openSharedDoc(\''+escJS(x.id)+'\')"><div class="rt-ph" style="--ch:8"><span class="rt-em rt-ic">'+ic(pdf?'pdf':'image')+'</span></div>'+
+      '<div class="rt-b"><div class="rt-n">'+esc(d.name)+'</div><div class="rt-m">'+(pdf?'PDF':'Image')+' · '+attSize(a.size||d.size)+'</div><div class="rt-c">'+ic('file')+' Document</div></div></div>';
+  }
+  var img=d.image&&d.image.length>4;
   var ph=img?'<img src="'+esc(d.image)+'" alt="" loading="lazy">':'<span class="rt-em">'+(d.image||ic('book'))+'</span>';
   var copied=recipes.some(function(r){ return r.fromShared&&r.fromShared.id===x.id; });
   return '<div class="rt" onclick="openShared(\''+escJS(x.id)+'\')"><div class="rt-ph'+(img?' img':'')+'" style="--ch:'+catHue(d.cat||'')+'">'+ph+
     (copied?'<span class="rt-badge">'+ic('check')+' Copiée</span>':'')+'</div>'+
     '<div class="rt-b"><div class="rt-n">'+esc(d.name)+'</div><div class="rt-m">'+fKg(d.weight||0)+' · '+fEur(d.cost||0)+(d.time?' · '+ic('clock')+' '+fDur(d.time):'')+'</div><div class="rt-c">'+catDot(d.cat||'')+esc(d.cat||'')+'</div></div></div>';
 }
-function partFolderCard(name,sub,n,onclick,acts){
-  return '<div class="pf'+(acts?' mine':'')+'"'+(onclick?' onclick="'+onclick+'"':'')+'><span class="pf-ic">'+ic('folder')+'</span>'+
-    '<div class="pf-b"><div class="pf-n">'+esc(name)+'</div><div class="pf-s">'+n+' recette'+(n>1?'s':'')+(sub?' · '+sub:'')+'</div></div>'+(acts||ic('arrow-right'))+'</div>';
+// lock : '' | 'locked' (mot de passe à saisir) | 'open' (protégé, déjà déverrouillé ou à moi)
+function partFolderCard(name,sub,label,onclick,acts,lock){
+  return '<div class="pf'+(acts?' mine':'')+(lock==='locked'?' locked':'')+'"'+(onclick?' onclick="'+onclick+'"':'')+'><span class="pf-ic">'+ic('folder')+(lock?'<i class="pf-lk">'+ic(lock==='locked'?'lock':'unlock')+'</i>':'')+'</span>'+
+    '<div class="pf-b"><div class="pf-n">'+esc(name)+'</div><div class="pf-s">'+label+(sub?' · '+sub:'')+'</div></div>'+(acts||ic(lock==='locked'?'lock':'arrow-right'))+'</div>';
 }
 function partOwnerName(x){ return x.owner_name||'Compte sans nom'; }
 function partOthersHTML(){
   var all=sharedList().filter(function(x){ return !shrIsMine(x); });
-  if(!all.length) return '<div class="empty"><div class="empty-s">Personne n’a encore partagé de recette.</div></div>';
+  var hidden=(CLOUD.locks||[]).filter(function(l){ return !l.unlocked&&l.n>0; });
+  if(!all.length&&!hidden.length) return '<div class="empty"><div class="empty-s">Personne n’a encore rien partagé.</div></div>';
   var mkBack=function(label,click){ return '<button class="btn btn-ghost btn-sm" onclick="'+click+'">'+ic('back')+' '+esc(label)+'</button>'; };
   // 3 · un dossier ouvert (à l'intérieur d'un compte)
   if(PART.open){
     var rows=all.filter(function(x){ return partFolderKey(x)===PART.open; });
     if(!rows.length){ PART.open=null; return partOthersHTML(); }
     PART.acct=rows[0].owner;
-    var f=rows[0].data.folder, owner=partOwnerName(rows[0]), todo=rows.filter(function(x){ return !recipes.some(function(r){ return r.fromShared&&r.fromShared.id===x.id; }); }).length;
-    var qa=partMatch(owner+' '+f);
+    var f=rows[0].data.folder, owner=partOwnerName(rows[0]);
+    var todo=rows.filter(function(x){ var t=shType(x); return t==='rec'?!recipes.some(function(r){ return r.fromShared&&r.fromShared.id===x.id; }):(t==='bon'&&!partCopiedBon(x)); }).length;
+    var copyable=rows.filter(function(x){ return shType(x)!=='doc'; }).length;
+    var qa=partMatch(owner+' '+f), lk=partLockFor(rows[0].owner,f);
     return mkBack(owner,'PART.open=null;partBody()')+
-      '<div class="pf-head"><span class="pf-ic">'+ic('folder')+'</span><div class="pf-b"><div class="pf-n big">'+esc(f)+'</div><div class="pf-s">Dossier de '+esc(owner)+' · '+rows.length+' recette'+(rows.length>1?'s':'')+'</div></div>'+
-      '<button class="btn btn-gold btn-sm" id="pf-copyall" onclick="partCopyFolder(\''+escJS(PART.open)+'\')"'+(todo?'':' disabled')+'>'+ic('copy')+' '+(todo?(todo===rows.length?'Copier tout le dossier':'Copier les '+todo+' manquantes'):'Déjà copié')+'</button></div>'+
+      '<div class="pf-head"><span class="pf-ic">'+ic('folder')+(lk?'<i class="pf-lk">'+ic('unlock')+'</i>':'')+'</span><div class="pf-b"><div class="pf-n big">'+esc(f)+'</div><div class="pf-s">Dossier de '+esc(owner)+' · '+partCountLabel(partCountRows(rows))+(lk?' · protégé par mot de passe':'')+'</div></div>'+
+      (copyable?'<button class="btn btn-gold btn-sm" id="pf-copyall" onclick="partCopyFolder(\''+escJS(PART.open)+'\')"'+(todo?'':' disabled')+'>'+ic('copy')+' '+(todo?(todo===copyable?'Copier tout le dossier':'Copier les '+todo+' manquants'):'Déjà copié')+'</button>':'')+'</div>'+
       '<div class="rgrid tiles">'+rows.filter(function(x){ return qa||partMatch(x.data.name); }).map(partTile).join('')+'</div>';
   }
-  // 2 · un compte ouvert : ses dossiers et ses recettes seules
+  // 2 · un compte ouvert : ses dossiers et ses éléments seuls
   if(PART.acct){
-    var mine=all.filter(function(x){ return x.owner===PART.acct; });
-    if(!mine.length){ PART.acct=null; return partOthersHTML(); }
-    var name=partOwnerName(mine[0]), qa2=partMatch(name), groups={}, loose=[];
+    var mine=all.filter(function(x){ return x.owner===PART.acct; }), lks=partLocksOf(PART.acct).filter(function(l){ return !l.unlocked&&l.n>0; });
+    if(!mine.length&&!lks.length){ PART.acct=null; return partOthersHTML(); }
+    var name=mine.length?partOwnerName(mine[0]):(lks[0].owner_name||'Compte sans nom'), qa2=partMatch(name), groups={}, loose=[];
     mine.forEach(function(x){ if(x.data.folder){ var k=partFolderKey(x); (groups[k]=groups[k]||[]).push(x); } else loose.push(x); });
-    var keys=Object.keys(groups).filter(function(k){ var g=groups[k]; return qa2||partMatch(g[0].data.folder)||g.some(function(x){ return partMatch(x.data.name); }); })
-      .sort(function(a,b){ return groups[a][0].data.folder.localeCompare(groups[b][0].data.folder,'fr'); });
-    var lo=loose.filter(function(x){ return qa2||partMatch(x.data.name+' '+x.data.cat); });
+    var cards=Object.keys(groups).filter(function(k){ var g=groups[k]; return qa2||partMatch(g[0].data.folder)||g.some(function(x){ return partMatch(x.data.name); }); }).map(function(k){
+      var g=groups[k], fo=g[0].data.folder;
+      return {n:fo,h:partFolderCard(fo,g.slice(0,3).map(function(x){ return esc(x.data.name); }).join(', ')+(g.length>3?'…':''),partCountLabel(partCountRows(g)),'PART.open=\''+escJS(k)+'\';partBody()','',partLockFor(PART.acct,fo)?'open':'')};
+    }).concat(lks.filter(function(l){ return qa2||partMatch(l.folder); }).map(function(l){
+      return {n:l.folder,h:partFolderCard(l.folder,'mot de passe requis',l.n+' élément'+(l.n>1?'s':''),'partUnlock(\''+escJS(l.owner)+'\',\''+escJS(l.folder)+'\')','','locked')};
+    })).sort(function(a,b){ return a.n.localeCompare(b.n,'fr'); });
+    var lo=loose.filter(function(x){ return qa2||partMatch(x.data.name+' '+(x.data.cat||'')); });
+    var nf=Object.keys(groups).length+lks.length;
     var hh=mkBack('Tous les comptes','PART.acct=null;PART.open=null;partBody()')+
-      '<div class="pf-head"><span class="pf-ic">'+ic('folder')+'</span><div class="pf-b"><div class="pf-n big">'+esc(name)+'</div><div class="pf-s">'+mine.length+' recette'+(mine.length>1?'s':'')+' partagée'+(mine.length>1?'s':'')+(Object.keys(groups).length?' · '+Object.keys(groups).length+' dossier'+(Object.keys(groups).length>1?'s':''):'')+'</div></div></div>';
-    if(keys.length) hh+='<div class="sh"><div class="sh-t">Dossiers</div></div><div class="pf-list">'+keys.map(function(k){ var g=groups[k];
-      return partFolderCard(g[0].data.folder,g.slice(0,3).map(function(x){ return esc(x.data.name); }).join(', ')+(g.length>3?'…':''),g.length,'PART.open=\''+escJS(k)+'\';partBody()'); }).join('')+'</div>';
-    if(lo.length) hh+='<div class="sh"><div class="sh-t">'+(keys.length?'Autres recettes':'Recettes')+'</div></div><div class="rgrid tiles">'+lo.map(partTile).join('')+'</div>';
-    return hh+((keys.length||lo.length)?'':'<div class="empty"><div class="empty-s">Aucun résultat</div></div>');
+      '<div class="pf-head"><span class="pf-ic">'+ic('folder')+'</span><div class="pf-b"><div class="pf-n big">'+esc(name)+'</div><div class="pf-s">'+partCountLabel(partCountRows(mine))+(nf?' · '+nf+' dossier'+(nf>1?'s':''):'')+'</div></div></div>';
+    if(cards.length) hh+='<div class="sh"><div class="sh-t">Dossiers</div></div><div class="pf-list">'+cards.map(function(c){ return c.h; }).join('')+'</div>';
+    if(lo.length) hh+='<div class="sh"><div class="sh-t">'+(cards.length?'Autres partages':'Partages')+'</div></div><div class="rgrid tiles">'+lo.map(partTile).join('')+'</div>';
+    return hh+((cards.length||lo.length)?'':'<div class="empty"><div class="empty-s">Aucun résultat</div></div>');
   }
   // 1 · un dossier par compte qui partage
   var by={};
-  all.forEach(function(x){ var a=by[x.owner]||(by[x.owner]={id:x.owner,name:partOwnerName(x),rows:[],folders:{}}); a.rows.push(x); if(x.data.folder) a.folders[x.data.folder]=1; });
+  function acct(id,nm){ return by[id]||(by[id]={id:id,name:nm||'Compte sans nom',rows:[],folders:{},locked:0}); }
+  all.forEach(function(x){ var a=acct(x.owner,partOwnerName(x)); a.rows.push(x); if(x.data.folder) a.folders[x.data.folder]=1; });
+  hidden.forEach(function(l){ var a=acct(l.owner,l.owner_name); a.folders[l.folder]=1; a.locked+=l.n||0; });
   var list=Object.keys(by).map(function(k){ return by[k]; }).filter(function(a){
-    return partMatch(a.name)||a.rows.some(function(x){ return partMatch(x.data.name+' '+(x.data.folder||'')+' '+(x.data.cat||'')); }); })
+    return partMatch(a.name)||a.rows.some(function(x){ return partMatch(x.data.name+' '+(x.data.folder||'')+' '+(x.data.cat||'')); })||Object.keys(a.folders).some(partMatch); })
     .sort(function(a,b){ return a.name.localeCompare(b.name,'fr'); });
   if(!list.length) return '<div class="empty"><div class="empty-s">Aucun résultat</div></div>';
   return '<div class="sh"><div class="sh-t">Comptes · '+list.length+'</div></div><div class="pf-list">'+list.map(function(a){
-    var nf=Object.keys(a.folders).length;
-    return partFolderCard(a.name,nf?nf+' dossier'+(nf>1?'s':''):'',a.rows.length,'PART.acct=\''+escJS(a.id)+'\';partBody()'); }).join('')+'</div>';
+    var nf=Object.keys(a.folders).length, c=partCountRows(a.rows), lab=partCountLabel(c);
+    if(a.locked) lab=(a.rows.length?lab+' · ':'')+a.locked+' protégé'+(a.locked>1?'s':'');
+    return partFolderCard(a.name,nf?nf+' dossier'+(nf>1?'s':''):'',lab,'PART.acct=\''+escJS(a.id)+'\';partBody()'); }).join('')+'</div>';
 }
 function partMineHTML(){
-  var folders=partMyFolders().filter(function(f){ return partMatch(f.name)||f.recs.some(function(r){ return partMatch(r.name); }); });
-  var loose=recipes.filter(function(r){ return r.shared&&!r.shareFolder&&partMatch(r.name); });
+  var folders=partMyFolders().filter(function(f){ return partMatch(f.name)||f.recs.some(function(r){ return partMatch(r.name); })||f.bons.some(function(o){ return partMatch(o.name); })||f.docs.some(function(d){ return partMatch(d.name); }); });
+  var looseR=recipes.filter(function(r){ return r.shared&&!r.shareFolder&&partMatch(r.name); });
+  var looseB=orders.filter(function(o){ return o.shared&&!o.shareFolder&&partMatch(o.name); });
+  var looseD=shDocs().filter(function(d){ return !d.folder&&partMatch(d.name); });
   var h='<div class="part-acts"><button class="btn btn-gold btn-sm" onclick="partNewFolder()">'+ic('plus')+' Nouveau dossier partagé</button>'+
-    '<button class="btn btn-ghost btn-sm" onclick="partShareCat()">'+ic('folder')+' Partager une catégorie</button></div>'+
-    '<div class="shr-info">'+ic('info')+'<span>Les autres voient tes dossiers et peuvent copier les recettes dans leur espace. Toi seul peux les modifier : elles se mettent à jour quand tu enregistres.</span></div>';
+    '<button class="btn btn-ghost btn-sm" onclick="partShareCat()">'+ic('folder')+' Partager une catégorie</button>'+
+    '<button class="btn btn-ghost btn-sm" onclick="partQuick(\'bon\')">'+ic('bon')+' Partager un bon</button>'+
+    '<button class="btn btn-ghost btn-sm" onclick="partAddDocs(\'\')">'+ic('pdf')+' Partager un PDF</button></div>'+
+    '<input type="file" id="part-doc-file" accept="application/pdf,image/*" multiple style="display:none" onchange="partDocFiles(this)">'+
+    '<div class="shr-info">'+ic('info')+'<span>Les autres voient tes dossiers et peuvent copier tes recettes et tes bons dans leur espace. Toi seul peux les modifier : ils se mettent à jour quand tu enregistres. Un dossier peut avoir un <b>mot de passe</b> ('+ic('lock')+').</span></div>';
   if(folders.length) h+='<div class="sh"><div class="sh-t">Mes dossiers</div></div><div class="pf-list">'+folders.map(function(f){
+    var lk=partMyLocked(f.name);
     var acts='<div class="pf-acts" onclick="event.stopPropagation()">'+
-      '<button class="btn btn-ghost btn-sm" onclick="partPick(\''+escJS(f.name)+'\')">'+ic('plus')+' Recettes</button>'+
+      '<button class="btn btn-ghost btn-sm" onclick="partPick(\''+escJS(f.name)+'\')">'+ic('plus')+' Ajouter</button>'+
+      '<button class="icbtn'+(lk?' on':'')+'" title="'+(lk?'Mot de passe (protégé)':'Mettre un mot de passe')+'" onclick="partLockUI(\''+escJS(f.name)+'\')">'+ic(lk?'lock':'unlock')+'</button>'+
       '<button class="icbtn" title="Renommer" onclick="partRename(\''+escJS(f.name)+'\')">'+ic('edit')+'</button>'+
       '<button class="icbtn" title="Ne plus partager le dossier" onclick="partStopFolder(\''+escJS(f.name)+'\')">'+ic('x')+'</button></div>';
-    return partFolderCard(f.name,f.recs.slice(0,3).map(function(r){ return esc(r.name); }).join(', ')+(f.recs.length>3?'…':''),f.recs.length,'partPick(\''+escJS(f.name)+'\')',acts);
+    var names=f.recs.map(function(r){ return r.name; }).concat(f.bons.map(function(o){ return o.name; }),f.docs.map(function(d){ return d.name; }));
+    return partFolderCard(f.name,esc(names.slice(0,3).join(', '))+(names.length>3?'…':''),partCountLabel({rec:f.recs.length,bon:f.bons.length,doc:f.docs.length})+(lk?' · protégé':''),'partPick(\''+escJS(f.name)+'\')',acts,lk?'open':'');
   }).join('')+'</div>';
-  if(loose.length) h+='<div class="sh"><div class="sh-t">Recettes partagées seules</div></div><div class="rgrid tiles">'+loose.map(function(r){
+  if(looseR.length) h+='<div class="sh"><div class="sh-t">Recettes partagées seules</div></div><div class="rgrid tiles">'+looseR.map(function(r){
     return '<div class="rt" onclick="openEditRec(\''+r.id+'\')"><div class="rt-ph" style="--ch:'+catHue(r.cat||'')+'">'+recThumb(r)+'</div><div class="rt-b"><div class="rt-n">'+esc(r.name)+'</div><div class="rt-c">'+esc(r.cat||'')+'</div></div></div>'; }).join('')+'</div>';
-  if(!folders.length&&!loose.length) h+='<div class="empty"><div class="empty-s">'+(PART.q?'Aucun résultat':'Tu ne partages rien pour l’instant. Crée un dossier (ex. « Stage traiteur ») et ajoutes-y les recettes que tu veux.')+'</div></div>';
+  if(looseB.length||looseD.length) h+='<div class="sh"><div class="sh-t">Bons et documents partagés seuls</div></div><div class="att-list">'+
+    looseB.map(function(o){ return partMineRow(ic('bon'),o.name,(o.items||[]).length+' article'+((o.items||[]).length>1?'s':'')+' · '+fEur(orderCost(o)),'openEditBon(\''+o.id+'\')','partUnshareBon(\''+o.id+'\')'); }).join('')+
+    looseD.map(function(d){ return partMineRow(ic(attIsPdf(d.att)?'pdf':'image'),d.name,(attIsPdf(d.att)?'PDF':'Image')+' · '+attSize(d.att.size),'partOpenMyDoc(\''+d.id+'\')','partUnshareDoc(\''+d.id+'\')'); }).join('')+'</div>';
+  if(!folders.length&&!looseR.length&&!looseB.length&&!looseD.length) h+='<div class="empty"><div class="empty-s">'+(PART.q?'Aucun résultat':'Tu ne partages rien pour l’instant. Crée un dossier (ex. « Stage traiteur ») et ajoutes-y des recettes, des bons ou des PDF.')+'</div></div>';
   return h;
+}
+function partMineRow(icon,name,sub,open,del){
+  return '<div class="att-r"><span class="att-th" onclick="'+open+'">'+icon+'</span><div class="att-n" onclick="'+open+'"><b>'+esc(name)+'</b><small>'+sub+'</small></div>'+
+    '<button class="idel" onclick="'+del+'" title="Ne plus partager">'+ic('x')+'</button></div>';
 }
 
 // ── gestion de mes dossiers ──
@@ -5051,7 +5184,7 @@ function partShareCat(){
   document.getElementById('pk-title').textContent='Partager une catégorie';
   b.innerHTML='<div class="pk-hint">Toutes les recettes de la catégorie choisie sont partagées dans un dossier du même nom. Tu pourras ensuite en retirer ou en ajouter.</div>'+
     '<div class="pf-list">'+cats.map(function(c){ var n=recipes.filter(function(r){ return r.cat===c; }).length;
-      return partFolderCard(c,'',n,'partShareCatGo(\''+escJS(c)+'\')'); }).join('')+'</div>';
+      return partFolderCard(c,'',n+' recette'+(n>1?'s':''),'partShareCatGo(\''+escJS(c)+'\')'); }).join('')+'</div>';
   document.getElementById('pk-foot').innerHTML='<button class="btn btn-ghost btn-full" onclick="closeMod(\'m-pick\')">Annuler</button>';
   openMod('m-pick');
 }
@@ -5059,28 +5192,44 @@ function partShareCatGo(c){
   var n=0; recipes.forEach(function(r){ if(r.cat===c){ r.shared=true; r.shareFolder=c; r.updatedAt=now(); n++; } });
   closeMod('m-pick'); PART.tab='mine'; partChanged('Dossier « '+c+' » partagé · '+n+' recette'+(n>1?'s':''));
 }
-var PICK={folder:'',sel:{},q:'',isNew:false};
+// choix du contenu d'un dossier : recettes, bons, documents
+var PICK={folder:'',sel:{},q:'',isNew:false,newDocs:[]};
 function partPick(folder,isNew){
-  PICK={folder:folder,sel:{},q:'',isNew:!!isNew};
+  PICK={folder:folder,sel:{},q:'',isNew:!!isNew,newDocs:[]};
   recipes.forEach(function(r){ if(r.shared&&r.shareFolder===folder) PICK.sel[r.id]=1; });
+  orders.forEach(function(o){ if(o.shared&&o.shareFolder===folder) PICK.sel['o:'+o.id]=1; });
+  shDocs().forEach(function(d){ if(d.folder===folder) PICK.sel['d:'+d.id]=1; });
   document.getElementById('pk-title').textContent='Dossier « '+folder+' »';
-  document.getElementById('pk-body').innerHTML='<div class="pk-hint">Coche les recettes à mettre dans ce dossier partagé.</div>'+
+  document.getElementById('pk-body').innerHTML='<div class="pk-hint">Coche ce que tu veux mettre dans ce dossier partagé : des recettes, des bons d’économat et des documents.</div>'+
     '<div class="srch">'+ic('search')+'<input class="sinp" placeholder="Rechercher…" oninput="PICK.q=this.value;partPickList()"></div><div id="pk-list"></div>';
   partPickList(); openMod('m-pick');
 }
 function partPickList(){
   var box=document.getElementById('pk-list'); if(!box) return;
-  var q=normTxt(PICK.q), by={};
+  var q=normTxt(PICK.q), by={}, h='';
   recipes.filter(function(r){ return !q||normTxt(r.name+' '+r.cat).indexOf(q)>=0; }).forEach(function(r){ (by[r.cat||'Sans catégorie']=by[r.cat||'Sans catégorie']||[]).push(r); });
   var cats=Object.keys(by).sort(function(a,b){ return a.localeCompare(b,'fr'); });
-  box.innerHTML=cats.length?cats.map(function(c){
+  h+='<div class="pk-sec">'+ic('book')+' Recettes</div>';
+  h+=cats.length?cats.map(function(c){
     var rs=by[c].sort(function(a,b){ return a.name.localeCompare(b.name,'fr'); }), all=rs.every(function(r){ return PICK.sel[r.id]; });
     return '<div class="pk-cat"><span>'+catDot(c)+esc(c)+'</span><button class="btn btn-ghost btn-sm" onclick="partPickCat(\''+escJS(c)+'\','+(all?0:1)+')">'+(all?'Tout décocher':'Tout cocher')+'</button></div>'+
       rs.map(function(r){
         var other=r.shared&&r.shareFolder&&r.shareFolder!==PICK.folder?'<small>dans « '+esc(r.shareFolder)+' »</small>':'';
         return '<label class="pk-r"><input type="checkbox"'+(PICK.sel[r.id]?' checked':'')+' onchange="PICK.sel[\''+r.id+'\']=this.checked?1:0;partPickCount()"><span>'+esc(r.name)+other+'</span></label>';
       }).join('');
-  }).join(''):'<div class="empty"><div class="empty-s">Aucune recette</div></div>';
+  }).join(''):'<div class="pk-none">Aucune recette</div>';
+  var bons=orders.filter(function(o){ return !q||normTxt(o.name).indexOf(q)>=0; }).sort(function(a,b){ return String(b.date||'').localeCompare(String(a.date||'')); });
+  h+='<div class="pk-sec">'+ic('bon')+' Bons d’économat</div>'+(bons.length?bons.map(function(o){
+    var other=o.shared&&o.shareFolder&&o.shareFolder!==PICK.folder?' · dans « '+esc(o.shareFolder)+' »':'';
+    return '<label class="pk-r"><input type="checkbox"'+(PICK.sel['o:'+o.id]?' checked':'')+' onchange="PICK.sel[\'o:'+o.id+'\']=this.checked?1:0;partPickCount()"><span>'+esc(o.name)+'<small>'+fDate(o.date)+' · '+(o.items||[]).length+' article'+((o.items||[]).length>1?'s':'')+other+'</small></span></label>';
+  }).join(''):'<div class="pk-none">Aucun bon</div>');
+  var docs=shDocs().filter(function(d){ return d.folder===PICK.folder; }).concat(PICK.newDocs).filter(function(d){ return !q||normTxt(d.name).indexOf(q)>=0; });
+  h+='<div class="pk-sec">'+ic('pdf')+' Documents (PDF, images)</div>'+docs.map(function(d){
+    return '<label class="pk-r"><input type="checkbox"'+(PICK.sel['d:'+d.id]?' checked':'')+' onchange="PICK.sel[\'d:'+d.id+'\']=this.checked?1:0;partPickCount()"><span>'+esc(d.name)+'<small>'+(attIsPdf(d.att)?'PDF':'Image')+' · '+attSize(d.att.size)+(d.isNew?' · nouveau':'')+'</small></span></label>';
+  }).join('')+
+    '<button class="btn btn-ghost btn-sm pk-add" onclick="document.getElementById(\'pk-doc-file\').click()">'+ic('plus')+' Ajouter un PDF ou une image</button>'+
+    '<input type="file" id="pk-doc-file" accept="application/pdf,image/*" multiple style="display:none" onchange="partPickDocs(this)">';
+  box.innerHTML=h;
   partPickCount();
 }
 function partPickCat(c,v){
@@ -5090,31 +5239,219 @@ function partPickCat(c,v){
 function partPickCount(){
   var n=Object.keys(PICK.sel).filter(function(k){ return PICK.sel[k]; }).length;
   document.getElementById('pk-foot').innerHTML='<button class="btn btn-ghost" onclick="closeMod(\'m-pick\')">Annuler</button>'+
-    '<button class="btn btn-gold btn-full" onclick="partPickSave()">'+ic('check')+' '+(n?'Partager '+n+' recette'+(n>1?'s':''):(PICK.isNew?'Choisis des recettes':'Vider le dossier'))+'</button>';
+    '<button class="btn btn-gold btn-full" onclick="partPickSave()">'+ic('check')+' '+(n?'Partager '+n+' élément'+(n>1?'s':''):(PICK.isNew?'Choisis au moins un élément':'Vider le dossier'))+'</button>';
 }
+// lit des fichiers choisis (PDF / images) → documents prêts à partager
+function partReadDocs(files){
+  var out=[], chain=Promise.resolve();
+  files.forEach(function(f){
+    chain=chain.then(function(){
+      var isImg=/^image\//.test(f.type), isPdf=f.type==='application/pdf'||/\.pdf$/i.test(f.name);
+      if(!isImg&&!isPdf){ toast(f.name+' : seuls les PDF et les images sont acceptés','err'); return; }
+      if(isPdf&&f.size>ATT_MAX){ toast(f.name+' : trop gros (15 Mo maximum)','err'); return; }
+      return attReadFile(f).then(function(d){ return isImg?attShrinkImage(d,2200,0.86):d; }).then(function(d){
+        var aid='a'+uid()+uid(), mime=isPdf?'application/pdf':(d.slice(5,d.indexOf(';'))||f.type);
+        var size=Math.round((d.length-d.indexOf(',')-1)*3/4);
+        if(size>ATT_MAX){ toast(f.name+' : trop gros (15 Mo maximum)','err'); return; }
+        out.push({id:'d'+uid(),name:(f.name||'document').replace(/\.(pdf|jpe?g|png|webp|heic)$/i,''),att:{id:aid,name:f.name||('document.'+(isPdf?'pdf':'jpg')),mime:mime,size:size},data:d,createdAt:now()});
+      });
+    }).catch(function(e){ toast(f.name+' : '+e.message,'err'); });
+  });
+  return chain.then(function(){ return out; });
+}
+function partPickDocs(input){
+  var files=Array.prototype.slice.call(input.files||[]); input.value=''; if(!files.length) return;
+  partReadDocs(files).then(function(ds){ ds.forEach(function(d){ d.isNew=true; d.folder=PICK.folder; PICK.newDocs.push(d); PICK.sel['d:'+d.id]=1; }); partPickList(); });
+}
+function partDocStore(d){ attPut(d.att.id,d.data); var c={id:d.id,name:d.name,att:d.att,folder:d.folder||'',createdAt:d.createdAt||now()}; return c; }
 function partPickSave(){
-  var n=0, out=0;
-  if(PICK.isNew&&!Object.keys(PICK.sel).some(function(k){ return PICK.sel[k]; })){ toast('Choisis au moins une recette','err'); return; }
+  var n=0;
+  if(PICK.isNew&&!Object.keys(PICK.sel).some(function(k){ return PICK.sel[k]; })){ toast('Choisis au moins un élément','err'); return; }
   recipes.forEach(function(r){
     var want=!!PICK.sel[r.id], inF=r.shared&&r.shareFolder===PICK.folder;
     if(want&&!inF){ r.shared=true; r.shareFolder=PICK.folder; r.updatedAt=now(); }
-    else if(!want&&inF){ delete r.shared; delete r.shareFolder; r.updatedAt=now(); out++; }
+    else if(!want&&inF){ delete r.shared; delete r.shareFolder; r.updatedAt=now(); }
     if(want) n++;
   });
+  orders.forEach(function(o){
+    var want=!!PICK.sel['o:'+o.id], inF=o.shared&&o.shareFolder===PICK.folder;
+    if(want&&!inF){ o.shared=true; o.shareFolder=PICK.folder; o.updatedAt=now(); }
+    else if(!want&&inF){ delete o.shared; delete o.shareFolder; o.updatedAt=now(); }
+    if(want) n++;
+  });
+  var ds=shDocs().filter(function(d){ return d.folder!==PICK.folder||PICK.sel['d:'+d.id]; });
+  PICK.newDocs.forEach(function(d){ if(PICK.sel['d:'+d.id]) ds.push(partDocStore(d)); });
+  n+=ds.filter(function(d){ return d.folder===PICK.folder; }).length;
+  shDocsSave(ds);
+  ds.forEach(function(d){ if(typeof clQueueAttUp==='function'&&attLocal(d.att.id)) clQueueAttUp(d.att.id); });
   closeMod('m-pick'); PART.tab='mine';
-  partChanged(n?'Dossier « '+PICK.folder+' » : '+n+' recette'+(n>1?'s':'')+' partagée'+(n>1?'s':''):'Dossier « '+PICK.folder+' » retiré du partage');
+  if(!n&&partMyLocked(PICK.folder)) clRpc('set_share_lock',{p_folder:PICK.folder,p_pw:''}).catch(function(){});
+  partChanged(n?'Dossier « '+PICK.folder+' » : '+n+' élément'+(n>1?'s':'')+' partagé'+(n>1?'s':''):'Dossier « '+PICK.folder+' » retiré du partage');
+}
+// partage rapide : un bon, ou des documents, avec choix du dossier
+function partFolderSelect(id){
+  var fs=partMyFolders().map(function(f){ return f.name; });
+  return '<div class="field"><div class="fl">Dossier</div><select class="fi" id="'+id+'" onchange="if(this.value===\'__new__\'){var s=this;askText(\'Nouveau dossier partagé\',\'Ex : Stage traiteur\',function(nm){nm=(nm||\'\').trim();if(!nm){s.value=\'\';return;}var o=document.createElement(\'option\');o.textContent=nm;o.value=nm;s.insertBefore(o,s.lastChild);s.value=nm;});}">'+
+    '<option value="">— Aucun (partagé seul) —</option>'+fs.map(function(f){ return '<option>'+esc(f)+'</option>'; }).join('')+'<option value="__new__">+ Nouveau dossier…</option></select></div>';
+}
+function partQuick(kind){
+  if(kind==='bon'){
+    if(!orders.length){ toast('Aucun bon d’économat à partager','err'); return; }
+    PICK={folder:'',sel:{},q:'',isNew:false,newDocs:[]};
+    document.getElementById('pk-title').textContent='Partager des bons d’économat';
+    var bons=orders.slice().sort(function(a,b){ return String(b.date||'').localeCompare(String(a.date||'')); });
+    document.getElementById('pk-body').innerHTML='<div class="pk-hint">Les autres pourront voir ces bons (articles, quantités, coûts) et les copier dans leurs propres bons. Toi seul peux les modifier.</div>'+
+      partFolderSelect('pk-fold')+bons.map(function(o){
+        return '<label class="pk-r"><input type="checkbox"'+(o.shared?' checked disabled':'')+' onchange="PICK.sel[\''+o.id+'\']=this.checked?1:0"><span>'+esc(o.name)+'<small>'+fDate(o.date)+' · '+(o.items||[]).length+' article'+((o.items||[]).length>1?'s':'')+' · '+fEur(orderCost(o))+(o.shared?' · déjà partagé':'')+'</small></span></label>';
+      }).join('');
+    document.getElementById('pk-foot').innerHTML='<button class="btn btn-ghost" onclick="closeMod(\'m-pick\')">Annuler</button><button class="btn btn-gold btn-full" onclick="partQuickBonSave()">'+ic('check')+' Partager</button>';
+    openMod('m-pick');
+  }
+}
+function partQuickBonSave(){
+  var f=(document.getElementById('pk-fold')||{}).value||''; if(f==='__new__') f='';
+  var ids=Object.keys(PICK.sel).filter(function(k){ return PICK.sel[k]; });
+  if(!ids.length){ toast('Coche au moins un bon','err'); return; }
+  ids.forEach(function(id){ var o=orders.find(function(x){ return x.id===id; }); if(o){ o.shared=true; if(f) o.shareFolder=f; else delete o.shareFolder; o.updatedAt=now(); } });
+  closeMod('m-pick'); PART.tab='mine'; partChanged(ids.length+' bon'+(ids.length>1?'s':'')+' partagé'+(ids.length>1?'s':'')+(f?' dans « '+f+' »':''));
+}
+var PDOC={list:[]};
+function partAddDocs(){ var i=document.getElementById('part-doc-file'); if(i) i.click(); }
+function partDocFiles(input){
+  var files=Array.prototype.slice.call(input.files||[]); input.value=''; if(!files.length) return;
+  partReadDocs(files).then(function(ds){
+    if(!ds.length) return; PDOC.list=ds;
+    document.getElementById('pk-title').textContent='Partager '+(ds.length>1?ds.length+' documents':'un document');
+    document.getElementById('pk-body').innerHTML='<div class="pk-hint">Les autres pourront ouvrir et télécharger '+(ds.length>1?'ces documents':'ce document')+'.</div>'+partFolderSelect('pk-fold')+
+      '<div class="att-list">'+ds.map(function(d){ return '<div class="att-r"><span class="att-th'+(attIsPdf(d.att)?' pdf':'')+'">'+ic(attIsPdf(d.att)?'pdf':'image')+'</span><div class="att-n"><b>'+esc(d.name)+'</b><small>'+(attIsPdf(d.att)?'PDF':'Image')+' · '+attSize(d.att.size)+'</small></div></div>'; }).join('')+'</div>';
+    document.getElementById('pk-foot').innerHTML='<button class="btn btn-ghost" onclick="closeMod(\'m-pick\')">Annuler</button><button class="btn btn-gold btn-full" onclick="partDocSave()">'+ic('check')+' Partager</button>';
+    openMod('m-pick');
+  });
+}
+function partDocSave(){
+  var f=(document.getElementById('pk-fold')||{}).value||''; if(f==='__new__') f='';
+  var ds=shDocs(); PDOC.list.forEach(function(d){ d.folder=f; ds.push(partDocStore(d)); if(typeof clQueueAttUp==='function') clQueueAttUp(d.att.id); });
+  shDocsSave(ds); var n=PDOC.list.length; PDOC.list=[];
+  closeMod('m-pick'); PART.tab='mine'; partChanged(n+' document'+(n>1?'s':'')+' partagé'+(n>1?'s':'')+(f?' dans « '+f+' »':''));
+}
+function partOpenMyDoc(id){ var d=shDocs().find(function(x){ return x.id===id; }); if(d) attOpen(d.att); }
+function partUnshareDoc(id){
+  var ds=shDocs(), d=ds.find(function(x){ return x.id===id; }); if(!d) return;
+  if(!confirm('Ne plus partager « '+d.name+' » ?')) return;
+  shDocsSave(ds.filter(function(x){ return x.id!==id; })); partChanged('Document retiré du partage');
+}
+function partUnshareBon(id){
+  var o=orders.find(function(x){ return x.id===id; }); if(!o) return;
+  delete o.shared; delete o.shareFolder; o.updatedAt=now(); partChanged('Bon retiré du partage');
 }
 function partRename(f){
   askText('Renommer le dossier',f,function(nm){
     nm=(nm||'').trim(); if(!nm||nm===f) return;
     recipes.forEach(function(r){ if(r.shared&&r.shareFolder===f){ r.shareFolder=nm; r.updatedAt=now(); } });
+    orders.forEach(function(o){ if(o.shared&&o.shareFolder===f){ o.shareFolder=nm; o.updatedAt=now(); } });
+    var ds=shDocs(); ds.forEach(function(d){ if(d.folder===f) d.folder=nm; }); shDocsSave(ds);
+    if(partMyLocked(f)) clRpc('rename_share_lock',{p_old:f,p_new:nm}).then(function(){ CLOUD.myLocks=(CLOUD.myLocks||[]).map(function(x){ return x===f?nm:x; }); renderPartage(); },function(e){ toast(e.message,'err'); });
     partChanged('Dossier renommé');
   });
 }
 function partStopFolder(f){
-  if(!confirm('Ne plus partager le dossier « '+f+' » ? Tes recettes restent dans ton espace ; les copies déjà faites par les autres restent chez eux.')) return;
+  if(!confirm('Ne plus partager le dossier « '+f+' » ? Tes recettes et tes bons restent dans ton espace ; les copies déjà faites par les autres restent chez eux.')) return;
   recipes.forEach(function(r){ if(r.shared&&r.shareFolder===f){ delete r.shared; delete r.shareFolder; r.updatedAt=now(); } });
+  orders.forEach(function(o){ if(o.shared&&o.shareFolder===f){ delete o.shared; delete o.shareFolder; o.updatedAt=now(); } });
+  shDocsSave(shDocs().filter(function(d){ return d.folder!==f; }));
+  if(partMyLocked(f)) clRpc('set_share_lock',{p_folder:f,p_pw:''}).then(function(){ CLOUD.myLocks=(CLOUD.myLocks||[]).filter(function(x){ return x!==f; }); },function(){});
   partChanged('Dossier retiré du partage');
+}
+
+// ── mot de passe d'un de mes dossiers ──
+function partLockUI(f){
+  var lk=partMyLocked(f);
+  document.getElementById('pk-title').textContent='Mot de passe · « '+f+' »';
+  document.getElementById('pk-body').innerHTML='<div class="pk-hint">'+(lk?ic('lock')+' Ce dossier est <b>protégé</b> : les autres comptes doivent saisir le mot de passe (une seule fois) pour voir son contenu. Tu peux le changer : ceux qui l’avaient devront saisir le nouveau.':'Avec un mot de passe, le contenu de ce dossier n’est visible que par les comptes qui le saisissent (une seule fois). Donne-le aux personnes concernées, par exemple tes stagiaires.')+'</div>'+
+    '<div class="field"><div class="fl">'+(lk?'Nouveau mot de passe':'Mot de passe')+' (4 caractères minimum)</div><div class="lk-pw"><input class="fi" id="lk-pw" type="password" autocomplete="new-password" onkeydown="if(event.key===\'Enter\')partLockSave()"><button type="button" class="icbtn" onclick="var i=document.getElementById(\'lk-pw\');i.type=i.type===\'password\'?\'text\':\'password\'" title="Afficher">'+ic('eye')+'</button></div></div>'+
+    '<div class="cl-err" id="lk-err"></div>';
+  document.getElementById('pk-foot').innerHTML='<button class="btn btn-ghost" onclick="closeMod(\'m-pick\')">Annuler</button>'+
+    (lk?'<button class="btn btn-ghost" onclick="partLockSave(true)">'+ic('unlock')+' Retirer le mot de passe</button>':'')+
+    '<button class="btn btn-gold" onclick="partLockSave()">'+ic('lock')+' '+(lk?'Changer':'Protéger le dossier')+'</button>';
+  PICK.folder=f; openMod('m-pick');
+  setTimeout(function(){ var i=document.getElementById('lk-pw'); if(i) i.focus(); },80);
+}
+function partLockSave(remove){
+  var f=PICK.folder, pw=remove?'':(document.getElementById('lk-pw').value||'');
+  var er=document.getElementById('lk-err');
+  if(!remove&&pw.length<4){ er.textContent='Mot de passe trop court (4 caractères minimum)'; return; }
+  if(remove&&!confirm('Retirer le mot de passe ? Le dossier sera visible par tous les comptes.')) return;
+  clRpc('set_share_lock',{p_folder:f,p_pw:pw}).then(function(){
+    var l=(CLOUD.myLocks||[]).filter(function(x){ return x!==f; }); if(!remove) l.push(f); CLOUD.myLocks=l;
+    closeMod('m-pick'); renderPartage(); toast(remove?'Mot de passe retiré':'Dossier « '+f+' » protégé par mot de passe','ok');
+  },function(e){ er.textContent=e.message||String(e); });
+}
+// ── saisir le mot de passe d'un dossier d'un autre compte ──
+var PUNL={owner:'',folder:''};
+function partUnlock(owner,f){
+  PUNL={owner:owner,folder:f};
+  var l=partLockFor(owner,f)||{};
+  document.getElementById('pk-title').textContent='Dossier protégé';
+  document.getElementById('pk-body').innerHTML='<div class="pk-hint">'+ic('lock')+' « <b>'+esc(f)+'</b> » de '+esc(l.owner_name||'—')+' est protégé par un mot de passe. Demande-le à son auteur ; tu ne le saisis qu’une fois.</div>'+
+    '<div class="field"><div class="fl">Mot de passe du dossier</div><div class="lk-pw"><input class="fi" id="unl-pw" type="password" autocomplete="off" onkeydown="if(event.key===\'Enter\')partUnlockGo()"><button type="button" class="icbtn" onclick="var i=document.getElementById(\'unl-pw\');i.type=i.type===\'password\'?\'text\':\'password\'" title="Afficher">'+ic('eye')+'</button></div></div>'+
+    '<div class="cl-err" id="unl-err"></div>';
+  document.getElementById('pk-foot').innerHTML='<button class="btn btn-ghost" onclick="closeMod(\'m-pick\')">Annuler</button><button class="btn btn-gold btn-full" id="unl-go" onclick="partUnlockGo()">'+ic('unlock')+' Ouvrir le dossier</button>';
+  openMod('m-pick'); setTimeout(function(){ var i=document.getElementById('unl-pw'); if(i) i.focus(); },80);
+}
+function partUnlockGo(){
+  var pw=document.getElementById('unl-pw').value||'', er=document.getElementById('unl-err'), b=document.getElementById('unl-go');
+  if(!pw){ er.textContent='Entre le mot de passe'; return; }
+  if(b) b.disabled=true; er.textContent='';
+  clRpc('unlock_share',{p_owner:PUNL.owner,p_folder:PUNL.folder,p_pw:pw}).then(function(ok){
+    if(b) b.disabled=false;
+    if(!ok){ er.textContent='Mot de passe incorrect'; return; }
+    CLOUD.lockSig=null;
+    return clLocksTick().then(function(){
+      closeMod('m-pick'); PART.tab='others'; PART.acct=PUNL.owner; PART.open=PUNL.owner+'|'+PUNL.folder; renderPartage(); toast('Dossier ouvert','ok');
+    });
+  },function(e){ if(b) b.disabled=false; er.textContent=e.message||String(e); });
+}
+
+// ── bons et documents des autres ──
+function openSharedDoc(id){ var x=(CLOUD.shared||{})[id]; var a=x&&x.data&&(x.data.attachments||[])[0]; if(a) attOpen(a); }
+function openSharedBon(id){
+  var x=(CLOUD.shared||{})[id]; if(!x||!x.data) return; SHR_CUR=x; var d=x.data, mine=shrIsMine(x);
+  var copy=orders.find(function(o){ return o.fromShared&&o.fromShared.id===x.id; });
+  document.getElementById('shr-title').textContent=d.name;
+  var rows=(d.items||[]).slice().sort(function(a,b){ return String(a.cat).localeCompare(String(b.cat),'fr')||String(a.n).localeCompare(String(b.n),'fr'); });
+  document.getElementById('shr-body').innerHTML=
+    '<div class="shr-by">'+ic('user')+' Partagé par <b>'+esc(x.owner_name||'—')+(mine?' (toi)':'')+'</b> · mis à jour le '+new Date(x.updated_at).toLocaleDateString('fr-FR')+'</div>'+
+    '<div class="rc-stats" style="margin:10px 0"><div class="rs"><span class="rs-v">'+rows.length+'</span><div class="rs-l">Articles</div></div><div class="rs"><span class="rs-v">'+fEur(d.cost||0)+'</span><div class="rs-l">Total (prix de l’auteur)</div></div><div class="rs"><span class="rs-v" style="font-size:13px">'+(d.date?fDate(d.date):'—')+'</span><div class="rs-l">'+(d.status==='validated'?'Validé':'Brouillon')+'</div></div></div>'+
+    ((d.recipes||[]).length?'<div class="shr-h">Recettes</div><div class="shr-notes">'+esc(d.recipes.join(', '))+'</div>':'')+
+    '<div class="shr-h">Articles</div><div class="shr-items">'+rows.map(function(it){ return '<div class="shr-i"><span>'+catDot(it.cat||'')+esc(it.n)+'</span><b>'+esc(it.q||'')+'<small class="shr-c">'+fEur(it.cost||0)+'</small></b></div>'; }).join('')+'</div>'+
+    (d.notes?'<div class="shr-h">Notes</div><div class="shr-notes">'+esc(d.notes)+'</div>':'')+
+    (copy&&!mine?'<div class="shr-info" style="margin-top:12px">'+ic('check-circle')+'<span>Tu as déjà une copie de ce bon : « '+esc(copy.name)+' ».</span></div>':'');
+  var loc=mine&&orders.find(function(o){ return clSharedId(o.id)===x.id; });
+  document.getElementById('shr-foot').innerHTML=mine
+    ?(loc?'<button class="btn btn-ghost" onclick="closeMod(\'m-shr\');partUnshareBon(\''+loc.id+'\')">Ne plus partager</button><button class="btn btn-gold" onclick="closeMod(\'m-shr\');openEditBon(\''+loc.id+'\')">'+ic('edit')+' Ouvrir mon bon</button>':'<button class="btn btn-ghost" onclick="closeMod(\'m-shr\')">Fermer</button>')
+    :'<button class="btn btn-ghost" onclick="closeMod(\'m-shr\')">Fermer</button><button class="btn btn-gold" id="shr-copy" onclick="shrCopyBonUI()">'+ic('copy')+' '+(copy?'Copier à nouveau':'Copier dans mes bons')+'</button>';
+  openMod('m-shr');
+}
+// copie d'un bon partagé : les ingrédients absents du catalogue y sont ajoutés
+function shrCopyBon(x){
+  var d=x.data, created=0, o=mkOrder();
+  o.name=d.name||o.name; o.notes=d.notes||''; o.recipesUsed=(d.recipes||[]).slice();
+  o.items=(d.items||[]).map(function(it){
+    var n=normTxt(it.n), g=ingredients.find(function(i){ return normTxt(i.name)===n; });
+    if(!g){ g={id:uid(),name:it.n,cat:it.cat||'Autre',unit:it.u||'kg',price:it.price||0,buyPrice:it.buyPrice!=null?it.buyPrice:(it.price||0),unitWeight:it.unitWeight||null,
+      allergens:(it.allergens||[]).slice(),allergensSet:!!it.allergensSet,priceHistory:[]}; ingredients.push(g); created++; }
+    return {id:uid(),ingId:g.id,qty:it.qty,cost:rnd((it.qty||0)*(g.price||0)),uses:[{n:'Copie du bon de '+(x.owner_name||'—'),q:it.qty}]};
+  });
+  o.fromShared={id:x.id,by:x.owner_name||''};
+  o.history=[{ts:now(),desc:'Copié depuis le partage de '+(x.owner_name||'—')}];
+  orders.unshift(o);
+  return {bon:o,ing:created};
+}
+function shrCopyBonUI(){
+  var x=SHR_CUR; if(!x) return; var b=document.getElementById('shr-copy'); if(b) b.disabled=true;
+  var r=shrCopyBon(x); persist(); updBadges(); closeMod('m-shr');
+  toast('« '+r.bon.name+' » copié dans tes bons'+(r.ing?' · '+r.ing+' ingrédient'+(r.ing>1?'s':'')+' ajouté'+(r.ing>1?'s':'')+' au catalogue':''),'ok');
+  if(CUR==='partage') partBody();
 }
 
 // ── copie (une recette ou un dossier entier) ──
@@ -5158,13 +5495,18 @@ function shrCopy(){
 }
 function partCopyFolder(key){
   var rows=sharedList().filter(function(x){ return !shrIsMine(x)&&partFolderKey(x)===key; });
-  var todo=rows.filter(function(x){ return !recipes.some(function(r){ return r.fromShared&&r.fromShared.id===x.id; }); });
+  var todo=rows.filter(function(x){ var t=shType(x); return t==='rec'?!recipes.some(function(r){ return r.fromShared&&r.fromShared.id===x.id; }):(t==='bon'&&!partCopiedBon(x)); });
   if(!todo.length) return;
   var folder=rows[0].data.folder, btn=document.getElementById('pf-copyall'); if(btn) btn.disabled=true;
-  var cat=addCatIfNew('rec',folder)||folder, ing=0;
-  todo.reduce(function(p,x){ return p.then(function(){ return shrCopyRow(x,cat).then(function(o){ ing+=o.ing; }); }); },Promise.resolve()).then(function(){
+  var hasRec=todo.some(function(x){ return shType(x)==='rec'; });
+  var cat=hasRec?(addCatIfNew('rec',folder)||folder):folder, ing=0, nr=0, nb=0;
+  todo.reduce(function(p,x){ return p.then(function(){
+    if(shType(x)==='bon'){ var r=shrCopyBon(x); ing+=r.ing; nb++; return; }
+    return shrCopyRow(x,cat).then(function(o){ ing+=o.ing; nr++; });
+  }); },Promise.resolve()).then(function(){
     persist(); updBadges(); partBody();
-    toast(todo.length+' recette'+(todo.length>1?'s':'')+' copiée'+(todo.length>1?'s':'')+' dans la catégorie « '+cat+' »'+(ing?' · '+ing+' ingrédient'+(ing>1?'s':'')+' ajouté'+(ing>1?'s':''):''),'ok');
+    var parts=[]; if(nr) parts.push(nr+' recette'+(nr>1?'s':'')+' copiée'+(nr>1?'s':'')+' dans la catégorie « '+cat+' »'); if(nb) parts.push(nb+' bon'+(nb>1?'s':'')+' copié'+(nb>1?'s':''));
+    toast(parts.join(' · ')+(ing?' · '+ing+' ingrédient'+(ing>1?'s':'')+' ajouté'+(ing>1?'s':''):''),'ok');
   });
 }
 
@@ -5446,7 +5788,9 @@ var GATE={mode:'login',step:'',err:'',busy:false,eye:false,last:''};
 
 function gateState(){
   if(!CLOUD.cfg) return 'server';
+  if(LS.getItem('v4_authlink')) return 'loading';
   if(!CLOUD.sess) return 'auth';
+  if(LS.getItem('v4_recovery')) return 'recovery';
   var ui=CLOUD.ui||{};
   if(ui.reloading) return 'loading';
   if(ui.claim) return 'claim';
@@ -5509,6 +5853,16 @@ function gateBody(st){
       '<div class="gate-err" id="g-err"></div>'+
       '<div class="gate-foot">Chacun a son espace perso : tes recettes, ton catalogue et tes bons ne sont visibles que par toi.'+(CLOUD.cfg&&!CLOUD.cfg.builtin?' <button class="gate-lnk" onclick="gateForget()">Changer de serveur</button>':'')+'</div>';
   }
+  if(st==='recovery'){
+    return gateHead('Mot de passe oublié','Choisis un nouveau mot de passe')+
+      '<p class="gate-p">Compte : <b>'+esc(CLOUD.sess&&CLOUD.sess.user.email||'')+'</b> · 6 caractères minimum</p>'+
+      '<div class="gate-pw"><input class="gate-in" id="g-npw" type="'+(GATE.eye?'text':'password')+'" placeholder="Nouveau mot de passe" autocomplete="new-password">'+
+        '<button class="gate-eye" type="button" onclick="gateEyeN()" aria-label="Afficher le mot de passe">'+ic(GATE.eye?'eye-off':'eye')+'</button></div>'+
+      '<input class="gate-in" id="g-npw2" type="'+(GATE.eye?'text':'password')+'" placeholder="Encore une fois" autocomplete="new-password" onkeydown="if(event.key===\'Enter\')gateNewPw()">'+
+      '<button class="gate-btn" id="g-go" onclick="gateNewPw()">'+ic('check')+' Enregistrer le mot de passe</button>'+
+      '<div class="gate-err" id="g-err"></div>'+
+      '<button class="gate-lnk" onclick="gateRecSkip()">Garder mon ancien mot de passe</button>';
+  }
   if(st==='claim'){
     var nr=recipes.length;
     return gateHead('Ton espace','Ces recettes sont-elles à toi ?')+
@@ -5547,8 +5901,63 @@ function gateGo(){
 function gateForgot(){
   var e=(document.getElementById('g-email').value||'').trim();
   if(!/^\S+@\S+\.\S+$/.test(e)){ gateErr('Entre ton adresse email, puis touche à nouveau « Mot de passe oublié ? »'); return; }
-  clFetch('/auth/v1/recover',{method:'POST',auth:false,body:{email:e}}).then(function(){ gateErr(''); toast('Email de réinitialisation envoyé','ok'); },function(er){ gateErr(er.message); });
+  clFetch('/auth/v1/recover'+clRedirectQS(),{method:'POST',auth:false,body:{email:e}}).then(function(){ gateErr(''); toast('Email envoyé à '+e+' : ouvre le lien qu’il contient pour choisir un nouveau mot de passe','ok'); },function(er){ gateErr(er.message); });
 }
+// ── Liens reçus par email (mot de passe oublié, confirmation d'adresse) ──
+// Supabase renvoie vers l'appli avec #access_token=…&type=recovery (ou une erreur).
+function recParseHash(){
+  var h=location.hash||''; if(h.length<2||h.indexOf('rejoindre=')>=0) return null;
+  var q; try{ q=new URLSearchParams(h.slice(1)); }catch(e){ return null; }
+  if(q.get('error_code')||q.get('error')) return {err:q.get('error_code')||q.get('error'),desc:q.get('error_description')||''};
+  if(!q.get('access_token')) return null;
+  return {access_token:q.get('access_token'),refresh_token:q.get('refresh_token')||'',expires_in:+q.get('expires_in')||3600,expires_at:+q.get('expires_at')||0,type:q.get('type')||''};
+}
+function recCheckHash(){
+  var o=recParseHash(); if(!o) return false;
+  try{ history.replaceState(null,'',location.href.split('#')[0]); }catch(e){}
+  if(o.err){
+    GATE.mode='login';
+    GATE.err=/expired|invalid|otp/i.test(o.err+' '+o.desc)?'Ce lien a expiré ou a déjà servi. Entre ton email puis touche « Mot de passe oublié ? » pour en recevoir un nouveau.':'Lien refusé : '+(o.desc||o.err);
+    return true;
+  }
+  LS.setItem('v4_authlink',JSON.stringify(o));
+  return true;
+}
+function recResume(){
+  var o=null; try{ o=JSON.parse(LS.getItem('v4_authlink')||'null'); }catch(e){}
+  if(!o||!CLOUD.cfg) return;
+  fetch(CLOUD.cfg.url.replace(/\/+$/,'')+'/auth/v1/user',{headers:{apikey:CLOUD.cfg.key,Authorization:'Bearer '+o.access_token}})
+    .then(function(r){ if(!r.ok) throw new Error('lien'); return r.json(); })
+    .then(function(u){
+      if(CLOUD.sess&&CLOUD.sess.user&&CLOUD.sess.user.id!==u.id){ clLogoutDo(); return; }   // un autre compte était ouvert : on le range, puis on reprend
+      LS.removeItem('v4_authlink');
+      clSetSession({access_token:o.access_token,refresh_token:o.refresh_token,expires_in:o.expires_in,expires_at:o.expires_at||undefined,user:{id:u.id,email:u.email}});
+      if(typeof clPendingName==='function') clPendingName();
+      if(o.type==='recovery'){ LS.setItem('v4_recovery','1'); GATE.err=''; gateRender(true); return; }
+      toast(o.type==='email_change'?'Nouvelle adresse email confirmée':'Adresse email confirmée','ok');
+      gateRender(true);
+      if(clLive()) clSync(); else clAfterLogin().catch(function(e){ console.warn(e); });
+    },function(){
+      LS.removeItem('v4_authlink'); GATE.mode='login';
+      GATE.err='Ce lien a expiré ou a déjà servi. Entre ton email puis touche « Mot de passe oublié ? » pour en recevoir un nouveau.';
+      gateRender(true);
+    });
+}
+function gateEyeN(){ var a=document.getElementById('g-npw'), b=document.getElementById('g-npw2'), va=a?a.value:'', vb=b?b.value:''; GATE.eye=!GATE.eye; gateRender(true); var x=document.getElementById('g-npw'), y=document.getElementById('g-npw2'); if(x) x.value=va; if(y) y.value=vb; }
+function gateRecDone(){ LS.removeItem('v4_recovery'); GATE.err=''; gateRender(true); if(clLive()) clSync(); else clAfterLogin().catch(function(e){ console.warn(e); }); }
+function gateNewPw(){
+  if(GATE.busy) return;
+  var p1=(document.getElementById('g-npw')||{}).value||'', p2=(document.getElementById('g-npw2')||{}).value||'';
+  if(p1.length<6){ gateErr('Mot de passe trop court (6 caractères minimum)'); return; }
+  if(p1!==p2){ gateErr('Les deux mots de passe ne sont pas identiques'); return; }
+  gateErr(''); gateBusy(true);
+  clAuthed(function(){ return clFetch('/auth/v1/user',{method:'PUT',body:{password:p1}}); }).then(function(){
+    gateBusy(false); toast('Mot de passe modifié : tu es connecté','ok'); gateRecDone();
+  },function(e){ gateBusy(false); gateErr(e.message||String(e)); });
+}
+function gateRecSkip(){ gateRecDone(); }
+(function(){ var _ci=cloudInit; cloudInit=function(){ recCheckHash(); var r=_ci.apply(this,arguments); recResume(); gateRender(true); return r; }; })();
+
 function gateInvite(){
   var o=clParseInvite(document.getElementById('g-inv').value);
   if(!o){ gateErr('Ce n’est pas un lien d’invitation Économat Pro'); return; }
@@ -5560,7 +5969,7 @@ function gateServer(){
   if(!/^https?:\/\/.+/.test(url)||key.length<20){ gateErr('Adresse ou clé incomplète'); return; }
   CLOUD.cfg={url:url,key:key}; gateBusy(true);
   clFetch('/auth/v1/settings',{auth:false}).then(function(){
-    clSave('v4_cloud_cfg',CLOUD.cfg); GATE.mode='signup'; GATE.step=''; GATE.err=''; gateBusy(false); gateRender(true); toast('Serveur enregistré','ok');
+    clSave('v4_cloud_cfg',CLOUD.cfg); GATE.mode='signup'; GATE.step=''; GATE.err=''; gateBusy(false); gateRender(true); toast('Serveur enregistré','ok'); recResume();
   },function(e){ CLOUD.cfg=null; gateBusy(false); gateErr(e.net?'Serveur injoignable : vérifie l’adresse':'Clé refusée : '+e.message); });
 }
 function gateForget(){ if(!confirm('Changer de serveur ?')) return; CLOUD.cfg=null; CLOUD.pendingInvite=null; clSave('v4_cloud_cfg',null); GATE.step=''; gateRender(true); }
@@ -5603,7 +6012,8 @@ function mcBox(){
     '<div class="field"><div class="fl">Nouveau mot de passe</div><input class="fi" id="mc-pw1" type="password" autocomplete="new-password" placeholder="6 caractères minimum"></div>'+
     '<div class="field"><div class="fl">Nouveau mot de passe (encore une fois)</div><input class="fi" id="mc-pw2" type="password" autocomplete="new-password" onkeydown="if(event.key===\'Enter\')mcSavePw()"></div>'+
     '<div class="cl-btns"><button class="btn btn-gold btn-sm" onclick="mcSavePw()">'+ic('check')+' Changer le mot de passe</button><button class="btn btn-ghost btn-sm" onclick="mcEdit(\'\')">Annuler</button></div></div>';
-  h+='<div class="cl-err" id="mc-err">'+esc(MC.err||'')+'</div></div>';
+  h+='<div class="cl-err" id="mc-err">'+esc(MC.err||'')+'</div>'+
+    '<button class="btn btn-ghost btn-sm mc-out" onclick="clLogout()">'+ic('logout')+' Se déconnecter</button></div>';
   return h;
 }
 function mcErr(m){ MC.err=m||''; var e=document.getElementById('mc-err'); if(e) e.textContent=MC.err; }
@@ -5654,7 +6064,7 @@ function mcSaveEmail(){
   if(!/^\S+@\S+\.\S+$/.test(ne)){ mcErr('Adresse email invalide'); return; }
   if(ne===String(CLOUD.sess.user.email||'').toLowerCase()){ mcErr('C’est déjà ton adresse actuelle'); return; }
   mcErr(''); mcBusy(true);
-  mcReauth(pw).then(function(){ return clFetch('/auth/v1/user',{method:'PUT',body:{email:ne}}); }).then(function(u){
+  mcReauth(pw).then(function(){ return clFetch('/auth/v1/user'+clRedirectQS(),{method:'PUT',body:{email:ne}}); }).then(function(u){
     mcBusy(false);
     if(u&&u.new_email&&String(u.new_email).toLowerCase()!==String(u.email||'').toLowerCase()){
       MC.pending=u.new_email; mcDone();
