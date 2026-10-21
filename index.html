@@ -1131,6 +1131,30 @@ html.re-full #p-rec-edit{padding:0;max-width:none;height:100%;position:relative;
   .re-sell{grid-template-columns:1fr;gap:10px;}
 }
 
+/* ══ ADMIN : sections repliables · MON COMPTE ═══════════════ */
+.adm-sec{background:var(--card);border:1px solid var(--bd);border-radius:14px;margin:14px 0;overflow:hidden;}
+.adm-sec>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;font-weight:600;font-size:15px;}
+.adm-sec>summary::-webkit-details-marker{display:none;}
+.adm-sec>summary:hover{background:var(--alt);}
+.adm-st{flex:1;}
+.adm-cnt{min-width:24px;height:22px;padding:0 8px;border-radius:999px;background:var(--beige);font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;}
+.adm-sec>summary .ic{font-size:16px;color:var(--i3);transition:transform .15s;}
+.adm-sec[open]>summary .ic{transform:rotate(180deg);}
+.adm-sec[open]>summary{border-bottom:1px solid var(--bd);}
+.adm-sb{padding:14px 16px 16px;}
+.adm-sb .adm-sh{margin-bottom:10px;}
+.adm-u.gone{opacity:.92;}
+.adm-u.gone .adm-av{filter:grayscale(.7);}
+.mc-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--bd);}
+.mc-row.open{border-bottom:0;padding-bottom:4px;}
+.mc-v{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.mc-v small{font-size:10.5px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--i3);}
+.mc-v b{font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mc-pend{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--warn);margin-top:2px;}
+.mc-ed{background:var(--p2);border-radius:12px;padding:12px;margin:6px 0 10px;}
+.mc-ed .field{margin-bottom:8px;}
+@media (max-width:820px){.adm-sec>summary{padding:12px 14px}.adm-sb{padding:12px 12px 14px}}
+
 /* mode mobile forcé */
 html.lay-mob .esplit{grid-template-columns:minmax(0,1fr) minmax(0,440px);}
 html.lay-mob .re-side{width:256px;}html.lay-mob .re-fold.l{left:243px;}html.lay-mob .re-fold.r{right:243px;}html.lay-mob .re-mid{padding:22px 24px 110px;}
@@ -1149,8 +1173,9 @@ html.lay-mob .adm-u .adm-acts{width:100%;justify-content:flex-end}
 html.lay-mob.gated #gate{flex-direction:column}html.lay-mob .gate-art{flex:none;max-width:none;padding:26px 20px 22px;justify-content:center}html.lay-mob .gate-crest{width:110px;margin-bottom:10px}html.lay-mob .gate-name{font-size:22px}html.lay-mob .gate-card{display:none}html.lay-mob .gate-side{align-items:flex-start;padding:26px 20px calc(30px + env(safe-area-inset-bottom,0px))}html.lay-mob .gate-logo{display:none}html.lay-mob .gate-btn{width:100%;min-width:0}
 html.lay-mob .cn-bar{gap:8px;}html.lay-mob .cn-srch{height:40px;padding:0 12px 0 16px;margin:0;}html.lay-mob .cn-new{height:40px;padding:0 14px 0 11px;font-size:14px;}html.lay-mob .cn-az{width:auto;justify-content:flex-start;margin:0 -14px 10px;border-radius:0;padding:4px 14px;background:transparent;}html.lay-mob .cn-l{min-width:26px;height:26px;font-size:12.5px;}html.lay-mob .cn-row{flex-wrap:wrap;gap:8px 10px;}html.lay-mob .cn-cnt{flex:1;order:1;}html.lay-mob .cn-view{order:2;width:36px;height:36px;}html.lay-mob .cn-filters{order:3;flex:0 0 calc(100% + 28px);margin:0 -14px;padding:0 14px 2px;flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;scrollbar-width:none;}html.lay-mob .cn-filters::-webkit-scrollbar{display:none;}html.lay-mob .cn-f{position:static;}html.lay-mob .cn-pop{position:fixed;top:auto;left:10px!important;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px) + var(--nav-h));max-width:none;min-width:0;max-height:58vh;border-radius:18px;z-index:900;}html.lay-mob .cn-active{justify-content:flex-start;}html.lay-mob .cn-imp{padding:11px 10px 11px 12px;gap:10px;}html.lay-mob .cn-imp-b{padding:0 9px 0 11px;}html.lay-mob .cn-empty{padding:56px 10px;}
 html.lay-mob.re-full #scroll{overflow-y:auto;}html.lay-mob.re-full #p-rec-edit{height:auto;min-height:100%;padding-bottom:calc(84px + env(safe-area-inset-bottom,0px));}html.lay-mob .re-top{position:sticky;top:0;z-index:20;height:auto;min-height:54px;padding:env(safe-area-inset-top,0px) 10px 0;gap:8px;}html.lay-mob .re-top .dsk{display:none;}html.lay-mob .re-tabs button{height:40px;padding:0 14px;font-size:13.5px;}html.lay-mob .re-pair .re-ib{width:32px;}html.lay-mob .re-top .re-save{width:36px;padding:0;font-size:0;gap:0;justify-content:center;}html.lay-mob .re-top .re-save .ic{font-size:18px;}html.lay-mob .re-body{flex-direction:column;height:auto;}html.lay-mob .re-body.l-off .re-l,html.lay-mob .re-body.r-off .re-r{display:block;}html.lay-mob .re-fold{display:none!important;}html.lay-mob .re-mid{order:1;overflow:visible;padding:18px 14px 6px;}html.lay-mob .re-l{order:2;}html.lay-mob .re-r{order:3;}html.lay-mob .re-side,html.lay-mob .re-body:not(.r-off) .re-r{width:auto;overflow:visible;padding:0 14px;border:0;background:transparent;}html.lay-mob .re-sec{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:0 14px 12px;margin-bottom:10px;}html.lay-mob .re-sec:not([open]){padding-bottom:0;}html.lay-mob .re-head{margin-bottom:16px;}html.lay-mob .re-title{font-size:19px;}html.lay-mob .re-card{padding:14px;border-radius:14px;}html.lay-mob .re-card-t{flex-wrap:wrap;}html.lay-mob .re-empty{flex-direction:column;padding:16px 0 8px;gap:10px;}html.lay-mob .re-big{justify-content:center;height:48px;font-size:14px;}html.lay-mob .re-dock{position:fixed;bottom:calc(12px + env(safe-area-inset-bottom,0px));}html.lay-mob .re-kpis{grid-template-columns:1fr 1fr 1fr;gap:6px;}html.lay-mob .re-kpi{padding:10px;}html.lay-mob .re-kpi b{font-size:15px;}html.lay-mob .re-kpi small{display:none;}html.lay-mob .re-pr{grid-template-columns:minmax(0,1fr) auto auto;}html.lay-mob .re-pr .re-pu,html.lay-mob .re-pr.hd>span:nth-child(3),html.lay-mob .re-pr.tt>span:nth-child(3){display:none;}html.lay-mob .re-sell{grid-template-columns:1fr;gap:10px;}
+html.lay-mob .adm-sec>summary{padding:12px 14px}html.lay-mob .adm-sb{padding:12px 12px 14px}
 </style>
-<script>window.ECO_SERVER={"url":"https://fbwuhejcphsjhhkfkjku.supabase.co","key":"sb_publishable_QRPVGvql3M2eSfvwkBDTfw_9Pc8fuo0"};</script>
+<script>window.ECO_SERVER={url:"",key:""};</script>
 <script>/* Apparence : mode clair / sombre et couleur de l'application.
    Lu de façon synchrone au chargement pour éviter un flash de couleur. */
 (function(){
@@ -4076,11 +4101,13 @@ function clFetch(path,opt){
 }
 function clErrMsg(j,status){
   var m=j&&(j.error_description||j.msg||j.message||j.error)||('Erreur '+status);
-  var T=[[/invalid login credentials/i,'Email ou mot de passe incorrect'],[/already registered|already exists/i,'Un compte existe déjà avec cet email : connecte-toi'],
+  var T=[[/invalid login credentials/i,'Email ou mot de passe incorrect'],[/already (been )?registered|already exists/i,'Un compte existe déjà avec cet email : connecte-toi'],
     [/email not confirmed/i,'Confirme ton adresse (lien reçu par email), puis connecte-toi'],[/password should be at least/i,'Mot de passe trop court (6 caractères minimum)'],
     [/unable to validate email|invalid email/i,'Adresse email invalide'],[/invalid api key|no api key/i,'Clé du serveur incorrecte'],[/jwt expired/i,'Session expirée'],
     [/rate limit|too many/i,'Trop de tentatives, réessaie dans quelques minutes'],[/row-level security|permission denied/i,'Action non autorisée'],
-    [/payload too large|request entity too large/i,'Document trop gros pour le serveur']];
+    [/payload too large|request entity too large/i,'Document trop gros pour le serveur'],
+    [/should be different from the old password/i,'Le nouveau mot de passe doit être différent de l’ancien'],[/weak and easy to guess|known to be weak/i,'Mot de passe trop facile à deviner : choisis-en un autre'],
+    [/reauthentication|recently logged in/i,'Pour ta sécurité, reconnecte-toi puis réessaie']];
   for(var i=0;i<T.length;i++) if(T[i][0].test(m)) return T[i][1];
   return m;
 }
@@ -4147,6 +4174,16 @@ function clWaitApproval(){
 }
 
 // ── Synchronisation ──
+// Compte rétabli par l'administrateur après suppression : son espace en ligne est
+// vide. On oublie ce qui était « déjà envoyé » pour tout renvoyer depuis l'appareil
+// (recettes partagées comprises).
+function clResetAfterRestore(){
+  var st=CLOUD.st; delete st.lost;
+  st.shadow={}; st.queue={}; st.pub={}; st.since={user:null,shared:null}; st.nameSent=null;
+  recipes.forEach(function(r){ (r.attachments||[]).forEach(function(a){ if(attLocal(a.id)) st.attUp[a.id]=1; }); });
+  CL_KINDS.forEach(function(k){ _clDirty[k]=1; });
+  clSaveState(); clDiffDirty();
+}
 function clSync(){
   if(!clLive()) return Promise.resolve();
   clFlushDirty();
@@ -4154,7 +4191,9 @@ function clSync(){
   if(typeof navigator!=='undefined'&&navigator.onLine===false){ CLOUD.status='offline'; clUI(); return Promise.resolve(); }
   CLOUD.busy=true; CLOUD.status='sync'; clUI();
   CLOUD.busyP=clAuthed(function(){ return clMe().then(function(me){
+      if(me.status==='deleted'&&!CLOUD.st.lost){ CLOUD.st.lost=1; clSaveState(); }   // l'espace en ligne a été effacé
       if(me.status!=='active') return 'stop';
+      if(CLOUD.st.lost) clResetAfterRestore();                                         // compte rétabli : on renvoie tout
       // lecture avant publication : un partage retiré par l'administrateur n'est pas republié
       return clPush().then(clPushAtt).then(clPull).then(clPublish).then(clNameSync).then(clAdminTick);
     }); })
@@ -4503,6 +4542,7 @@ function clCardHTML(){
   }
   var myShared=recipes.filter(function(r){ return r.shared; }).length;
   h+='<div class="cl-team"><div class="cl-tn">'+esc(clMyName())+'</div><div class="cl-who">'+esc(CLOUD.sess.user.email||'')+'</div></div>'+
+    (typeof mcBox==='function'?mcBox():'')+
     '<div class="cl-sync"><div id="cl-status">'+clStatusLine()+'</div><button class="btn btn-ghost btn-sm" onclick="clSyncNow()">'+ic('refresh')+' Synchroniser</button></div>'+
     '<div class="cl-box"><div class="cl-h">Recettes partagées</div><div class="cl-p" style="margin:0 0 8px">'+(myShared?'Tu partages <b>'+myShared+'</b> recette'+(myShared>1?'s':'')+'.':'Tu ne partages encore aucune recette.')+' Pour partager des dossiers entiers ou une recette, va dans <b>Partage</b>.</div>'+
     '<button class="btn btn-ghost btn-sm" onclick="goPage(\'partage\')">'+ic('users')+' Ouvrir l’espace Partage</button></div>'+
@@ -4511,7 +4551,7 @@ function clCardHTML(){
     '<div class="cl-foot"><span></span><button class="lnk" onclick="clLogout()">'+ic('logout')+' Se déconnecter</button></div>';
   return h+'</div>';
 }
-function clRedraw(){ var c=document.getElementById('cl-card'); if(c) c.outerHTML=clCardHTML(); if(typeof gateRender==='function') gateRender(); }
+function clRedraw(){ var c=document.getElementById('cl-card'), a=document.activeElement; if(c&&!(CLOUD.ui&&CLOUD.ui.acct&&a&&a.tagName==='INPUT'&&a.closest&&a.closest('#mc-box')&&!CLOUD.ui.force)) c.outerHTML=clCardHTML(); if(typeof gateRender==='function') gateRender(); }
 function clStep(s){ CLOUD.ui.step=s; CLOUD.ui.err=''; clRedraw(); var f=document.querySelector('#cl-card input'); if(f) f.focus(); }
 function clMode(m){ var e=document.getElementById('cl-email'); if(e) CLOUD.ui.email=e.value; CLOUD.ui.mode=m; CLOUD.ui.err=''; clRedraw(); }
 function clErr(msg){ CLOUD.ui.err=msg||''; var e=document.getElementById('cl-err'); if(e) e.textContent=CLOUD.ui.err; }
@@ -4887,7 +4927,7 @@ function shrCopy(){
 // Un dossier partagé = un nom (« Stage traiteur ») porté par chaque recette
 // partagée (r.shareFolder). Rien ne change côté serveur : le nom voyage dans
 // l'instantané publié, et chaque recette reste modifiable par son seul auteur.
-var PART={tab:'others',q:'',open:null};
+var PART={tab:'others',q:'',open:null,acct:null};
 
 function partConnectHTML(){
   return '<div class="empty shr-empty"><span class="empty-i">'+ic('users')+'</span><div class="empty-t">Partage de recettes</div>'+
@@ -4907,7 +4947,7 @@ function renderPartage(){
   if(typeof clActive!=='function'||!clActive()){ w.innerHTML=partConnectHTML(); return; }
   var others=sharedList().filter(function(x){ return !shrIsMine(x); });
   var mineN=recipes.filter(function(r){ return r.shared; }).length;
-  var h='<div class="seg part-seg"><button class="'+(PART.tab==='others'?'on':'')+'" onclick="PART.tab=\'others\';PART.open=null;renderPartage()">'+ic('users')+' Des autres · '+others.length+'</button>'+
+  var h='<div class="seg part-seg"><button class="'+(PART.tab==='others'?'on':'')+'" onclick="PART.tab=\'others\';PART.open=null;PART.acct=null;renderPartage()">'+ic('users')+' Des autres · '+others.length+'</button>'+
     '<button class="'+(PART.tab==='mine'?'on':'')+'" onclick="PART.tab=\'mine\';PART.open=null;renderPartage()">'+ic('upload')+' Les miens · '+mineN+'</button></div>'+
     '<div class="srch">'+ic('search')+'<input class="sinp" id="part-q" placeholder="Rechercher…" value="'+esc(PART.q)+'" oninput="PART.q=this.value;partBody()"></div>'+
     '<div id="part-body"></div>';
@@ -4923,34 +4963,55 @@ function partTile(x){
   var copied=recipes.some(function(r){ return r.fromShared&&r.fromShared.id===x.id; });
   return '<div class="rt" onclick="openShared(\''+escJS(x.id)+'\')"><div class="rt-ph'+(img?' img':'')+'" style="--ch:'+catHue(d.cat||'')+'">'+ph+
     (copied?'<span class="rt-badge">'+ic('check')+' Copiée</span>':'')+'</div>'+
-    '<div class="rt-b"><div class="rt-n">'+esc(d.name)+'</div><div class="rt-m">'+fKg(d.weight||0)+' · '+fEur(d.cost||0)+'</div><div class="rt-c">'+ic('user')+' '+esc(x.owner_name||'—')+'</div></div></div>';
+    '<div class="rt-b"><div class="rt-n">'+esc(d.name)+'</div><div class="rt-m">'+fKg(d.weight||0)+' · '+fEur(d.cost||0)+(d.time?' · '+ic('clock')+' '+fDur(d.time):'')+'</div><div class="rt-c">'+catDot(d.cat||'')+esc(d.cat||'')+'</div></div></div>';
 }
 function partFolderCard(name,sub,n,onclick,acts){
   return '<div class="pf'+(acts?' mine':'')+'"'+(onclick?' onclick="'+onclick+'"':'')+'><span class="pf-ic">'+ic('folder')+'</span>'+
     '<div class="pf-b"><div class="pf-n">'+esc(name)+'</div><div class="pf-s">'+n+' recette'+(n>1?'s':'')+(sub?' · '+sub:'')+'</div></div>'+(acts||ic('arrow-right'))+'</div>';
 }
+function partOwnerName(x){ return x.owner_name||'Compte sans nom'; }
 function partOthersHTML(){
   var all=sharedList().filter(function(x){ return !shrIsMine(x); });
   if(!all.length) return '<div class="empty"><div class="empty-s">Personne n’a encore partagé de recette.</div></div>';
+  var mkBack=function(label,click){ return '<button class="btn btn-ghost btn-sm" onclick="'+click+'">'+ic('back')+' '+esc(label)+'</button>'; };
+  // 3 · un dossier ouvert (à l'intérieur d'un compte)
   if(PART.open){
     var rows=all.filter(function(x){ return partFolderKey(x)===PART.open; });
     if(!rows.length){ PART.open=null; return partOthersHTML(); }
-    var f=rows[0].data.folder, todo=rows.filter(function(x){ return !recipes.some(function(r){ return r.fromShared&&r.fromShared.id===x.id; }); }).length;
-    return '<button class="btn btn-ghost btn-sm" onclick="PART.open=null;partBody()">'+ic('back')+' Tous les partages</button>'+
-      '<div class="pf-head"><span class="pf-ic">'+ic('folder')+'</span><div class="pf-b"><div class="pf-n big">'+esc(f)+'</div><div class="pf-s">Partagé par '+esc(rows[0].owner_name||'—')+' · '+rows.length+' recette'+(rows.length>1?'s':'')+'</div></div>'+
+    PART.acct=rows[0].owner;
+    var f=rows[0].data.folder, owner=partOwnerName(rows[0]), todo=rows.filter(function(x){ return !recipes.some(function(r){ return r.fromShared&&r.fromShared.id===x.id; }); }).length;
+    var qa=partMatch(owner+' '+f);
+    return mkBack(owner,'PART.open=null;partBody()')+
+      '<div class="pf-head"><span class="pf-ic">'+ic('folder')+'</span><div class="pf-b"><div class="pf-n big">'+esc(f)+'</div><div class="pf-s">Dossier de '+esc(owner)+' · '+rows.length+' recette'+(rows.length>1?'s':'')+'</div></div>'+
       '<button class="btn btn-gold btn-sm" id="pf-copyall" onclick="partCopyFolder(\''+escJS(PART.open)+'\')"'+(todo?'':' disabled')+'>'+ic('copy')+' '+(todo?(todo===rows.length?'Copier tout le dossier':'Copier les '+todo+' manquantes'):'Déjà copié')+'</button></div>'+
-      '<div class="rgrid tiles">'+rows.filter(function(x){ return partMatch(x.data.name); }).map(partTile).join('')+'</div>';
+      '<div class="rgrid tiles">'+rows.filter(function(x){ return qa||partMatch(x.data.name); }).map(partTile).join('')+'</div>';
   }
-  var groups={}, loose=[];
-  all.forEach(function(x){ if(x.data.folder){ var k=partFolderKey(x); (groups[k]=groups[k]||[]).push(x); } else loose.push(x); });
-  var keys=Object.keys(groups).filter(function(k){ var g=groups[k]; return partMatch(g[0].data.folder+' '+g[0].owner_name)||g.some(function(x){ return partMatch(x.data.name); }); })
-    .sort(function(a,b){ return groups[a][0].data.folder.localeCompare(groups[b][0].data.folder,'fr'); });
-  var lo=loose.filter(function(x){ return partMatch(x.data.name+' '+x.owner_name+' '+x.data.cat); });
-  var h='';
-  if(keys.length) h+='<div class="sh"><div class="sh-t">Dossiers</div></div><div class="pf-list">'+keys.map(function(k){ var g=groups[k];
-    return partFolderCard(g[0].data.folder,'par '+esc(g[0].owner_name||'—'),g.length,'PART.open=\''+escJS(k)+'\';partBody()'); }).join('')+'</div>';
-  if(lo.length) h+='<div class="sh"><div class="sh-t">Recettes</div></div><div class="rgrid tiles">'+lo.map(partTile).join('')+'</div>';
-  return h||'<div class="empty"><div class="empty-s">Aucun résultat</div></div>';
+  // 2 · un compte ouvert : ses dossiers et ses recettes seules
+  if(PART.acct){
+    var mine=all.filter(function(x){ return x.owner===PART.acct; });
+    if(!mine.length){ PART.acct=null; return partOthersHTML(); }
+    var name=partOwnerName(mine[0]), qa2=partMatch(name), groups={}, loose=[];
+    mine.forEach(function(x){ if(x.data.folder){ var k=partFolderKey(x); (groups[k]=groups[k]||[]).push(x); } else loose.push(x); });
+    var keys=Object.keys(groups).filter(function(k){ var g=groups[k]; return qa2||partMatch(g[0].data.folder)||g.some(function(x){ return partMatch(x.data.name); }); })
+      .sort(function(a,b){ return groups[a][0].data.folder.localeCompare(groups[b][0].data.folder,'fr'); });
+    var lo=loose.filter(function(x){ return qa2||partMatch(x.data.name+' '+x.data.cat); });
+    var hh=mkBack('Tous les comptes','PART.acct=null;PART.open=null;partBody()')+
+      '<div class="pf-head"><span class="pf-ic">'+ic('folder')+'</span><div class="pf-b"><div class="pf-n big">'+esc(name)+'</div><div class="pf-s">'+mine.length+' recette'+(mine.length>1?'s':'')+' partagée'+(mine.length>1?'s':'')+(Object.keys(groups).length?' · '+Object.keys(groups).length+' dossier'+(Object.keys(groups).length>1?'s':''):'')+'</div></div></div>';
+    if(keys.length) hh+='<div class="sh"><div class="sh-t">Dossiers</div></div><div class="pf-list">'+keys.map(function(k){ var g=groups[k];
+      return partFolderCard(g[0].data.folder,g.slice(0,3).map(function(x){ return esc(x.data.name); }).join(', ')+(g.length>3?'…':''),g.length,'PART.open=\''+escJS(k)+'\';partBody()'); }).join('')+'</div>';
+    if(lo.length) hh+='<div class="sh"><div class="sh-t">'+(keys.length?'Autres recettes':'Recettes')+'</div></div><div class="rgrid tiles">'+lo.map(partTile).join('')+'</div>';
+    return hh+((keys.length||lo.length)?'':'<div class="empty"><div class="empty-s">Aucun résultat</div></div>');
+  }
+  // 1 · un dossier par compte qui partage
+  var by={};
+  all.forEach(function(x){ var a=by[x.owner]||(by[x.owner]={id:x.owner,name:partOwnerName(x),rows:[],folders:{}}); a.rows.push(x); if(x.data.folder) a.folders[x.data.folder]=1; });
+  var list=Object.keys(by).map(function(k){ return by[k]; }).filter(function(a){
+    return partMatch(a.name)||a.rows.some(function(x){ return partMatch(x.data.name+' '+(x.data.folder||'')+' '+(x.data.cat||'')); }); })
+    .sort(function(a,b){ return a.name.localeCompare(b.name,'fr'); });
+  if(!list.length) return '<div class="empty"><div class="empty-s">Aucun résultat</div></div>';
+  return '<div class="sh"><div class="sh-t">Comptes · '+list.length+'</div></div><div class="pf-list">'+list.map(function(a){
+    var nf=Object.keys(a.folders).length;
+    return partFolderCard(a.name,nf?nf+' dossier'+(nf>1?'s':''):'',a.rows.length,'PART.acct=\''+escJS(a.id)+'\';partBody()'); }).join('')+'</div>';
 }
 function partMineHTML(){
   var folders=partMyFolders().filter(function(f){ return partMatch(f.name)||f.recs.some(function(r){ return partMatch(r.name); }); });
@@ -5217,7 +5278,11 @@ function toggleLayout(){
 // Réservé aux comptes administrateurs : valider les inscriptions, gérer les
 // comptes et retirer n'importe quel partage. Le serveur vérifie chaque action
 // (fonctions admin_*) : l'appli ne fait qu'afficher.
-var ADM={users:null,err:'',busy:false,q:''};
+var ADM={users:null,err:'',busy:false,q:'',open:{accts:false,del:false,shares:false}};
+function admSec(key,title,count,body,forceOpen){
+  var open=forceOpen||ADM.open[key];
+  return '<details class="adm-sec"'+(open?' open':'')+' ontoggle="ADM.open[\''+key+'\']=this.open"><summary><span class="adm-st">'+title+'</span><span class="adm-cnt">'+count+'</span>'+ic('chev-down')+'</summary><div class="adm-sb">'+body+'</div></details>';
+}
 
 function admNav(){
   var on=typeof clIsAdmin==='function'&&clIsAdmin();
@@ -5266,22 +5331,31 @@ function renderAdmin(){
       return '<div class="adm-u pend">'+admAvatar(u)+'<div class="adm-b"><div class="adm-n">'+esc(admName(u))+'</div><div class="adm-s">'+esc(u.email||'')+' · inscrit le '+admDate(u.created_at)+'</div></div>'+
         '<div class="adm-acts"><button class="btn btn-gold btn-sm" onclick="admSet(\''+u.id+'\',\'active\')">'+ic('check')+' Valider</button><button class="btn btn-ghost btn-sm" onclick="admDelete(\''+u.id+'\',true)">Refuser</button></div></div>';
     }).join('')+'</div>':'<div class="empty" style="padding:14px"><div class="empty-s">Aucune inscription en attente.</div></div>';
-  // Comptes
-  h+='<div class="sh"><div class="sh-t">Comptes · '+us.filter(function(u){ return u.status!=='pending'&&u.status!=='deleted'; }).length+'</div></div>'+
-    '<div class="srch">'+ic('search')+'<input class="sinp" placeholder="Rechercher un compte…" value="'+esc(ADM.q)+'" oninput="ADM.q=this.value;renderAdmin();var i=document.querySelector(\'#adm-wrap .srch input\');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length);}"></div>'+
-    '<div class="adm-list">'+rest.map(function(u){
+  // Comptes (repliés par défaut : on ne les voit que si on le demande)
+  var nAct=us.filter(function(u){ return u.status!=='pending'&&u.status!=='deleted'; }).length;
+  var accts='<div class="srch">'+ic('search')+'<input class="sinp" placeholder="Rechercher un compte…" value="'+esc(ADM.q)+'" oninput="ADM.q=this.value;ADM.open.accts=true;ADM.open.del=true;renderAdmin();var i=document.querySelector(\'#adm-wrap .srch input\');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length);}"></div>'+
+    '<div class="adm-list">'+(rest.length?rest.map(function(u){
       var self=u.id===me, acts='';
       if(self) acts='<span class="adm-me">C’est toi</span>';
       else acts=(u.status==='blocked'?'<button class="btn btn-ghost btn-sm" onclick="admSet(\''+u.id+'\',\'active\')">'+ic('check')+' Débloquer</button>':'<button class="btn btn-ghost btn-sm" onclick="admSet(\''+u.id+'\',\'blocked\')">Bloquer</button>')+
         (u.status==='active'?'<button class="btn btn-ghost btn-sm" onclick="admAdmin(\''+u.id+'\','+(u.is_admin?'false':'true')+')">'+ic('shield')+' '+(u.is_admin?'Retirer admin':'Nommer admin')+'</button>':'')+
         '<button class="icbtn" title="Supprimer le compte" onclick="admDelete(\''+u.id+'\')">'+ic('trash')+'</button>';
       return '<div class="adm-u">'+admAvatar(u)+'<div class="adm-b"><div class="adm-n">'+esc(admName(u))+' '+admBadge(u)+'</div><div class="adm-s">'+esc(u.email||'')+' · depuis le '+admDate(u.created_at)+'</div></div><div class="adm-acts">'+acts+'</div></div>';
-    }).join('')+'</div>';
+    }).join(''):'<div class="empty" style="padding:14px"><div class="empty-s">Aucun compte'+(q?' ne correspond':'')+'.</div></div>')+'</div>';
+  h+=admSec('accts','Comptes',nAct,accts,!!q&&rest.length>0);
+  // Comptes supprimés : rétablissables
+  var gone=us.filter(function(u){ return u.status==='deleted'&&(!q||normTxt(admName(u)+' '+u.email).indexOf(q)>=0); });
+  var nGone=us.filter(function(u){ return u.status==='deleted'; }).length;
+  var del='<div class="shr-info" style="margin:0 0 10px">'+ic('info')+'<span>Un compte supprimé n’a plus accès à rien et son espace en ligne est vide. En le rétablissant, la personne se reconnecte avec son ancien email et son ancien mot de passe : ses recettes, son catalogue et ses bons reviennent depuis ses appareils, et ses recettes partagées sont de nouveau partagées.</span></div>'+
+    '<div class="adm-list">'+(gone.length?gone.map(function(u){
+      return '<div class="adm-u gone">'+admAvatar(u)+'<div class="adm-b"><div class="adm-n">'+esc(admName(u))+' '+admBadge(u)+'</div><div class="adm-s">'+esc(u.email||'')+' · depuis le '+admDate(u.created_at)+'</div></div>'+
+        '<div class="adm-acts"><button class="btn btn-gold btn-sm" onclick="admRestore(\''+u.id+'\')">'+ic('refresh')+' Rétablir</button></div></div>';
+    }).join(''):'<div class="empty" style="padding:14px"><div class="empty-s">Aucun compte supprimé.</div></div>')+'</div>';
+  h+=admSec('del','Comptes supprimés',nGone,del,!!q&&gone.length>0);
   // Partages
   var rows=sharedList(), by={};
   rows.forEach(function(x){ var k=x.owner; (by[k]=by[k]||{name:x.owner_name||'—',folders:{},loose:[]}); if(x.data.folder) (by[k].folders[x.data.folder]=by[k].folders[x.data.folder]||[]).push(x); else by[k].loose.push(x); });
-  h+='<div class="sh"><div class="sh-t">Partages · '+rows.length+' recette'+(rows.length>1?'s':'')+'</div></div>';
-  h+=rows.length?Object.keys(by).map(function(k){
+  var shr=rows.length?Object.keys(by).map(function(k){
     var o=by[k];
     return '<div class="cw adm-sh"><div class="cw-t">'+ic('user')+' '+esc(o.name)+(k===me?' (toi)':'')+'</div>'+
       Object.keys(o.folders).sort().map(function(f){ var rs=o.folders[f];
@@ -5289,7 +5363,8 @@ function renderAdmin(){
           rs.map(admShRow).join('')+'</div>'; }).join('')+
       (o.loose.length?'<div class="adm-f">'+o.loose.map(admShRow).join('')+'</div>':'')+'</div>';
   }).join(''):'<div class="empty" style="padding:14px"><div class="empty-s">Rien n’est partagé pour l’instant.</div></div>';
-  h+='<div class="shr-info" style="margin-top:12px">'+ic('info')+'<span>Retirer un partage le fait disparaître pour tout le monde ; la recette reste dans l’espace de son auteur, qui est prévenu. Les copies déjà faites restent chez ceux qui les ont faites.</span></div>';
+  shr+='<div class="shr-info" style="margin-top:12px">'+ic('info')+'<span>Retirer un partage le fait disparaître pour tout le monde ; la recette reste dans l’espace de son auteur, qui est prévenu. Les copies déjà faites restent chez ceux qui les ont faites.</span></div>';
+  h+=admSec('shares','Partages',rows.length+' recette'+(rows.length>1?'s':''),shr);
   w.innerHTML=h;
 }
 function admShRow(x){
@@ -5302,6 +5377,11 @@ function admSet(id,st){
   var u=(ADM.users||[]).find(function(x){ return x.id===id; });
   if(st==='blocked'&&!confirm('Bloquer '+(u?admName(u):'ce compte')+' ? Il n’aura plus accès à son espace en ligne ni aux partages (ses données sont gardées).')) return;
   admDo('admin_set_status',{p_user:id,p_status:st},st==='active'?(u&&u.status==='pending'?'Compte validé':'Compte débloqué'):'Compte bloqué').then(admLoad,function(){});
+}
+function admRestore(id){
+  var u=(ADM.users||[]).find(function(x){ return x.id===id; });
+  if(!confirm('Rétablir le compte de '+(u?admName(u)+' ('+u.email+')':'ce compte')+' ?\n\nLa personne retrouve l’accès à son espace en ligne et à Partage. Ses données reviennent depuis ses appareils à sa prochaine connexion.')) return;
+  admDo('admin_restore_user',{p_user:id},'Compte rétabli').then(function(){ ADM.open.accts=true; admLoad(); },function(){});
 }
 function admAdmin(id,on){
   var u=(ADM.users||[]).find(function(x){ return x.id===id; });
@@ -5496,6 +5576,111 @@ function gateLogout(){ GATE.mode='login'; clLogoutDo(); }
   if(CLOUD.pendingInvite) GATE.mode='signup';
   gateRender(true);
 })();
+
+// ══ MON COMPTE : nom, email, mot de passe ═════════════════════
+// Affiché dans Réglages → Espace en ligne. Le mot de passe actuel est demandé
+// pour changer l'email ou le mot de passe (et ouvre une session toute fraîche,
+// que le serveur exige pour ces deux changements).
+var MC={err:'',busy:false,pending:null};
+
+function mcBox(){
+  var ui=CLOUD.ui||{}, k=ui.acct||'', email=CLOUD.sess&&CLOUD.sess.user.email||'';
+  function row(key,label,val,extra){
+    return '<div class="mc-row'+(k===key?' open':'')+'"><div class="mc-v"><small>'+label+'</small><b>'+val+'</b>'+(extra||'')+'</div>'+
+      (k===key?'':'<button class="btn btn-ghost btn-sm" onclick="mcEdit(\''+key+'\')">'+ic('edit')+' Modifier</button>')+'</div>';
+  }
+  var h='<div class="cl-box mc" id="mc-box"><div class="cl-h">Mon compte</div>';
+  h+=row('name','Nom affiché',esc(clMyName()));
+  if(k==='name') h+='<div class="mc-ed"><div class="field"><div class="fl">Nom affiché sur tes recettes partagées</div><input class="fi" id="mc-name" value="'+esc(loadProfile().name||clMyName())+'" maxlength="60" autocomplete="name" onkeydown="if(event.key===\'Enter\')mcSaveName()"></div>'+
+    '<div class="cl-btns"><button class="btn btn-gold btn-sm" onclick="mcSaveName()">'+ic('check')+' Enregistrer</button><button class="btn btn-ghost btn-sm" onclick="mcEdit(\'\')">Annuler</button></div></div>';
+  h+=row('email','Email',esc(email),MC.pending?'<span class="mc-pend">'+ic('clock')+' En attente de confirmation : '+esc(MC.pending)+'</span>':'');
+  if(k==='email') h+='<div class="mc-ed"><div class="field"><div class="fl">Nouvelle adresse email</div><input class="fi" id="mc-email" type="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="nouvelle@adresse.fr"></div>'+
+    '<div class="field"><div class="fl">Mot de passe actuel</div><input class="fi" id="mc-pw0" type="password" autocomplete="current-password" onkeydown="if(event.key===\'Enter\')mcSaveEmail()"></div>'+
+    '<div class="cl-hint" style="margin:0 0 8px">Un email de confirmation peut t’être envoyé : clique sur son lien pour valider le changement. Jusque-là, tu te connectes avec l’ancienne adresse.</div>'+
+    '<div class="cl-btns"><button class="btn btn-gold btn-sm" onclick="mcSaveEmail()">'+ic('check')+' Changer l’email</button><button class="btn btn-ghost btn-sm" onclick="mcEdit(\'\')">Annuler</button></div></div>';
+  h+=row('pw','Mot de passe','••••••••');
+  if(k==='pw') h+='<div class="mc-ed"><div class="field"><div class="fl">Mot de passe actuel</div><input class="fi" id="mc-pw0" type="password" autocomplete="current-password"></div>'+
+    '<div class="field"><div class="fl">Nouveau mot de passe</div><input class="fi" id="mc-pw1" type="password" autocomplete="new-password" placeholder="6 caractères minimum"></div>'+
+    '<div class="field"><div class="fl">Nouveau mot de passe (encore une fois)</div><input class="fi" id="mc-pw2" type="password" autocomplete="new-password" onkeydown="if(event.key===\'Enter\')mcSavePw()"></div>'+
+    '<div class="cl-btns"><button class="btn btn-gold btn-sm" onclick="mcSavePw()">'+ic('check')+' Changer le mot de passe</button><button class="btn btn-ghost btn-sm" onclick="mcEdit(\'\')">Annuler</button></div></div>';
+  h+='<div class="cl-err" id="mc-err">'+esc(MC.err||'')+'</div></div>';
+  return h;
+}
+function mcErr(m){ MC.err=m||''; var e=document.getElementById('mc-err'); if(e) e.textContent=MC.err; }
+function mcBusy(on){ MC.busy=!!on; document.querySelectorAll('#mc-box .btn').forEach(function(b){ b.disabled=!!on; }); }
+function mcEdit(k){
+  if(!CLOUD.ui) CLOUD.ui={};
+  CLOUD.ui.acct=k||''; MC.err=''; clRedraw();
+  var f=document.querySelector('#mc-box .mc-ed input'); if(f) f.focus();
+  if(k==='email') mcRefreshUser();
+}
+function mcDone(){ CLOUD.ui.acct=''; MC.err=''; clRedraw(); clUI(); }
+
+// ── nom ──
+function mcSaveName(){
+  var v=(document.getElementById('mc-name').value||'').trim().replace(/\s+/g,' ');
+  if(!v){ mcErr('Entre un nom'); return; }
+  var p=loadProfile(); p.name=v; LS.setItem('v4_profile',JSON.stringify(p));
+  var f=document.getElementById('pf-name'); if(f) f.value=v;
+  if(CLOUD.st){ CLOUD.st.nameSent=null; clSaveState(); }
+  mcBusy(true);
+  clAuthed(function(){ return clFetch('/rest/v1/rpc/set_my_name',{method:'POST',body:{p_name:v}}); }).then(function(){
+    if(CLOUD.st){ CLOUD.st.nameSent=v; clSaveState(); }
+    return clSync();
+  },function(){ /* hors ligne : partira à la prochaine synchro */ }).then(function(){
+    mcBusy(false); mcDone(); try{ renderHome(); }catch(e){} toast('Nom modifié','ok');
+  });
+}
+
+// ── réauthentification (mot de passe actuel) ──
+function mcReauth(pw){
+  if(!pw) return Promise.reject(new Error('Entre ton mot de passe actuel'));
+  return clFetch('/auth/v1/token?grant_type=password',{method:'POST',auth:false,body:{email:CLOUD.sess.user.email,password:pw}})
+    .then(clSetSession,function(e){ if(/incorrect/i.test(e.message)) e.message='Mot de passe actuel incorrect'; throw e; });
+}
+function mcRefreshUser(){
+  if(!clActive()) return Promise.resolve();
+  return clAuthed(function(){ return clFetch('/auth/v1/user'); }).then(function(u){
+    if(!u) return;
+    if(u.email&&CLOUD.sess&&u.email!==CLOUD.sess.user.email){ CLOUD.sess.user.email=u.email; clSave('v4_cloud_sess',CLOUD.sess); }
+    MC.pending=(u.new_email&&u.new_email!==u.email)?u.new_email:null;
+    if(document.getElementById('mc-box')) clRedraw();
+  },function(){});
+}
+
+// ── email ──
+function mcSaveEmail(){
+  var ne=(document.getElementById('mc-email').value||'').trim().toLowerCase(), pw=document.getElementById('mc-pw0').value;
+  if(!/^\S+@\S+\.\S+$/.test(ne)){ mcErr('Adresse email invalide'); return; }
+  if(ne===String(CLOUD.sess.user.email||'').toLowerCase()){ mcErr('C’est déjà ton adresse actuelle'); return; }
+  mcErr(''); mcBusy(true);
+  mcReauth(pw).then(function(){ return clFetch('/auth/v1/user',{method:'PUT',body:{email:ne}}); }).then(function(u){
+    mcBusy(false);
+    if(u&&u.new_email&&String(u.new_email).toLowerCase()!==String(u.email||'').toLowerCase()){
+      MC.pending=u.new_email; mcDone();
+      toast('Email de confirmation envoyé à '+u.new_email+' : clique sur son lien pour valider','info');
+    } else {
+      MC.pending=null; CLOUD.sess.user.email=(u&&u.email)||ne; clSave('v4_cloud_sess',CLOUD.sess); mcDone();
+      toast('Email modifié','ok');
+    }
+  },function(e){
+    mcBusy(false);
+    mcErr(/existe déjà/.test(e.message)?'Cet email est déjà utilisé par un autre compte':e.message);
+  });
+}
+
+// ── mot de passe ──
+function mcSavePw(){
+  var p0=document.getElementById('mc-pw0').value, p1=document.getElementById('mc-pw1').value, p2=document.getElementById('mc-pw2').value;
+  if(!p0){ mcErr('Entre ton mot de passe actuel'); return; }
+  if(p1.length<6){ mcErr('Nouveau mot de passe trop court (6 caractères minimum)'); return; }
+  if(p1!==p2){ mcErr('Les deux nouveaux mots de passe ne sont pas identiques'); return; }
+  if(p1===p0){ mcErr('Le nouveau mot de passe doit être différent de l’ancien'); return; }
+  mcErr(''); mcBusy(true);
+  mcReauth(p0).then(function(){ return clFetch('/auth/v1/user',{method:'PUT',body:{password:p1}}); }).then(function(){
+    mcBusy(false); mcDone(); toast('Mot de passe modifié','ok');
+  },function(e){ mcBusy(false); mcErr(e.message); });
+}
 
 // ══ CARNET DE RECETTES ════════════════════════════════════════
 // Liste : recherche, lettres A→Z, filtres en menus déroulants, tri.
