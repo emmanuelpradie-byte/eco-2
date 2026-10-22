@@ -1311,3 +1311,32 @@ html.flip-on{overflow:hidden;}
   .flip-r{padding:16px 16px 24px;overflow:visible;}
   .flip-t{font-size:22px;}
 }
+/* changer un ingrédient (recherche) */
+.ir-sw{cursor:pointer;min-width:0;border-radius:7px}
+.ir-sw:hover .ir-n{text-decoration:underline;text-underline-offset:3px}
+.ir-chg{display:inline-flex;align-items:center;gap:3px;margin-left:7px;font-size:10.5px;font-weight:600;color:var(--i3);opacity:.75}
+.ir-chg .ic{width:11px;height:11px}
+.ir-sw:hover .ir-chg{opacity:1;color:var(--i)}
+.imp-chg{display:flex;align-items:center;gap:7px;flex:2 1 220px;text-align:left;cursor:pointer;background:var(--card)}
+.imp-chg span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.imp-chg .ic{width:14px;height:14px;flex:none;color:var(--i3)}
+.swp-m{max-width:520px;display:flex;flex-direction:column;height:min(82vh,640px);max-height:86vh}
+.swp-s{display:flex;align-items:center;gap:8px;margin:0 16px 8px;padding:0 10px;border:1px solid var(--bd);border-radius:10px;background:var(--card)}
+.swp-s:focus-within{border-color:var(--i)}
+.swp-s>.ic{width:16px;height:16px;color:var(--i3);flex:none}
+.swp-s .fi{border:none!important;box-shadow:none!important;background:transparent;padding:10px 0;flex:1;min-width:0;font-size:15px}
+.swp-cl{border:none;background:transparent;color:var(--i3);width:26px;height:26px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none}
+.swp-cl .ic{width:14px;height:14px}
+.swp-b{overflow-y:auto;flex:1;min-height:200px;padding-top:0}
+.swp-h{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--i3);margin:12px 2px 6px}
+.swp-r{width:100%;display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 10px;text-align:left;background:var(--card);border:1px solid var(--bd);border-radius:9px;padding:9px 12px;margin-bottom:5px;cursor:pointer;color:var(--i);font:inherit}
+.swp-r:hover{border-color:var(--i)}
+.swp-r.on{background:var(--alt);box-shadow:inset 0 0 0 1px var(--i)}
+.swp-t{font-size:13.5px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:5px}
+.swp-t .ic{width:14px;height:14px;flex:none}
+.swp-mt{grid-column:1;font-size:11px;color:var(--i3)}
+.swp-ok{grid-column:2;grid-row:1/span 2;color:var(--i)}
+.swp-ok .ic{width:16px;height:16px}
+.swp-rec .swp-t{color:var(--bl)}
+.swp-new .swp-t{color:var(--i)}
+.swp-none{padding:24px 8px;text-align:center}

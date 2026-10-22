@@ -150,20 +150,15 @@ function impDecorate(){
     else if(m.isNew) b=['b-new','Nouveau'];
     else if(m.score<0.9||m.conf<70) b=['b-warn','À vérifier'+(m.orig?' · lu « '+m.orig+' »':'')];
     if(b) c.insertAdjacentHTML('beforeend',' <span class="ri-badge imp-b '+b[0]+'">'+esc(b[1])+'</span>');
-    // choix de l'ingrédient, comme avant : correspondances proposées, tout le catalogue, ou nouvel ingrédient
+    // bouton « changer » : ouvre la recherche (catalogue, sous-recettes, nouvel ingrédient)
     var l=impLine(m); if(!l||m.isSub) return;
     var cur=ingredients.find(function(x){ return x.id===it.refId; });
-    var sug=findMatches(l.name).filter(function(x){ return !x.ing._imp; }), sid={};
-    sug.forEach(function(x){ sid[x.ing.id]=1; });
-    var rest=ingredients.filter(function(x){ return !x._imp&&!sid[x.id]; }).sort(function(a,b){ return a.name.localeCompare(b.name,'fr'); });
-    var opt=function(x,lab){ return '<option value="ing:'+x.id+'"'+(x.id===it.refId?' selected':'')+'>'+esc(lab)+'</option>'; };
+    var lab;
+    if(it.type==='recipe'){ var rr=recipes.find(function(x){ return x.id===it.refId; }); lab=ic('sub')+' '+esc(rr?rr.name:'?'); }
+    else if(m.isNew) lab='＋ Nouvel ingrédient';
+    else lab=esc(cur?cur.name:'?')+(m.score<1?' — '+Math.round(m.score*100)+' %':'');
     var html='<div class="imp-pick" onclick="event.stopPropagation()">'+
-      '<select class="fi sm imp-sel" onchange="RIMP.setIng('+idx+',this.value)" aria-label="Ingrédient ou sous-recette">'+
-        '<option value=""'+(m.isNew?' selected':'')+'>＋ Nouvel ingrédient (« '+esc(l.name)+' »)</option>'+
-        (sug.length?'<optgroup label="Suggestions">'+sug.map(function(x){ return opt(x.ing,x.ing.name+' — '+Math.round(x.score*100)+' %'); }).join('')+'</optgroup>':'')+
-        '<optgroup label="Tout le catalogue">'+rest.map(function(x){ return opt(x,x.name); }).join('')+'</optgroup>'+
-        impRecOpts(l,it)+
-      '</select>'+
+      '<button class="fi sm imp-chg" onclick="RIMP.swap('+idx+')" aria-label="Changer l’ingrédient">'+ic('search')+'<span>'+lab+'</span>'+ic('chev-down')+'</button>'+
       (m.isNew&&cur&&cur._imp?'<input class="fi sm imp-nm" value="'+esc(cur.name)+'" placeholder="Nom du nouvel ingrédient" onchange="RIMP.setName('+idx+',this.value)" aria-label="Nom du nouvel ingrédient">':'')+
     '</div>';
     row.insertAdjacentHTML('beforeend',html);
@@ -186,8 +181,13 @@ function impLineKg(it){
   var ing=ingredients.find(function(x){ return x.id===it.refId; });
   return toKg(it.qty,it.unit,ing);
 }
+function impSwap(idx){
+  var it=recItems[idx], m=it&&it.imp, l=impLine(m); if(!l) return;
+  swapOpen({cur:m.isNew?{type:'new'}:{type:it.type,id:it.refId},name:l.originalName||l.name,allowNew:true,onPick:function(v){ impSetIng(idx,v); }});
+}
 function impSetIng(idx,val){
   var it=recItems[idx], m=it&&it.imp, l=impLine(m); if(!l) return;
+  if(/^new:/.test(val||'')){ var nm=decodeURIComponent(val.slice(4)); impSetIng(idx,''); if(nm) impSetName(idx,nm); return; }
   if(/^rec:/.test(val||'')){
     var rid=val.slice(4), rec=recipes.find(function(r){ return r.id===rid; }); if(!rec) return;
     var kg=impLineKg(it), base=recWeight(rid), mult=(base>0&&kg>0)?Math.round(kg/base*1e6)/1e6:1;
@@ -305,7 +305,7 @@ function impAbandon(){
   renderDraft=function(){ if(draft&&draft.multi) return _rd(); impOpen(); };
 })();
 
-RIMP.addIgnored=impAddIgnored; RIMP.setIng=impSetIng; RIMP.setName=impSetName; RIMP.pause=impPause; RIMP.abandon=impAbandon;
+RIMP.addIgnored=impAddIgnored; RIMP.setIng=impSetIng; RIMP.swap=impSwap; RIMP.setName=impSetName; RIMP.pause=impPause; RIMP.abandon=impAbandon;
 
 // Point d'entrée programmatique : ouvre l'éditeur à partir de recettes déjà analysées.
 RIMP.fromParsed=function(list,fileName){
