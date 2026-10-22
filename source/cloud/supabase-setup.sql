@@ -323,14 +323,14 @@ create or replace function public.admin_unshare(p_id text) returns void
 language plpgsql security definer set search_path = public as $$
 begin
   perform public.admin_check();
-  update public.shared_recipes set deleted = true, data = null where id = p_id and not deleted;
+  update public.shared_recipes set deleted = true, data = '{"by":"admin"}'::jsonb where id = p_id and not deleted;
 end $$;
 create or replace function public.admin_unshare_folder(p_owner uuid, p_folder text) returns integer
 language plpgsql security definer set search_path = public as $$
 declare n integer;
 begin
   perform public.admin_check();
-  update public.shared_recipes set deleted = true, data = null
+  update public.shared_recipes set deleted = true, data = '{"by":"admin"}'::jsonb
     where owner = p_owner and not deleted and coalesce(data->>'folder','') = p_folder;
   get diagnostics n = row_count; return n;
 end $$;

@@ -222,7 +222,7 @@ function shrOpenAtt(i){ var a=SHR_CUR&&SHR_CUR.data.attachments[i]; if(a) attOpe
 function shrUnshare(){
   var x=SHR_CUR; if(!x) return;
   var r=recipes.find(function(r){ return (CLOUD.sess.user.id.slice(0,8)+'_'+r.id)===x.id; });
-  if(r){ delete r.shared; persist(); }
+  if(r){ delete r.shared; delete r.shareFolder; r.updatedAt=now(); persist(); }
   else { CLOUD.st.pub[x.id]='force-delete'; clSaveState(); }
   closeMod('m-shr'); toast('Recette retirée du partage','ok'); clSync().then(function(){ if(CUR==='partage') renderPartage(); });
 }

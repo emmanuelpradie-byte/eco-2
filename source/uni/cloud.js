@@ -241,6 +241,19 @@ function clPushAtt(){
 }
 // Recettes partagées : on publie un instantané autonome (ingrédients, sous-recettes,
 // prix, allergènes, documents) dès qu'il change ; on retire celles qui ne sont plus partagées.
+// Garde anti-copie ancienne : un partage n'est retiré que si l'élément a été
+// décoché sur cet appareil APRÈS la dernière publication (sa date de modification
+// est plus récente). Sans ça, un appareil avec une vieille copie effaçait les
+// partages faits depuis un autre appareil.
+function clTs(v){ if(!v) return 0; var t=Date.parse(String(v).replace(' ','T').replace(/(\.\d{3})\d+/,'$1').replace(/\+00(:00)?$/,'Z')); return isNaN(t)?0:t; }
+function clMayUnpublish(sid){
+  var v=CLOUD.st.pub[sid]; if(v==='force-delete') return true;
+  var it=recipes.find(function(x){ return clSharedId(x.id)===sid; })||orders.find(function(x){ return clSharedId(x.id)===sid; });
+  var row=CLOUD.shared[sid];
+  if(!it) return v!=='remote';
+  if(!row||row.deleted) return true;
+  return clTs(it.updatedAt)>=clTs(row.updated_at);
+}
 function clPublish(){
   var st=CLOUD.st, rows=[], want={};
   var items=[]; recipes.forEach(function(r){ if(r.shared) items.push({id:r.id,snap:function(){ return shareSnapshot(r); }}); });
@@ -251,7 +264,7 @@ function clPublish(){
     var h=clHash(JSON.stringify(snap)+'|'+clMyName());
     if(st.pub[sid]!==h) rows.push({sid:sid,h:h,row:{id:sid,owner:clUid(),owner_name:clMyName(),data:snap,deleted:false}});
   });
-  Object.keys(st.pub).forEach(function(sid){ if(!want[sid]) rows.push({sid:sid,h:null,row:{id:sid,owner:clUid(),owner_name:clMyName(),data:null,deleted:true}}); });
+  Object.keys(st.pub).forEach(function(sid){ if(!want[sid]&&clMayUnpublish(sid)) rows.push({sid:sid,h:null,row:{id:sid,owner:clUid(),owner_name:clMyName(),data:null,deleted:true}}); });
   if(!rows.length) return Promise.resolve();
   return rows.reduce(function(p,it){
     return p.then(function(){ return clUpsert('shared_recipes','id',[it.row]).then(function(){ if(it.h) st.pub[it.sid]=it.h; else delete st.pub[it.sid]; clSaveState(); }); });
@@ -280,7 +293,9 @@ function clPull(opts){
     // une de mes recettes retirée du partage par l'administrateur
     var gone=[];
     res[1].forEach(function(r){
-      if(r.owner!==clUid()||!r.deleted||!st.pub[r.id]||st.pub[r.id]==='force-delete') return;
+      // seul un retrait par l'administrateur (marqué by:admin) décoche la recette ; un retrait fait
+      // depuis un autre de mes appareils arrive déjà par la recette elle-même
+      if(r.owner!==clUid()||!r.deleted||!st.pub[r.id]||st.pub[r.id]==='force-delete'||!(r.data&&r.data.by==='admin')) return;
       var rec=recipes.find(function(x){ return clSharedId(x.id)===r.id; });
       if(rec&&rec.shared){ delete rec.shared; delete rec.shareFolder; rec.updatedAt=now(); gone.push(rec.name); }
       else if(typeof shareExtraGone==='function'){ var nm=shareExtraGone(r.id); if(nm) gone.push(nm); }
