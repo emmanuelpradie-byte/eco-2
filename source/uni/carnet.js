@@ -104,7 +104,8 @@ function rfOpt(on,label,click,multi,count){
 }
 function renderRecFilters(){
   var box=document.getElementById('rec-filters'); if(!box) return;
-  var op=box.querySelector('.cn-pop'), keep=op?{k:RF_OPEN,a:op.scrollTop,b:(op.querySelector('.cn-ol')||{}).scrollTop||0}:null;
+  var op=document.querySelector('.cn-pop'), keep=op?{k:op.getAttribute('data-k'),a:op.scrollTop,b:(op.querySelector('.cn-ol')||{}).scrollTop||0}:null;
+  var sl=box.scrollLeft; cnSheetRm();
   // catégories (et leurs dossiers)
   var catOrder=loadCats('rec'), cnt={};
   recipes.forEach(function(r){ cnt[r.cat]=(cnt[r.cat]||0)+1; });
@@ -140,8 +141,20 @@ function renderRecFilters(){
     rfPill('ing',esc(ingLbl),RF.ing.length>0,ingPop)+
     rfPill('date',esc(dateLbl),!!RF.date,datePop)+
     rfPill('sort',esc(sortLbl),false,sortPop);
+  box.scrollLeft=sl;
   var pop=box.querySelector('.cn-pop');
   if(pop){
+    pop.setAttribute('data-k',RF_OPEN);
+    if(cnMobile()){
+      // téléphone : vraie feuille du bas, hors de la rangée qui défile, avec fond et bouton OK
+      var sh=document.createElement('div'); sh.id='cn-sheet'; sh.className='cn-sheet';
+      sh.innerHTML='<div class="cn-sheet-bd" onclick="cnClose()"></div>';
+      var hd=document.createElement('div'); hd.className='cn-sh';
+      hd.innerHTML='<b>'+esc(RF_TITLES[RF_OPEN]||'')+'</b><button type="button" class="cn-sh-ok" onclick="cnClose()">OK</button>';
+      pop.insertBefore(hd,pop.firstChild);
+      sh.appendChild(pop); document.body.appendChild(sh);
+      document.documentElement.classList.add('cn-lock');
+    }
     if(getComputedStyle(pop).position!=='fixed'){
       var r=pop.getBoundingClientRect(), vw=document.documentElement.clientWidth;
       if(r.right>vw-8) pop.style.left=Math.max(vw-8-r.right,8-r.left)+'px';
@@ -165,7 +178,10 @@ function renderRecActive(){
   box.innerHTML=ch.map(function(c){ return '<button class="cn-ac" onclick="'+c[0]+'">'+c[1]+ic('x')+'</button>'; }).join('')+(ch.length>1?'<button class="cn-acx" onclick="cnReset()">Tout effacer</button>':'');
 }
 function cnOpen(e,k){ if(e) e.stopPropagation(); RF_OPEN=RF_OPEN===k?'':k; RF_IQ=''; renderRecFilters(); }
-function cnClose(){ if(!RF_OPEN) return; RF_OPEN=''; renderRecFilters(); }
+function cnClose(){ if(!RF_OPEN){ cnSheetRm(); return; } RF_OPEN=''; renderRecFilters(); }
+var RF_TITLES={cat:'Catégories',alg:'Allergènes',tags:'Tags',ing:'Ingrédients',date:'Dates',sort:'Trier'};
+function cnMobile(){ return window.matchMedia&&window.matchMedia('(max-width:820px)').matches; }
+function cnSheetRm(){ var s=document.getElementById('cn-sheet'); if(s) s.remove(); document.documentElement.classList.remove('cn-lock'); }
 document.addEventListener('click',function(e){ if(RF_OPEN&&!(e.target.closest&&e.target.closest('.cn-f'))) cnClose(); });
 document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&RF_OPEN) cnClose(); });
 function cnLetter(l){ RF.letter=(RF.letter===l?'':l); renderRec(); }
@@ -217,7 +233,7 @@ function recEdApply(rec){
   var _g=goPage; goPage=function(p){
     var r=_g.apply(this,arguments);
     document.documentElement.classList.toggle('re-full',CUR==='rec-edit'||CUR==='edit');
-    if(CUR!=='recettes') RF_OPEN='';
+    if(CUR!=='recettes'){ RF_OPEN=''; cnSheetRm(); }
     return r;
   };
   var nm=document.getElementById('r-name'), no=document.getElementById('r-notes'), tm=null;

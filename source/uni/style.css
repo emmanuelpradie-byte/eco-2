@@ -1345,3 +1345,15 @@ html.flip-on{overflow:hidden;}
 .cat-top{align-items:center}
 .cat-cnt{margin:0 0 8px}
 @media(max-width:700px){.cat-top{flex-direction:column;align-items:stretch}.cat-top .cat-supf{height:42px}}
+/* filtres du carnet sur téléphone : feuille du bas */
+.cn-sheet{position:fixed;inset:0;z-index:950;display:flex;flex-direction:column;justify-content:flex-end}
+.cn-sheet-bd{position:absolute;inset:0;background:rgba(20,16,14,.38);cursor:pointer;animation:cnFade .15s ease}
+.cn-sheet .cn-pop{position:relative!important;left:auto!important;right:auto;top:auto;bottom:auto;margin:0 8px calc(8px + env(safe-area-inset-bottom,0px) + var(--nav-h,0px));max-height:70vh;z-index:1;padding:0 6px 6px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;animation:cnUp .18s ease}
+.cn-sh{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 -6px 4px;padding:12px 14px 10px;background:var(--card);border-bottom:1px solid var(--bd)}
+.cn-sh b{font-size:15px}
+.cn-sh-ok{border:0;background:var(--i);color:var(--card);font:inherit;font-weight:600;font-size:13.5px;padding:7px 16px;border-radius:999px;cursor:pointer}
+.cn-sheet .cn-o{min-height:44px}
+html.cn-lock,html.cn-lock body{overflow:hidden}
+@keyframes cnUp{from{transform:translateY(24px);opacity:.4}to{transform:none;opacity:1}}
+@keyframes cnFade{from{opacity:0}to{opacity:1}}
+html.cn-lock #scroll{overflow:hidden}
