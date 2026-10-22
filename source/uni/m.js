@@ -118,7 +118,9 @@ function flatten(recId,mult,vis){
   });
   return out;
 }
-function recWeight(id){return flatten(id).reduce(function(s,i){return s+i.qty;},0);}
+function ingNoW(ing){return !!(ing&&isCountable(ing.unit)&&!(ing.unitWeight>0));}
+function unitPl(n,u){return u+(n>1&&!/s$/.test(u)?'s':'');}
+function recWeight(id){return flatten(id).reduce(function(s,i){var g=ingredients.find(function(x){return x.id===i.ingId;});return ingNoW(g)?s:s+i.qty;},0);}
 function recCost(id){return flatten(id).reduce(function(s,i){var ing=ingredients.find(function(x){return x.id===i.ingId;});return s+(ing?ing.price*i.qty:0);},0);}
 function addRecToOrder(recId,order,mult){
   var flat=flatten(recId,mult);var rec=recipes.find(function(r){return r.id===recId;});
@@ -199,7 +201,7 @@ function renderItems(){
 }
 function updQ(id,val){var item=curBon.items.find(function(i){return i.id===id;});if(!item)return;var ing=ingredients.find(function(i){return i.id===item.ingId;});item.qty=rnd(parseFloat(val)||0);item.cost=rnd(item.qty*(ing?ing.price:0));addLog('Qté: '+(ing?ing.name:'?')+' → '+item.qty+' kg');calcTots();livePreview();}
 function remItem(id){var ing=ingredients.find(function(i){return i.id===(curBon.items.find(function(x){return x.id===id;})||{}).ingId;});curBon.items=curBon.items.filter(function(i){return i.id!==id;});addLog('Supprimé: '+(ing?ing.name:'?'));renderItems();}
-function calcTots(){var n=curBon.items.length,w=curBon.items.reduce(function(s,i){return s+i.qty;},0),c=curBon.items.reduce(function(s,i){return s+i.cost;},0);document.getElementById('t-l').textContent=n;document.getElementById('t-w').textContent=fQup(w);document.getElementById('t-c').textContent=fEur(c);}
+function calcTots(){var n=curBon.items.length,w=curBon.items.reduce(function(s,i){var g=ingredients.find(function(x){return x.id===i.ingId;});return ingNoW(g)?s:s+i.qty;},0),c=curBon.items.reduce(function(s,i){return s+i.cost;},0);document.getElementById('t-l').textContent=n;document.getElementById('t-w').textContent=fQup(w);document.getElementById('t-c').textContent=fEur(c);}
 function addLog(desc){if(!curBon)return;curBon.history.push({ts:now(),desc:desc});renderMlog();}
 function renderMlog(){var log=document.getElementById('e-mlog');if(!curBon||!curBon.history.length){log.innerHTML='<div class="empty-s" style="padding:5px 0">Aucune modification</div>';return;}log.innerHTML=curBon.history.slice().reverse().slice(0,10).map(function(e){return'<div class="me"><span class="mt">'+fTs(e.ts)+'</span> — '+esc(e.desc)+'</div>';}).join('');}
 function handleImg(input){var f=input.files[0];if(!f)return;var r=new FileReader();r.onload=function(e){curImg=e.target.result;addLog('Image ajoutée');livePreview();};r.readAsDataURL(f);}
@@ -242,7 +244,9 @@ function bonQtyLabel(it){
   var hasQS=(it.uses||[]).some(function(u){ return !(u.q>0); });
   if(!(it.qty>0)) return 'Q.S.';
   var s;
-  if(bonIsCount(it.ing)){
+  if(ingNoW(it.ing)){
+    var n0=+(+it.qty).toFixed(2); s=String(n0).replace('.',',')+' '+unitPl(n0,it.ing.unit);
+  } else if(bonIsCount(it.ing)){
     var n=+(it.qty/it.ing.unitWeight).toFixed(2), u=it.ing.unit;
     s=String(n).replace('.',',')+' '+u+(n>1 && !/s$/.test(u)?'s':'');
   } else s=bonKg(it.qty);
@@ -250,6 +254,7 @@ function bonQtyLabel(it){
 }
 function bonPriceLabel(it){
   var ing=it.ing; if(!ing || !(it.qty>0)) return '—';
+  if(ingNoW(ing)) return fEur(ing.buyPrice!=null?ing.buyPrice:ing.price)+' / '+ing.unit;
   if(bonIsCount(ing)) return fEur(ing.buyPrice!=null?ing.buyPrice:ing.price*ing.unitWeight)+' / '+ing.unit;
   return fEur(ing.price)+' / '+(BON_VOL[ing.unit]?'L':'kg');
 }
@@ -258,7 +263,8 @@ function bonPriceLabel(it){
 function bonUsesText(it){
   var us=it.uses||[]; if(!us.length) return '';
   if(us.length===1) return us[0].n;
-  return us.map(function(u){ return u.q>0 ? u.n+' ('+bonKg(u.q)+')' : u.n; }).join(' · ');
+  var nw=ingNoW(it.ing);
+  return us.map(function(u){ return u.q>0 ? u.n+' ('+(nw?String(+(+u.q).toFixed(2)).replace('.',',')+' '+unitPl(u.q,it.ing.unit):bonKg(u.q))+')' : u.n; }).join(' · ');
 }
 function bonAddUse(it, name, q){
   it.uses=it.uses||[];
@@ -1099,7 +1105,7 @@ var _uw=parseFloat(document.getElementById('cat-uw').value)||0;
 var _bp=parseFloat(document.getElementById('cat-p').value)||0;
 var _tmp={unit:_u,unitWeight:_uw};
 var _f=unitFactor(_u,_tmp);
-if(isCountable(_u)&&!_uw){toast('Indiquez le poids d\'une '+_u,'err');return;}
+
 ingredients.push({id:uid(),name:name,cat:document.getElementById('cat-c').value,sub:(document.getElementById('cat-s')||{}).value||'',
   unit:_u,unitWeight:_uw||null,buyPrice:_bp,price:rnd(_bp/_f),image:curIngImg||(document.getElementById('cat-img')||{value:''}).value.trim()});persist();updBadges();renderCat();closeMod('m-addcat');resetIngImgUI('cat');toast('✓ Ingrédient ajouté','ok');}
 function openEditIng(id){var ing=ingredients.find(function(i){return i.id===id;});if(!ing)return;document.getElementById('edit-cat-id').value=id;document.getElementById('edit-cat-n').value=ing.name;fillCatSelect('edit-cat-c','ing',ing.cat);fillSubSelect('edit-cat-s','ing',ing.cat,ing.sub||'');document.getElementById('edit-cat-u').value=ing.unit;
@@ -1109,7 +1115,7 @@ var _isImg=ing.image&&ing.image.length>4;curIngImg=_isImg?ing.image:null;documen
 syncUW('edit');openMod('m-editcat');}
 function saveEditIng(){var id=document.getElementById('edit-cat-id').value;var ing=ingredients.find(function(i){return i.id===id;});if(!ing)return;var n=document.getElementById('edit-cat-n').value.trim();if(!n){toast('Nom requis','err');return;}ing.name=n;ing.cat=document.getElementById('edit-cat-c').value;ing.sub=(document.getElementById('edit-cat-s')||{}).value||'';var _u2=document.getElementById('edit-cat-u').value;
 var _uw2=parseFloat(document.getElementById('edit-cat-uw').value)||0;
-if(isCountable(_u2)&&!_uw2){toast('Indiquez le poids d\'une '+_u2,'err');return;}
+
 var _bp2=parseFloat(document.getElementById('edit-cat-p').value)||0;
 ing.unit=_u2; ing.unitWeight=_uw2||null; ing.buyPrice=_bp2; ing.image=curIngImg||(document.getElementById('edit-cat-img')||{value:''}).value.trim();
 ing.price=rnd(_bp2/unitFactor(_u2,{unit:_u2,unitWeight:_uw2}));orders.forEach(function(order){order.items.forEach(function(item){if(item.ingId===id)item.cost=rnd(item.qty*ing.price);});});persist();renderCat();closeMod('m-editcat');toast('✓ Ingrédient modifié','ok');}
@@ -1160,6 +1166,7 @@ function showPerKg(pfx){
   var uw=parseFloat(document.getElementById(pfx==='edit'?'edit-cat-uw':'cat-uw').value)||0;
   var bp=parseFloat(document.getElementById(pfx==='edit'?'edit-cat-p':'cat-p').value)||0;
   var f=unitFactor(u,{unit:u,unitWeight:uw});
+  if(isCountable(u)&&!uw){hint.textContent='→ Produit sans poids : compté à l’unité'+(bp?' ('+fEur(bp)+' / '+u+')':'')+', pas compté dans le poids des recettes';return;}
   if(!bp||!f){hint.textContent='';return;}
   hint.textContent='→ '+fEur(bp/f)+' / kg  (utilisé pour les recettes et les bons)';
 }
