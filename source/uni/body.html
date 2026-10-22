@@ -306,7 +306,7 @@
           <select class="fi cat-supf" id="cat-supf" onchange="renderCat()"></select>
         </div>
         <div class="cn-az" id="cat-az"></div><div class="cn-cnt cat-cnt" id="cat-count"></div><div class="chips" id="cat-chips"></div><div class="chips" id="cat-subchips" style="display:none"></div>
-        <div class="inv-bar" style="margin-bottom:12px"><button class="btn btn-ghost btn-sm" onclick="openSubMgr('ing')">{{ic:folder}} Catégories</button><button class="btn btn-ghost btn-sm" onclick="goPage('fournisseurs')">{{ic:truck}} Fournisseurs</button><button class="btn btn-ghost btn-sm" onclick="autoAllergens()">{{ic:wheat}} Compléter les allergènes</button></div>
+        <div class="inv-bar" style="margin-bottom:12px"><button class="btn btn-ghost btn-sm" onclick="openSubMgr('ing')">{{ic:folder}} Catégories</button><button class="btn btn-ghost btn-sm" onclick="goPage('fournisseurs')">{{ic:truck}} Fournisseurs</button><button class="btn btn-ghost btn-sm" id="ref-btn" onclick="refOpen()">{{ic:users}} Catalogue commun<span class="ref-n" id="ref-btn-n" style="display:none"></span></button><button class="btn btn-ghost btn-sm" onclick="autoAllergens()">{{ic:wheat}} Compléter les allergènes</button></div>
         <div id="cat-list"></div>
         <div id="cat-empty" class="empty" style="display:none;"><span class="empty-i">{{ic:box}}</span><div class="empty-t">Catalogue vide</div></div>
       </div>

@@ -116,7 +116,7 @@ class H(BaseHTTPRequestHandler):
                 else: sql = "select coalesce(to_json(public.%s(%s))::text,'null')" % (fn, args)
                 out = run(sql, uid)
                 return self.reply(200, json.loads(out) if out else None)
-            m = re.match(r'^/rest/v1/(user_docs|shared_recipes|attachments|profiles|invites|settings)$', p)
+            m = re.match(r'^/rest/v1/(user_docs|shared_recipes|attachments|profiles|invites|settings|ref_ingredients)$', p)
             if m:
                 table = m.group(1)
                 where = []
