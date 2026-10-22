@@ -41,7 +41,7 @@ function impIngFor(l){
   ingredients.push(ing); return {id:ing.id,isNew:true};
 }
 function impItem(l){
-  if(l.useRecipeId) return {id:uid(),type:'recipe',refId:l.useRecipeId,qty:l.qty||1,unit:'x'};
+  if(l.useRecipeId) return {id:uid(),type:'recipe',refId:l.useRecipeId,qty:l.qty||1,unit:'x',imp:{isRec:true,conf:100,score:1,orig:l.originalName||'',lid:l.id}};
   var r=impIngFor(l);
   return {id:uid(),type:'ingredient',refId:r.id,qty:l.qty,unit:l.unit,
     imp:{isNew:r.isNew,conf:l.confidence,score:l.matchScore||0,orig:l.originalName||'',lid:l.id}};
@@ -146,29 +146,64 @@ function impDecorate(){
     var c=row.querySelector('.ir-c'); if(!c||c.querySelector('.imp-b')) return;
     var b=null;
     if(m.isSub) b=['b-new','Sous-recette créée'];
+    else if(m.isRec) b=['b-ok2','Sous-recette'];
     else if(m.isNew) b=['b-new','Nouveau'];
     else if(m.score<0.9||m.conf<70) b=['b-warn','À vérifier'+(m.orig?' · lu « '+m.orig+' »':'')];
     if(b) c.insertAdjacentHTML('beforeend',' <span class="ri-badge imp-b '+b[0]+'">'+esc(b[1])+'</span>');
     // choix de l'ingrédient, comme avant : correspondances proposées, tout le catalogue, ou nouvel ingrédient
-    var l=impLine(m); if(!l||it.type!=='ingredient'||m.isSub) return;
+    var l=impLine(m); if(!l||m.isSub) return;
     var cur=ingredients.find(function(x){ return x.id===it.refId; });
     var sug=findMatches(l.name).filter(function(x){ return !x.ing._imp; }), sid={};
     sug.forEach(function(x){ sid[x.ing.id]=1; });
     var rest=ingredients.filter(function(x){ return !x._imp&&!sid[x.id]; }).sort(function(a,b){ return a.name.localeCompare(b.name,'fr'); });
     var opt=function(x,lab){ return '<option value="ing:'+x.id+'"'+(x.id===it.refId?' selected':'')+'>'+esc(lab)+'</option>'; };
     var html='<div class="imp-pick" onclick="event.stopPropagation()">'+
-      '<select class="fi sm imp-sel" onchange="RIMP.setIng('+idx+',this.value)" aria-label="Ingrédient">'+
+      '<select class="fi sm imp-sel" onchange="RIMP.setIng('+idx+',this.value)" aria-label="Ingrédient ou sous-recette">'+
         '<option value=""'+(m.isNew?' selected':'')+'>＋ Nouvel ingrédient (« '+esc(l.name)+' »)</option>'+
         (sug.length?'<optgroup label="Suggestions">'+sug.map(function(x){ return opt(x.ing,x.ing.name+' — '+Math.round(x.score*100)+' %'); }).join('')+'</optgroup>':'')+
         '<optgroup label="Tout le catalogue">'+rest.map(function(x){ return opt(x,x.name); }).join('')+'</optgroup>'+
+        impRecOpts(l,it)+
       '</select>'+
       (m.isNew&&cur&&cur._imp?'<input class="fi sm imp-nm" value="'+esc(cur.name)+'" placeholder="Nom du nouvel ingrédient" onchange="RIMP.setName('+idx+',this.value)" aria-label="Nom du nouvel ingrédient">':'')+
     '</div>';
     row.insertAdjacentHTML('beforeend',html);
   });
 }
+// recettes proposables comme sous-recette (les plus proches du nom lu d'abord)
+function impRecOpts(l,it){
+  var key=rslug(l.name||''), list=recipes.filter(function(r){ return !r._imp&&r.id!==editRecId; });
+  if(!list.length) return '';
+  var near=function(r){ var k=rslug(r.name); return key.length>2&&(k.indexOf(key)>=0||key.indexOf(k)>=0); };
+  list.sort(function(a,b){ return (near(b)-near(a))||a.name.localeCompare(b.name,'fr'); });
+  return '<optgroup label="Utiliser une sous-recette">'+list.map(function(r){
+    var w=recWeight(r.id);
+    return '<option value="rec:'+r.id+'"'+(it.type==='recipe'&&it.refId===r.id?' selected':'')+'>⊛ '+esc(r.name)+(w>0?' ('+fQtyNice(w)+')':'')+'</option>';
+  }).join('')+'</optgroup>';
+}
+// poids actuel de la ligne (kg), pour garder la même quantité en changeant de choix
+function impLineKg(it){
+  if(it.type==='recipe') return (recWeight(it.refId)||0)*(Number(it.qty)||0);
+  var ing=ingredients.find(function(x){ return x.id===it.refId; });
+  return toKg(it.qty,it.unit,ing);
+}
 function impSetIng(idx,val){
   var it=recItems[idx], m=it&&it.imp, l=impLine(m); if(!l) return;
+  if(/^rec:/.test(val||'')){
+    var rid=val.slice(4), rec=recipes.find(function(r){ return r.id===rid; }); if(!rec) return;
+    var kg=impLineKg(it), base=recWeight(rid), mult=(base>0&&kg>0)?Math.round(kg/base*1e6)/1e6:1;
+    if(it.type==='ingredient'){ l.ingQty=it.qty; l.ingUnit=it.unit; }
+    l.useRecipeId=rid; l.qty=mult; l.matchId='';
+    recItems[idx]={id:it.id,type:'recipe',refId:rid,qty:mult,unit:'x',imp:{isRec:true,conf:100,score:1,orig:m.orig,lid:l.id}};
+    renderRItems(); persistDraft(); return;
+  }
+  if(it.type==='recipe'){
+    var kg2=impLineKg(it);
+    delete l.useRecipeId;
+    if(l.ingQty!=null){ l.qty=l.ingQty; l.unit=l.ingUnit; } else { l.qty=Math.round(kg2*1000)/1000; l.unit='kg'; }
+    l.matchId=val?val.replace(/^ing:/,''):'';
+    var ni=impItem(l); ni.id=it.id; recItems[idx]=ni; it=ni; m=ni.imp;
+    if(!val){ renderRItems(); persistDraft(); return; }
+  }
   if(val){
     var ing=ingredients.find(function(x){ return x.id===val.replace(/^ing:/,''); }); if(!ing) return;
     l.matchId=ing.id; l.matchScore=1; it.refId=ing.id; m.isNew=false; m.score=1; m.conf=100;
