@@ -1340,3 +1340,8 @@ html.flip-on{overflow:hidden;}
 .swp-rec .swp-t{color:var(--bl)}
 .swp-new .swp-t{color:var(--i)}
 .swp-none{padding:24px 8px;text-align:center}
+/* catalogue : recherche comme le carnet */
+.cat-top .cat-srch{margin:0;max-width:none}
+.cat-top{align-items:center}
+.cat-cnt{margin:0 0 8px}
+@media(max-width:700px){.cat-top{flex-direction:column;align-items:stretch}.cat-top .cat-supf{height:42px}}

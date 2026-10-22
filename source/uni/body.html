@@ -302,10 +302,10 @@
     <div id="p-catalogue" class="pg" style="display:none;">
       <div class="narrow wide">
         <div class="cat-top">
-          <div class="srch" style="flex:1;margin-bottom:0">{{ic:search}}<input class="sinp" id="cat-srch" placeholder="Rechercher un ingrédient…" oninput="renderCat()"></div>
+          <label class="cn-srch cat-srch"><input id="cat-srch" type="search" placeholder="Rechercher un ingrédient…" oninput="catSearchIn()" autocomplete="off" enterkeyhint="search"><span class="cn-srch-x" onclick="catClearSearch()" title="Effacer">{{ic:x}}</span>{{ic:search}}</label>
           <select class="fi cat-supf" id="cat-supf" onchange="renderCat()"></select>
         </div>
-        <div class="chips" id="cat-chips"></div><div class="chips" id="cat-subchips" style="display:none"></div>
+        <div class="cn-az" id="cat-az"></div><div class="cn-cnt cat-cnt" id="cat-count"></div><div class="chips" id="cat-chips"></div><div class="chips" id="cat-subchips" style="display:none"></div>
         <div class="inv-bar" style="margin-bottom:12px"><button class="btn btn-ghost btn-sm" onclick="openSubMgr('ing')">{{ic:folder}} Catégories</button><button class="btn btn-ghost btn-sm" onclick="goPage('fournisseurs')">{{ic:truck}} Fournisseurs</button><button class="btn btn-ghost btn-sm" onclick="autoAllergens()">{{ic:wheat}} Compléter les allergènes</button></div>
         <div id="cat-list"></div>
         <div id="cat-empty" class="empty" style="display:none;"><span class="empty-i">{{ic:box}}</span><div class="empty-t">Catalogue vide</div></div>

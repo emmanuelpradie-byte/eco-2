@@ -1353,6 +1353,11 @@ html.flip-on{overflow:hidden;}
 .swp-rec .swp-t{color:var(--bl)}
 .swp-new .swp-t{color:var(--i)}
 .swp-none{padding:24px 8px;text-align:center}
+/* catalogue : recherche comme le carnet */
+.cat-top .cat-srch{margin:0;max-width:none}
+.cat-top{align-items:center}
+.cat-cnt{margin:0 0 8px}
+@media(max-width:700px){.cat-top{flex-direction:column;align-items:stretch}.cat-top .cat-supf{height:42px}}
 
 /* mode mobile forcé */
 html.lay-mob .esplit{grid-template-columns:minmax(0,1fr) minmax(0,440px);}
@@ -1378,7 +1383,7 @@ html.lay-mob .ov.show .modal{animation:sheetIn .24s cubic-bezier(.2,.8,.2,1);}
 html.lay-mob .upd-bar{bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 10px);width:calc(100vw - 24px);}html.lay-mob .upd-t small{display:none;}
 html.lay-mob .cn-flipb span{display:none;}html.lay-mob .cn-flipb{width:36px!important;padding:0;justify-content:center;}html.lay-mob .rgrid.tiles.big{grid-template-columns:1fr;}html.lay-mob .re-thumb.cover{height:180px;}html.lay-mob .flip{padding:56px 10px 40px;}html.lay-mob .flip-nav{display:none;}html.lay-mob .flip-b span{display:none;}html.lay-mob .flip-b{width:36px;padding:0;justify-content:center;}html.lay-mob .flip-stage{max-height:none;}html.lay-mob .flip-page{grid-template-columns:1fr;overflow-y:auto;display:block;}html.lay-mob .flip-page::after{display:none;}html.lay-mob .flip-l{padding:14px;}html.lay-mob .flip-r{padding:16px 16px 24px;overflow:visible;}html.lay-mob .flip-t{font-size:22px;}
 </style>
-<script>window.ECO_SERVER={"url": "https://fbwuhejcphsjhhkfkjku.supabase.co", "key": "sb_publishable_QRPVGvql3M2eSfvwkBDTfw_9Pc8fuo0"};window.ECO_BUILD="d05c390810";</script>
+<script>window.ECO_SERVER={"url": "https://fbwuhejcphsjhhkfkjku.supabase.co", "key": "sb_publishable_QRPVGvql3M2eSfvwkBDTfw_9Pc8fuo0"};window.ECO_BUILD="e4355609d6";</script>
 <script>/* Apparence : mode clair / sombre et couleur de l'application.
    Lu de façon synchrone au chargement pour éviter un flash de couleur. */
 (function(){
@@ -1755,10 +1760,10 @@ html.lay-mob .cn-flipb span{display:none;}html.lay-mob .cn-flipb{width:36px!impo
     <div id="p-catalogue" class="pg" style="display:none;">
       <div class="narrow wide">
         <div class="cat-top">
-          <div class="srch" style="flex:1;margin-bottom:0"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input class="sinp" id="cat-srch" placeholder="Rechercher un ingrédient…" oninput="renderCat()"></div>
+          <label class="cn-srch cat-srch"><input id="cat-srch" type="search" placeholder="Rechercher un ingrédient…" oninput="catSearchIn()" autocomplete="off" enterkeyhint="search"><span class="cn-srch-x" onclick="catClearSearch()" title="Effacer"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg></label>
           <select class="fi cat-supf" id="cat-supf" onchange="renderCat()"></select>
         </div>
-        <div class="chips" id="cat-chips"></div><div class="chips" id="cat-subchips" style="display:none"></div>
+        <div class="cn-az" id="cat-az"></div><div class="cn-cnt cat-cnt" id="cat-count"></div><div class="chips" id="cat-chips"></div><div class="chips" id="cat-subchips" style="display:none"></div>
         <div class="inv-bar" style="margin-bottom:12px"><button class="btn btn-ghost btn-sm" onclick="openSubMgr('ing')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2.5h8.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/></svg> Catégories</button><button class="btn btn-ghost btn-sm" onclick="goPage('fournisseurs')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 6h11.5v10H2.5z"/><path d="M14 9h4l3.5 3.5V16H14"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/></svg> Fournisseurs</button><button class="btn btn-ghost btn-sm" onclick="autoAllergens()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21V8"/><path d="M12 8c-2.5 0-4-1.5-4-4 2.5 0 4 1.5 4 4zM12 8c2.5 0 4-1.5 4-4-2.5 0-4 1.5-4 4zM12 13c-2.5 0-4-1.5-4-4 2.5 0 4 1.5 4 4zM12 13c2.5 0 4-1.5 4-4-2.5 0-4 1.5-4 4zM12 18c-2.5 0-4-1.5-4-4 2.5 0 4 1.5 4 4zM12 18c2.5 0 4-1.5 4-4-2.5 0-4 1.5-4 4z"/></svg> Compléter les allergènes</button></div>
         <div id="cat-list"></div>
         <div id="cat-empty" class="empty" style="display:none;"><span class="empty-i"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg></span><div class="empty-t">Catalogue vide</div></div>
@@ -3464,6 +3469,11 @@ function openMod(id){
     renderAlgPicker('cat');
   }
 }
+var CATF={letter:''}, _catSearchT=null;
+function catLetter(i){ var c=normTxt(String(i.name||'').trim()).charAt(0).toUpperCase(); return /[A-Z]/.test(c)?c:'#'; }
+function catLetterGo(l){ CATF.letter=(CATF.letter===l?'':l); renderCat(); }
+function catSearchIn(){ clearTimeout(_catSearchT); _catSearchT=setTimeout(renderCat,100); }
+function catClearSearch(){ var i=document.getElementById('cat-srch'); if(i){ i.value=''; i.focus(); } renderCat(); }
 function renderCat(){
   var chEl=document.getElementById('cat-chips');
   var catOrder=loadCats('ing');
@@ -3481,14 +3491,24 @@ function renderCat(){
     sf.value=supSel; if(sf.value!==supSel){ sf.value=''; supSel=''; }
     sf.style.display=suppliers.length?'':'none';
   }
-  var q=normTxt(document.getElementById('cat-srch').value||'');
+  var q=normTxt((document.getElementById('cat-srch').value||'').trim()), words=q.split(/\s+/).filter(Boolean);
   var base=activeIngSub?ingredients.filter(function(i){return i.sub===activeIngSub;}):(activeIngCat?ingredients.filter(function(i){return i.cat===activeIngCat;}):ingredients);
+  // lettres A–Z (comme le carnet de recettes)
+  var has={}; base.forEach(function(i){ has[catLetter(i)]=1; });
+  var az=document.getElementById('cat-az');
+  if(az) az.innerHTML='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(function(l){
+      return '<button class="cn-l'+(CATF.letter===l?' on':'')+(has[l]?'':' off')+'"'+(has[l]||CATF.letter===l?'':' disabled')+' onclick="catLetterGo(\''+l+'\')">'+l+'</button>'; }).join('')+
+    (has['#']?'<button class="cn-l'+(CATF.letter==='#'?' on':'')+'" onclick="catLetterGo(\'#\')" title="Autres">#</button>':'')+
+    '<button class="cn-l cn-l0'+(CATF.letter?'':' on')+'" onclick="catLetterGo(\'\')" title="Toutes les lettres">'+ic('refresh')+'</button>';
   var list=base.filter(function(i){
-    if(q&&normTxt(i.name).indexOf(q)<0&&normTxt(i.cat).indexOf(q)<0&&normTxt(supName(i.supplierId)).indexOf(q)<0) return false;
+    if(CATF.letter&&catLetter(i)!==CATF.letter) return false;
+    if(words.length){ var hay=normTxt(i.name+' '+i.cat+' '+supName(i.supplierId)+' '+(i.ref||'')); if(!words.every(function(w){ return hay.indexOf(w)>=0; })) return false; }
     if(supSel==='__none__') return !supById(i.supplierId);
     if(supSel) return i.supplierId===supSel;
     return true;
   });
+  var cc=document.getElementById('cat-count');
+  if(cc) cc.innerHTML='Mes ingrédients <b>('+(list.length===ingredients.length?list.length:list.length+' / '+ingredients.length)+')</b>';
   var el=document.getElementById('cat-list'),emp=document.getElementById('cat-empty');
   emp.style.display=list.length?'none':'block';
   if(!list.length){ el.innerHTML=''; return; }

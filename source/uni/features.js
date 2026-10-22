@@ -351,6 +351,11 @@ function openMod(id){
     renderAlgPicker('cat');
   }
 }
+var CATF={letter:''}, _catSearchT=null;
+function catLetter(i){ var c=normTxt(String(i.name||'').trim()).charAt(0).toUpperCase(); return /[A-Z]/.test(c)?c:'#'; }
+function catLetterGo(l){ CATF.letter=(CATF.letter===l?'':l); renderCat(); }
+function catSearchIn(){ clearTimeout(_catSearchT); _catSearchT=setTimeout(renderCat,100); }
+function catClearSearch(){ var i=document.getElementById('cat-srch'); if(i){ i.value=''; i.focus(); } renderCat(); }
 function renderCat(){
   var chEl=document.getElementById('cat-chips');
   var catOrder=loadCats('ing');
@@ -368,14 +373,24 @@ function renderCat(){
     sf.value=supSel; if(sf.value!==supSel){ sf.value=''; supSel=''; }
     sf.style.display=suppliers.length?'':'none';
   }
-  var q=normTxt(document.getElementById('cat-srch').value||'');
+  var q=normTxt((document.getElementById('cat-srch').value||'').trim()), words=q.split(/\s+/).filter(Boolean);
   var base=activeIngSub?ingredients.filter(function(i){return i.sub===activeIngSub;}):(activeIngCat?ingredients.filter(function(i){return i.cat===activeIngCat;}):ingredients);
+  // lettres A–Z (comme le carnet de recettes)
+  var has={}; base.forEach(function(i){ has[catLetter(i)]=1; });
+  var az=document.getElementById('cat-az');
+  if(az) az.innerHTML='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(function(l){
+      return '<button class="cn-l'+(CATF.letter===l?' on':'')+(has[l]?'':' off')+'"'+(has[l]||CATF.letter===l?'':' disabled')+' onclick="catLetterGo(\''+l+'\')">'+l+'</button>'; }).join('')+
+    (has['#']?'<button class="cn-l'+(CATF.letter==='#'?' on':'')+'" onclick="catLetterGo(\'#\')" title="Autres">#</button>':'')+
+    '<button class="cn-l cn-l0'+(CATF.letter?'':' on')+'" onclick="catLetterGo(\'\')" title="Toutes les lettres">'+ic('refresh')+'</button>';
   var list=base.filter(function(i){
-    if(q&&normTxt(i.name).indexOf(q)<0&&normTxt(i.cat).indexOf(q)<0&&normTxt(supName(i.supplierId)).indexOf(q)<0) return false;
+    if(CATF.letter&&catLetter(i)!==CATF.letter) return false;
+    if(words.length){ var hay=normTxt(i.name+' '+i.cat+' '+supName(i.supplierId)+' '+(i.ref||'')); if(!words.every(function(w){ return hay.indexOf(w)>=0; })) return false; }
     if(supSel==='__none__') return !supById(i.supplierId);
     if(supSel) return i.supplierId===supSel;
     return true;
   });
+  var cc=document.getElementById('cat-count');
+  if(cc) cc.innerHTML='Mes ingrédients <b>('+(list.length===ingredients.length?list.length:list.length+' / '+ingredients.length)+')</b>';
   var el=document.getElementById('cat-list'),emp=document.getElementById('cat-empty');
   emp.style.display=list.length?'none':'block';
   if(!list.length){ el.innerHTML=''; return; }
