@@ -2714,7 +2714,7 @@ function parseDocument(res){
 // La quantité de la recette est la PREMIÈRE colonne chiffrée ; les autres
 // (quantité mise en œuvre, coût, total) sont ignorées. Le procédé est le
 // bloc « Procédé » qui suit le tableau.
-var TABLE_HEAD=/^ingr[ée]dients?\s+(recettes?|quantit[ée]s?|poids|masse|grammages?)(?=\s|$|[^a-zà-ÿ])|^ingr[ée]dients?\s+.*\b(quant|rec[a-z]{0,3}tte|poids|gramm|co[uûi]t\b)/i;
+var TABLE_HEAD=/^ingr[ée]dients?\s+(recettes?|quantit[ée]s?|poids|masse|grammages?)(?=\s|$|[^a-zà-ÿ])|^ingr[ée]dients?\s+.*\b(quant|rec[a-z]{0,3}tte|poids|gramm|co[uûi]t\b)|^ingr[ée]dients?\s*:?\s+(?:[x×*]\s*\d+(?:[.,]\d+)?|\d+(?:[.,]\d+)?\s*[x×]|qt[ée]s?\.?|qt[ée]\.?|dose|base|g|gr|kg|\(g\)|\(kg\)|en\s+g)(?:\s+.*)?$/i;
 var GENERIC_TITLE=/^(recettes?|commande|proc[ée]d[ée]s?|sommaire|m[ée]thode)\s*:?$/i;
 var STEP_MARK=/^[-–—•●·]\s*/;
 function parseHeaderTables(res){
@@ -2727,8 +2727,21 @@ function parseHeaderTables(res){
       if(l && /[A-Za-zÀ-ÿ0-9]{2,}/.test(l)) L.push({t:l, page:(res.pageOffset||0)+pi+1});
     });
   });
-  var heads=[];
+  var heads=[], virt={};
   L.forEach(function(x,i){ if(TABLE_HEAD.test(x.t)) heads.push(i); });
+  // Tableau sans en-tête : au moins 4 lignes « Ingrédient  500 » (nombre seul,
+  // sans unité) qui se suivent, sous un titre — colonne de gauche les
+  // ingrédients, colonne de droite les poids.
+  if(!heads.length){
+    var ROW=/^[A-Za-zÀ-ÿŒœ][^\d]*?(?:\s[A-Za-zÀ-ÿŒœ]*\d+[A-Za-zÀ-ÿ]*)*\s+\d+(?:[.,]\d+)?(?:\s+\d+(?:[.,]\d+)?){0,3}$/;
+    var CONT=/^[a-zà-ÿ][a-zà-ÿ' ’-]{1,30}$/;
+    for(var a=0;a<L.length;a++){
+      if(!ROW.test(L[a].t) || /^total\b/i.test(L[a].t) || (a>0 && ROW.test(L[a-1].t))) continue;
+      var n=0, b=a;
+      while(b<L.length && (ROW.test(L[b].t) || (n && CONT.test(L[b].t))) && !/^total\b/i.test(L[b].t)){ if(ROW.test(L[b].t)) n++; b++; }
+      if(n>=4){ heads.push(a); virt[a]=true; a=b; }
+    }
+  }
   if(!heads.length) return [];
   function isTitleLike(s){
     return !STEP_MARK.test(s) && /^[A-ZÀ-ÝŒ0-9]/.test(s) && s.split(' ').length<=10 &&
@@ -2736,9 +2749,9 @@ function parseHeaderTables(res){
   }
   var docs=[];
   heads.forEach(function(h){
-    var head=L[h].t;
+    var head=virt[h]?'':L[h].t;
     var unit=/\bkg\b|kilo/i.test(head)?'kg':(/gramme/i.test(head)?'g':'');
-    var i=h+1;
+    var i=virt[h]?h:h+1;
     // En-tête écrit sur deux lignes (« en grammes   oeuvre »)
     while(i<L.length && !/\d/.test(L[i].t) && /^(en\s+grammes?|en\s+kg|oeuvre|œuvre|de base|\(g\)|€)/i.test(L[i].t)){
       if(!unit && /gramme/i.test(L[i].t)) unit='g';
@@ -2771,6 +2784,13 @@ function parseHeaderTables(res){
       items.slice(0,-1).forEach(function(x){ sum+=x.quantity||0; });
       if(sum>0 && Math.abs(lastIt.quantity-sum)<=Math.max(1,sum*0.02)) items.pop();
     }
+    // Colonne sans unité (« Ingrédients  X1 ») : des grammes, sauf si toutes
+    // les valeurs sont petites et décimales (0,500 · 1,2) — alors des kilos
+    if(!unit && items.length){
+      var vals=items.map(function(x){ return x.quantity||0; }).filter(function(v){ return v>0; });
+      if(vals.length && vals.every(function(v){ return v<=10; }) && vals.some(function(v){ return v%1!==0; }))
+        items.forEach(function(x){ x.unit='kg'; });
+    }
     if(!items.length) return;
     // Titre : la ligne significative la plus proche au-dessus du tableau
     var title='';
@@ -2796,7 +2816,7 @@ function parseHeaderTables(res){
         else proc[proc.length-1]+=' '+s2;            // suite de la consigne
       }
     }
-    docs.push({ page:L[h].page, head:h, title:title, name:title||('Recette page '+L[h].page), direct:true, count:items.length,
+    docs.push({ page:L[h].page, head:h, title:title, name:title||('Recette page '+L[h].page), direct:true, count:items.length, implicit:!!virt[h],
       parsed:{ recipeName:title, main:items, subRecipes:[],
                process:proc.filter(Boolean).map(function(x){ return {type:'process_step', text:x, confidence:0.9, section:''}; }) } });
   });
@@ -2852,6 +2872,12 @@ function groupFinalDough(docs, L){
 function localDocsFor(r){
   var tbl=parseHeaderTables(r), base=parseDocument(r);
   if(!tbl.length) return base;
+  // Tableaux devinés sans en-tête : retenus seulement s'ils trouvent plus
+  // d'ingrédients que la lecture habituelle
+  if(tbl.every(function(d){ return d.implicit; })){
+    var sc=function(ds){ return ds.reduce(function(a,d){ return a+(d.count||0); },0); };
+    return sc(tbl)>sc(base) ? tbl : base;
+  }
   if(tbl.length>=3) return tbl;               // book entièrement en tableaux
   var covered={}; tbl.forEach(function(d){ covered[d.page]=true; });
   return tbl.concat(base.filter(function(d){ return !(d.pages||[d.page]).some(function(p){ return covered[p]; }); }))
@@ -4507,6 +4533,8 @@ function renderFixesList(){
   }).join('');
 }
 
+// point d'accès pour les tests automatiques de l'import
+window.__impT={pdfItemsToWords:pdfItemsToWords,pageLinesFromWords:pageLinesFromWords,bestLocalDocs:bestLocalDocs};
 window.RIMP={
   retry:function(){ draft=null; goPage('rec-import'); },
   saveKey:function(){
