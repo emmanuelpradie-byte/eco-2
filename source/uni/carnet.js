@@ -415,3 +415,67 @@ function reSubDetails(){
     if(open) row.insertAdjacentHTML('afterend','<div class="ir-subd">'+reSubHTML(it.refId,Number(it.qty)||0,1)+'</div>');
   });
 }
+
+// ══ AJOUT D'UNE SOUS-RECETTE (même fonctionnement que l'ajout d'un ingrédient) ══
+// recherche → choix → quantité + unité (kg, g ou ×), puis « Ajouter ».
+var SR={sel:null,u:'kg'};
+function initSubRec(){
+  var avail=recipes.filter(function(r){ return r.id!==editRecId&&(typeof swpRecOk!=='function'||swpRecOk(r)); });
+  if(!avail.length){ toast('Aucune autre recette','info'); return false; }
+  SR.sel=null; SR.u='kg';
+  document.getElementById('subrec-s').value='';
+  document.getElementById('subrec-qty').style.display='none';
+  filterSubRec();
+  setTimeout(function(){ var s=document.getElementById('subrec-s'); if(s&&isWide()) s.focus(); },60);
+  return true;
+}
+function filterSubRec(){
+  var q=normTxt((document.getElementById('subrec-s').value||'').trim()), w=q.split(/\s+/).filter(Boolean);
+  var list=recipes.filter(function(r){ return r.id!==editRecId&&!r._imp&&(typeof swpRecOk!=='function'||swpRecOk(r)); })
+    .filter(function(r){ var n=normTxt(r.name+' '+(r.cat||'')); return w.every(function(x){ return n.indexOf(x)>=0; }); })
+    .sort(function(a,b){ return a.name.localeCompare(b.name,'fr'); });
+  document.getElementById('subrec-list-m').innerHTML=list.length?list.map(function(r){
+    var wt=recWeight(r.id);
+    return '<div class="pi2'+(SR.sel&&SR.sel.id===r.id?' sel':'')+'" onclick="pickSubRec(\''+r.id+'\')"><div><div class="pi2-n">'+ic('sub')+' '+esc(r.name)+'</div><div class="pi2-m">'+esc(r.cat||'')+(wt>0?' · '+fQtyNice(wt):'')+' · '+fEur(recCost(r.id))+'</div></div></div>';
+  }).join(''):'<div class="empty-s" style="padding:18px 6px;text-align:center">Aucune recette trouvée</div>';
+}
+function srBuildPills(){
+  var base=SR.sel?recWeight(SR.sel.id):0, list=base>0?['kg','g','×']:['×'];
+  if(list.indexOf(SR.u)<0) SR.u=list[0];
+  document.getElementById('subrec-upills').innerHTML=list.map(function(u){
+    return '<button type="button" class="upill'+(SR.u===u?' on':'')+'" onclick="srSetUnit(\''+u+'\')" title="'+(u==='×'?'Multiplicateur de la recette':'Poids voulu')+'">'+u+'</button>'; }).join('');
+}
+function srKg(){ var q=parseFloat(String(document.getElementById('subrec-q').value).replace(',','.'))||0, base=SR.sel?recWeight(SR.sel.id):0;
+  return SR.u==='kg'?q:(SR.u==='g'?q/1000:q*base); }
+function srSetUnit(u){
+  var kg=srKg(), base=SR.sel?recWeight(SR.sel.id):0, el=document.getElementById('subrec-q');
+  SR.u=u;
+  if(kg>0) el.value=u==='kg'?+kg.toFixed(3):(u==='g'?+(kg*1000).toFixed(1):(base>0?+(kg/base).toFixed(4):1));
+  srBuildPills(); updSubRecHint(); try{ el.focus(); }catch(e){}
+}
+function pickSubRec(id){
+  SR.sel=recipes.find(function(r){ return r.id===id; }); if(!SR.sel) return;
+  var base=recWeight(id);
+  SR.u=base>0?(base<1?'g':'kg'):'×';
+  document.getElementById('subrec-q').value=SR.u==='g'?+(base*1000).toFixed(1):(SR.u==='kg'?+base.toFixed(3):1);
+  document.getElementById('subrec-sel-n').innerHTML=ic('sub')+' '+esc(SR.sel.name);
+  document.getElementById('subrec-qty').style.display='block';
+  srBuildPills(); updSubRecHint(); filterSubRec(); selScrollTop('m-subrec');
+  var q=document.getElementById('subrec-q'); try{ q.focus({preventScroll:true}); q.select(); }catch(e){}
+}
+function unpickSubRec(){ SR.sel=null; document.getElementById('subrec-qty').style.display='none'; filterSubRec(); var s=document.getElementById('subrec-s'); if(s&&isWide()) s.focus(); }
+function updSubRecHint(){
+  var h=document.getElementById('subrec-hint'); if(!h||!SR.sel) return;
+  var base=recWeight(SR.sel.id), kg=srKg(), m=base>0?kg/base:(parseFloat(document.getElementById('subrec-q').value)||0);
+  h.textContent=base>0?('Recette de base : '+fQtyNice(base)+' · ici '+fQtyNice(kg)+' (×'+fNum(m,2)+') · '+fEur(recCost(SR.sel.id)*m)+' TTC'):'Cette recette n’a pas de poids : quantité en multiplicateur (×1 = recette entière).';
+}
+function confirmSubRec(){
+  if(!SR.sel){ toast('Choisis une recette','err'); return; }
+  var base=recWeight(SR.sel.id), kg=srKg();
+  var m=base>0?kg/base:(parseFloat(String(document.getElementById('subrec-q').value).replace(',','.'))||0);
+  if(!(m>0)){ toast('Quantité requise','err'); return; }
+  m=Math.round(m*1e6)/1e6;
+  recItems.push({id:uid(),type:'recipe',refId:SR.sel.id,qty:m,unit:'x'});
+  closeMod('m-subrec'); renderRItems();
+  toast('⊛ '+SR.sel.name+' ajoutée'+(base>0?' ('+fQtyNice(base*m)+')':''),'ok');
+}
