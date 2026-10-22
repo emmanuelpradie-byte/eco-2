@@ -5,7 +5,7 @@
 // modifiable par son seul auteur. Un dossier peut avoir un mot de passe :
 // le serveur cache alors son contenu à ceux qui ne l'ont pas saisi.
 var PART={tab:'others',q:'',open:null,acct:null};
-var PT_NAMES={rec:['recette','recettes'],bon:['bon','bons'],doc:['document','documents']};
+var PT_NAMES={rec:['recette','recettes'],bon:['bon','bons'],pdf:['PDF','PDF'],img:['image','images'],doc:['document','documents']};
 
 function partConnectHTML(){
   return '<div class="empty shr-empty"><span class="empty-i">'+ic('users')+'</span><div class="empty-t">Partage</div>'+
@@ -14,10 +14,10 @@ function partConnectHTML(){
 }
 function shType(x){ var t=x&&x.data&&x.data.type; return t==='bon'||t==='doc'?t:'rec'; }
 function partCountLabel(c){
-  var p=[]; ['rec','bon','doc'].forEach(function(k){ var n=c[k]||0; if(n) p.push(n+' '+PT_NAMES[k][n>1?1:0]); });
+  var p=[]; ['rec','bon','pdf','img','doc'].forEach(function(k){ var n=c[k]||0; if(n) p.push(n+' '+PT_NAMES[k][n>1?1:0]); });
   return p.join(' · ')||'vide';
 }
-function partCountRows(rows){ var c={}; rows.forEach(function(x){ var t=shType(x); c[t]=(c[t]||0)+1; }); return c; }
+function partCountRows(rows){ var c={}; rows.forEach(function(x){ var t=partSecType(x); c[t]=(c[t]||0)+1; }); return c; }
 function partFolderKey(x){ return x.owner+'|'+((x.data&&x.data.folder)||''); }
 
 // ── mes documents partagés (PDF / images) ──
@@ -119,6 +119,18 @@ function partTile(x){
     (copied?'<span class="rt-badge">'+ic('check')+' Copiée</span>':'')+'</div>'+
     '<div class="rt-b"><div class="rt-n">'+esc(d.name)+'</div><div class="rt-m">'+fKg(d.weight||0)+' · '+fEur(d.cost||0)+(d.time?' · '+ic('clock')+' '+fDur(d.time):'')+'</div><div class="rt-c">'+catDot(d.cat||'')+esc(d.cat||'')+'</div></div></div>';
 }
+// contenu d'un dossier rangé en sections séparées : Recettes · Bons · PDF · Images
+var PSEC=[['rec','book','Recettes'],['bon','bon','Bons d’économat'],['pdf','pdf','PDF'],['img','image','Images']];
+function partSecType(x){ var t=shType(x); if(t!=='doc') return t; var a=(x.data.attachments||[])[0]||{}; return attIsPdf(a.mime?a:x.data.mime)?'pdf':'img'; }
+function partSecsHTML(rows){
+  var g={rec:[],bon:[],pdf:[],img:[]};
+  rows.forEach(function(x){ g[partSecType(x)].push(x); });
+  g.rec.sort(function(a,b){ return String(a.data.cat||'').localeCompare(String(b.data.cat||''),'fr')||String(a.data.name).localeCompare(String(b.data.name),'fr'); });
+  return PSEC.filter(function(t){ return g[t[0]].length; }).map(function(t){
+    var n=g[t[0]].length;
+    return '<div class="psec psec-'+t[0]+'"><div class="psec-h"><span class="psec-i">'+ic(t[1])+'</span><b>'+t[2]+'</b><em>'+n+'</em></div><div class="rgrid tiles">'+g[t[0]].map(partTile).join('')+'</div></div>';
+  }).join('');
+}
 // lock : '' | 'locked' (mot de passe à saisir) | 'open' (protégé, déjà déverrouillé ou à moi)
 function partFolderCard(name,sub,label,onclick,acts,lock){
   return '<div class="pf'+(acts?' mine':'')+(lock==='locked'?' locked':'')+'"'+(onclick?' onclick="'+onclick+'"':'')+'><span class="pf-ic">'+ic('folder')+(lock?'<i class="pf-lk">'+ic(lock==='locked'?'lock':'unlock')+'</i>':'')+'</span>'+
@@ -142,7 +154,7 @@ function partOthersHTML(){
     return mkBack(owner,'PART.open=null;partBody()')+
       '<div class="pf-head"><span class="pf-ic">'+ic('folder')+(lk?'<i class="pf-lk">'+ic('unlock')+'</i>':'')+'</span><div class="pf-b"><div class="pf-n big">'+esc(f)+'</div><div class="pf-s">Dossier de '+esc(owner)+' · '+partCountLabel(partCountRows(rows))+(lk?' · protégé par mot de passe':'')+'</div></div>'+
       (copyable?'<button class="btn btn-gold btn-sm" id="pf-copyall" onclick="partCopyFolder(\''+escJS(PART.open)+'\')"'+(todo?'':' disabled')+'>'+ic('copy')+' '+(todo?(todo===copyable?'Copier tout le dossier':'Copier les '+todo+' manquants'):'Déjà copié')+'</button>':'')+'</div>'+
-      '<div class="rgrid tiles">'+rows.filter(function(x){ return qa||partMatch(x.data.name); }).map(partTile).join('')+'</div>';
+      partSecsHTML(rows.filter(function(x){ return qa||partMatch(x.data.name); }));
   }
   // 2 · un compte ouvert : ses dossiers et ses éléments seuls
   if(PART.acct){
@@ -161,7 +173,7 @@ function partOthersHTML(){
     var hh=mkBack('Tous les comptes','PART.acct=null;PART.open=null;partBody()')+
       '<div class="pf-head"><span class="pf-ic">'+ic('folder')+'</span><div class="pf-b"><div class="pf-n big">'+esc(name)+'</div><div class="pf-s">'+partCountLabel(partCountRows(mine))+(nf?' · '+nf+' dossier'+(nf>1?'s':''):'')+'</div></div></div>';
     if(cards.length) hh+='<div class="sh"><div class="sh-t">Dossiers</div></div><div class="pf-list">'+cards.map(function(c){ return c.h; }).join('')+'</div>';
-    if(lo.length) hh+='<div class="sh"><div class="sh-t">'+(cards.length?'Autres partages':'Partages')+'</div></div><div class="rgrid tiles">'+lo.map(partTile).join('')+'</div>';
+    if(lo.length) hh+='<div class="sh"><div class="sh-t">'+(cards.length?'Autres partages':'Partages')+'</div></div>'+partSecsHTML(lo);
     return hh+((cards.length||lo.length)?'':'<div class="empty"><div class="empty-s">Aucun résultat</div></div>');
   }
   // 1 · un dossier par compte qui partage
@@ -197,13 +209,16 @@ function partMineHTML(){
       '<button class="icbtn" title="Renommer" onclick="partRename(\''+escJS(f.name)+'\')">'+ic('edit')+'</button>'+
       '<button class="icbtn" title="Ne plus partager le dossier" onclick="partStopFolder(\''+escJS(f.name)+'\')">'+ic('x')+'</button></div>';
     var names=f.recs.map(function(r){ return r.name; }).concat(f.bons.map(function(o){ return o.name; }),f.docs.map(function(d){ return d.name; }));
-    return partFolderCard(f.name,esc(names.slice(0,3).join(', '))+(names.length>3?'…':''),partCountLabel({rec:f.recs.length,bon:f.bons.length,doc:f.docs.length})+(lk?' · protégé':''),'partPick(\''+escJS(f.name)+'\')',acts,lk?'open':'');
+    return partFolderCard(f.name,esc(names.slice(0,3).join(', '))+(names.length>3?'…':''),partCountLabel({rec:f.recs.length,bon:f.bons.length,pdf:f.docs.filter(function(d){ return attIsPdf(d.att); }).length,img:f.docs.filter(function(d){ return !attIsPdf(d.att); }).length})+(lk?' · protégé':''),'partPick(\''+escJS(f.name)+'\')',acts,lk?'open':'');
   }).join('')+'</div>';
-  if(looseR.length) h+='<div class="sh"><div class="sh-t">Recettes partagées seules</div></div><div class="rgrid tiles">'+looseR.map(function(r){
-    return '<div class="rt" onclick="openEditRec(\''+r.id+'\')"><div class="rt-ph" style="--ch:'+catHue(r.cat||'')+'">'+recThumb(r)+'</div><div class="rt-b"><div class="rt-n">'+esc(r.name)+'</div><div class="rt-c">'+esc(r.cat||'')+'</div></div></div>'; }).join('')+'</div>';
-  if(looseB.length||looseD.length) h+='<div class="sh"><div class="sh-t">Bons et documents partagés seuls</div></div><div class="att-list">'+
-    looseB.map(function(o){ return partMineRow(ic('bon'),o.name,(o.items||[]).length+' article'+((o.items||[]).length>1?'s':'')+' · '+fEur(orderCost(o)),'openEditBon(\''+o.id+'\')','partUnshareBon(\''+o.id+'\')'); }).join('')+
-    looseD.map(function(d){ return partMineRow(ic(attIsPdf(d.att)?'pdf':'image'),d.name,(attIsPdf(d.att)?'PDF':'Image')+' · '+attSize(d.att.size),'partOpenMyDoc(\''+d.id+'\')','partUnshareDoc(\''+d.id+'\')'); }).join('')+'</div>';
+  if(looseR.length) h+='<div class="psec"><div class="psec-h"><span class="psec-i">'+ic('book')+'</span><b>Recettes partagées seules</b><em>'+looseR.length+'</em></div><div class="rgrid tiles">'+looseR.map(function(r){
+    return '<div class="rt" onclick="openEditRec(\''+r.id+'\')"><div class="rt-ph" style="--ch:'+catHue(r.cat||'')+'">'+recThumb(r)+'</div><div class="rt-b"><div class="rt-n">'+esc(r.name)+'</div><div class="rt-c">'+esc(r.cat||'')+'</div></div></div>'; }).join('')+'</div></div>';
+  var looseP=looseD.filter(function(d){ return attIsPdf(d.att); }), looseI=looseD.filter(function(d){ return !attIsPdf(d.att); });
+  function mySec(icn,t,n,inner){ return '<div class="psec"><div class="psec-h"><span class="psec-i">'+ic(icn)+'</span><b>'+t+'</b><em>'+n+'</em></div>'+inner+'</div>'; }
+  if(looseB.length) h+=mySec('bon','Bons d’économat partagés seuls',looseB.length,'<div class="att-list">'+looseB.map(function(o){ return partMineRow(ic('bon'),o.name,(o.items||[]).length+' article'+((o.items||[]).length>1?'s':'')+' · '+fEur(orderCost(o)),'openEditBon(\''+o.id+'\')','partUnshareBon(\''+o.id+'\')'); }).join('')+'</div>');
+  [[looseP,'pdf','PDF partagés seuls'],[looseI,'image','Images partagées seules']].forEach(function(z){
+    if(z[0].length) h+=mySec(z[1],z[2],z[0].length,'<div class="att-list">'+z[0].map(function(d){ return partMineRow(ic(z[1]),d.name,(z[1]==='pdf'?'PDF':'Image')+' · '+attSize(d.att.size),'partOpenMyDoc(\''+d.id+'\')','partUnshareDoc(\''+d.id+'\')'); }).join('')+'</div>');
+  });
   if(!folders.length&&!looseR.length&&!looseB.length&&!looseD.length) h+='<div class="empty"><div class="empty-s">'+(PART.q?'Aucun résultat':'Tu ne partages rien pour l’instant. Crée un dossier (ex. « Stage traiteur ») et ajoutes-y des recettes, des bons ou des PDF.')+'</div></div>';
   return h;
 }
@@ -239,43 +254,88 @@ function partShareCatGo(c){
   var n=0; recipes.forEach(function(r){ if(r.cat===c){ r.shared=true; r.shareFolder=c; r.updatedAt=now(); n++; } });
   closeMod('m-pick'); PART.tab='mine'; partChanged('Dossier « '+c+' » partagé · '+n+' recette'+(n>1?'s':''));
 }
-// choix du contenu d'un dossier : recettes, bons, documents
-var PICK={folder:'',sel:{},q:'',isNew:false,newDocs:[]};
+// choix du contenu d'un dossier : 4 onglets bien séparés (Recettes · Bons · PDF · Images)
+var PICK={folder:'',sel:{},q:'',isNew:false,newDocs:[],tab:'rec',closed:{}};
+var PK_TABS=[['rec','book','Recettes'],['bon','bon','Bons'],['pdf','pdf','PDF'],['img','image','Images']];
 function partPick(folder,isNew){
-  PICK={folder:folder,sel:{},q:'',isNew:!!isNew,newDocs:[]};
+  PICK={folder:folder,sel:{},q:'',isNew:!!isNew,newDocs:[],tab:'rec',closed:{}};
   recipes.forEach(function(r){ if(r.shared&&r.shareFolder===folder) PICK.sel[r.id]=1; });
   orders.forEach(function(o){ if(o.shared&&o.shareFolder===folder) PICK.sel['o:'+o.id]=1; });
   shDocs().forEach(function(d){ if(d.folder===folder) PICK.sel['d:'+d.id]=1; });
   document.getElementById('pk-title').textContent='Dossier « '+folder+' »';
-  document.getElementById('pk-body').innerHTML='<div class="pk-hint">Coche ce que tu veux mettre dans ce dossier partagé : des recettes, des bons d’économat et des documents.</div>'+
+  document.getElementById('pk-body').innerHTML='<div class="pk-hint">Choisis ce qui va dans ce dossier. Chaque type a son onglet ; ils seront rangés séparément mais visibles dans le même dossier.</div>'+
+    '<div class="pk-tabs" id="pk-tabs"></div>'+
     '<div class="srch">'+ic('search')+'<input class="sinp" placeholder="Rechercher…" oninput="PICK.q=this.value;partPickList()"></div><div id="pk-list"></div>';
   partPickList(); openMod('m-pick');
 }
+function pkDocs(){ return shDocs().filter(function(d){ return d.folder===PICK.folder; }).concat(PICK.newDocs); }
+function pkLists(){
+  return {
+    rec:recipes.slice(),
+    bon:orders.slice(),
+    pdf:pkDocs().filter(function(d){ return attIsPdf(d.att); }),
+    img:pkDocs().filter(function(d){ return !attIsPdf(d.att); })
+  };
+}
+function pkKey(k,x){ return k==='rec'?x.id:(k==='bon'?'o:'+x.id:'d:'+x.id); }
+function pkTabsHTML(){
+  var L=pkLists();
+  return PK_TABS.map(function(t){
+    var k=t[0], n=L[k].filter(function(x){ return PICK.sel[pkKey(k,x)]; }).length;
+    return '<button class="'+(PICK.tab===k?'on':'')+'" onclick="PICK.tab=\''+k+'\';partPickList()">'+ic(t[1])+'<span>'+t[2]+'</span>'+(n?'<em>'+n+'</em>':'')+'</button>';
+  }).join('');
+}
+function pkRow(key,thumb,name,sub){
+  var on=!!PICK.sel[key];
+  return '<label class="pk-it'+(on?' on':'')+'"><input type="checkbox"'+(on?' checked':'')+' onchange="pkTog(this,\''+escJS(key)+'\')">'+
+    '<span class="pk-th">'+thumb+'</span><span class="pk-tx"><b>'+esc(name)+'</b>'+(sub?'<small>'+sub+'</small>':'')+'</span><span class="pk-ck">'+ic('check')+'</span></label>';
+}
+function pkTog(el,key){
+  PICK.sel[key]=el.checked?1:0;
+  var p=el.parentNode; if(p) p.classList.toggle('on',el.checked);
+  partPickCount(); var t=document.getElementById('pk-tabs'); if(t) t.innerHTML=pkTabsHTML();
+  pkGrpCount();
+}
+function pkGrpCount(){
+  document.querySelectorAll('#pk-list .pk-grp').forEach(function(g){
+    var rows=g.querySelectorAll('.pk-it'), on=g.querySelectorAll('.pk-it.on'), c=g.querySelector('.pk-gc');
+    if(c) c.textContent=on.length+'/'+rows.length;
+    var b=g.querySelector('.pk-all'); if(b){ var all=on.length===rows.length; b.textContent=all?'Tout décocher':'Tout cocher'; b.setAttribute('data-v',all?0:1); }
+  });
+}
+function pkFold(c){ PICK.closed[c]=!PICK.closed[c]; partPickList(); }
 function partPickList(){
   var box=document.getElementById('pk-list'); if(!box) return;
-  var q=normTxt(PICK.q), by={}, h='';
-  recipes.filter(function(r){ return !q||normTxt(r.name+' '+r.cat).indexOf(q)>=0; }).forEach(function(r){ (by[r.cat||'Sans catégorie']=by[r.cat||'Sans catégorie']||[]).push(r); });
-  var cats=Object.keys(by).sort(function(a,b){ return a.localeCompare(b,'fr'); });
-  h+='<div class="pk-sec">'+ic('book')+' Recettes</div>';
-  h+=cats.length?cats.map(function(c){
-    var rs=by[c].sort(function(a,b){ return a.name.localeCompare(b.name,'fr'); }), all=rs.every(function(r){ return PICK.sel[r.id]; });
-    return '<div class="pk-cat"><span>'+catDot(c)+esc(c)+'</span><button class="btn btn-ghost btn-sm" onclick="partPickCat(\''+escJS(c)+'\','+(all?0:1)+')">'+(all?'Tout décocher':'Tout cocher')+'</button></div>'+
-      rs.map(function(r){
-        var other=r.shared&&r.shareFolder&&r.shareFolder!==PICK.folder?'<small>dans « '+esc(r.shareFolder)+' »</small>':'';
-        return '<label class="pk-r"><input type="checkbox"'+(PICK.sel[r.id]?' checked':'')+' onchange="PICK.sel[\''+r.id+'\']=this.checked?1:0;partPickCount()"><span>'+esc(r.name)+other+'</span></label>';
-      }).join('');
-  }).join(''):'<div class="pk-none">Aucune recette</div>';
-  var bons=orders.filter(function(o){ return !q||normTxt(o.name).indexOf(q)>=0; }).sort(function(a,b){ return String(b.date||'').localeCompare(String(a.date||'')); });
-  h+='<div class="pk-sec">'+ic('bon')+' Bons d’économat</div>'+(bons.length?bons.map(function(o){
-    var other=o.shared&&o.shareFolder&&o.shareFolder!==PICK.folder?' · dans « '+esc(o.shareFolder)+' »':'';
-    return '<label class="pk-r"><input type="checkbox"'+(PICK.sel['o:'+o.id]?' checked':'')+' onchange="PICK.sel[\'o:'+o.id+'\']=this.checked?1:0;partPickCount()"><span>'+esc(o.name)+'<small>'+fDate(o.date)+' · '+(o.items||[]).length+' article'+((o.items||[]).length>1?'s':'')+other+'</small></span></label>';
-  }).join(''):'<div class="pk-none">Aucun bon</div>');
-  var docs=shDocs().filter(function(d){ return d.folder===PICK.folder; }).concat(PICK.newDocs).filter(function(d){ return !q||normTxt(d.name).indexOf(q)>=0; });
-  h+='<div class="pk-sec">'+ic('pdf')+' Documents (PDF, images)</div>'+docs.map(function(d){
-    return '<label class="pk-r"><input type="checkbox"'+(PICK.sel['d:'+d.id]?' checked':'')+' onchange="PICK.sel[\'d:'+d.id+'\']=this.checked?1:0;partPickCount()"><span>'+esc(d.name)+'<small>'+(attIsPdf(d.att)?'PDF':'Image')+' · '+attSize(d.att.size)+(d.isNew?' · nouveau':'')+'</small></span></label>';
-  }).join('')+
-    '<button class="btn btn-ghost btn-sm pk-add" onclick="document.getElementById(\'pk-doc-file\').click()">'+ic('plus')+' Ajouter un PDF ou une image</button>'+
-    '<input type="file" id="pk-doc-file" accept="application/pdf,image/*" multiple style="display:none" onchange="partPickDocs(this)">';
+  var tb=document.getElementById('pk-tabs'); if(tb) tb.innerHTML=pkTabsHTML();
+  var q=normTxt(PICK.q), tab=PICK.tab||'rec', h='';
+  if(tab==='rec'){
+    var by={};
+    recipes.filter(function(r){ return !q||normTxt(r.name+' '+r.cat).indexOf(q)>=0; }).forEach(function(r){ var c=r.cat||'Sans catégorie'; (by[c]=by[c]||[]).push(r); });
+    var cats=Object.keys(by).sort(function(a,b){ return a.localeCompare(b,'fr'); });
+    h=cats.length?cats.map(function(c){
+      var rs=by[c].sort(function(a,b){ return a.name.localeCompare(b.name,'fr'); }), on=rs.filter(function(r){ return PICK.sel[r.id]; }).length, all=on===rs.length, shut=PICK.closed[c]&&!q;
+      return '<div class="pk-grp'+(shut?' shut':'')+'"><div class="pk-gh"><button class="pk-gt" onclick="pkFold(\''+escJS(c)+'\')">'+ic('chev-down')+catDot(c)+'<b>'+esc(c)+'</b><span class="pk-gc">'+on+'/'+rs.length+'</span></button>'+
+        '<button class="pk-all" data-v="'+(all?0:1)+'" onclick="partPickCat(\''+escJS(c)+'\',+this.getAttribute(\'data-v\'))">'+(all?'Tout décocher':'Tout cocher')+'</button></div>'+
+        (shut?'':'<div class="pk-gb">'+rs.map(function(r){
+          var other=r.shared&&r.shareFolder&&r.shareFolder!==PICK.folder?' · dans « '+esc(r.shareFolder)+' »':'', w=0, co=0;
+          try{ w=recWeight(r.id); co=recCostOf(r); }catch(e){}
+          return pkRow(r.id,'<i class="pk-ph" style="--ch:'+catHue(r.cat||'')+'">'+recThumb(r)+'</i>',r.name,fKg(w)+' · '+fEur(co)+other);
+        }).join('')+'</div>')+'</div>';
+    }).join(''):'<div class="pk-none">Aucune recette</div>';
+  } else if(tab==='bon'){
+    var bons=orders.filter(function(o){ return !q||normTxt(o.name).indexOf(q)>=0; }).sort(function(a,b){ return String(b.date||'').localeCompare(String(a.date||'')); });
+    h=bons.length?'<div class="pk-gb flat">'+bons.map(function(o){
+      var other=o.shared&&o.shareFolder&&o.shareFolder!==PICK.folder?' · dans « '+esc(o.shareFolder)+' »':'';
+      return pkRow('o:'+o.id,'<i class="pk-ic">'+ic('bon')+'</i>',o.name,fDate(o.date)+' · '+(o.items||[]).length+' article'+((o.items||[]).length>1?'s':'')+' · '+fEur(orderCost(o))+other);
+    }).join('')+'</div>':'<div class="pk-none">Aucun bon d’économat</div>';
+  } else {
+    var isPdf=tab==='pdf', ds=pkDocs().filter(function(d){ return attIsPdf(d.att)===isPdf&&(!q||normTxt(d.name).indexOf(q)>=0); });
+    h=(ds.length?'<div class="pk-gb flat">'+ds.map(function(d){
+      return pkRow('d:'+d.id,'<i class="pk-ic'+(isPdf?' pdf':'')+'">'+ic(isPdf?'pdf':'image')+'</i>',d.name,(isPdf?'PDF':'Image')+' · '+attSize(d.att.size)+(d.isNew?' · nouveau':''));
+    }).join('')+'</div>':'<div class="pk-none">'+(isPdf?'Aucun PDF':'Aucune image')+' dans ce dossier</div>')+
+      '<button class="btn btn-ghost btn-sm pk-add" onclick="document.getElementById(\'pk-doc-file\').click()">'+ic('plus')+' Ajouter '+(isPdf?'un PDF':'une image')+'</button>'+
+      '<input type="file" id="pk-doc-file" accept="'+(isPdf?'application/pdf':'image/*')+'" multiple style="display:none" onchange="partPickDocs(this)">';
+  }
   box.innerHTML=h;
   partPickCount();
 }
@@ -459,8 +519,25 @@ function partUnlockGo(){
   },function(e){ if(b) b.disabled=false; er.textContent=e.message||String(e); });
 }
 
+// ── journal des copies (visible par l'administrateur) ──
+function partLogQ(){ try{ var a=JSON.parse(LS.getItem('v4_copylog')||'[]'); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+function partLogCopy(id,act){
+  if(!id) return; var q=partLogQ(); q.push({id:id,a:act||'copy'}); LS.setItem('v4_copylog',JSON.stringify(q.slice(-200))); partLogFlush();
+}
+var PLOG_BUSY=false;
+function partLogFlush(){
+  if(PLOG_BUSY||typeof clLive!=='function'||!clLive()||!clUid()) return Promise.resolve();
+  var q=partLogQ(); if(!q.length) return Promise.resolve();
+  PLOG_BUSY=true;
+  return q.reduce(function(p,e){ return p.then(function(){
+    return clRpc('log_share_copy',{p_item:e.id,p_action:e.a}).then(function(){ return 1; },function(err){ return err&&(err.status===404||err.status===400)?1:0; })
+      .then(function(done){ if(done){ var l=partLogQ(), i=l.findIndex(function(z){ return z.id===e.id&&z.a===e.a; }); if(i>=0){ l.splice(i,1); LS.setItem('v4_copylog',JSON.stringify(l)); } } });
+  }); },Promise.resolve()).then(function(){ PLOG_BUSY=false; },function(){ PLOG_BUSY=false; });
+}
+(function(){ var _p=clPull; clPull=function(){ return _p.apply(this,arguments).then(function(r){ partLogFlush(); return r; }); }; })();
+
 // ── bons et documents des autres ──
-function openSharedDoc(id){ var x=(CLOUD.shared||{})[id]; var a=x&&x.data&&(x.data.attachments||[])[0]; if(a) attOpen(a); }
+function openSharedDoc(id){ var x=(CLOUD.shared||{})[id]; var a=x&&x.data&&(x.data.attachments||[])[0]; if(a){ if(!shrIsMine(x)) partLogCopy(x.id,'open'); attOpen(a); } }
 function openSharedBon(id){
   var x=(CLOUD.shared||{})[id]; if(!x||!x.data) return; SHR_CUR=x; var d=x.data, mine=shrIsMine(x);
   var copy=orders.find(function(o){ return o.fromShared&&o.fromShared.id===x.id; });
@@ -496,7 +573,7 @@ function shrCopyBon(x){
 }
 function shrCopyBonUI(){
   var x=SHR_CUR; if(!x) return; var b=document.getElementById('shr-copy'); if(b) b.disabled=true;
-  var r=shrCopyBon(x); persist(); updBadges(); closeMod('m-shr');
+  var r=shrCopyBon(x); partLogCopy(x.id); persist(); updBadges(); closeMod('m-shr');
   toast('« '+r.bon.name+' » copié dans tes bons'+(r.ing?' · '+r.ing+' ingrédient'+(r.ing>1?'s':'')+' ajouté'+(r.ing>1?'s':'')+' au catalogue':''),'ok');
   if(CUR==='partage') partBody();
 }
@@ -535,7 +612,7 @@ function shrCopyRow(x,cat){
 function shrCopy(){
   var x=SHR_CUR; if(!x) return; var btn=document.getElementById('shr-copy'); if(btn) btn.disabled=true;
   shrCopyRow(x).then(function(o){
-    persist(); updBadges(); closeMod('m-shr');
+    partLogCopy(x.id); persist(); updBadges(); closeMod('m-shr');
     toast('« '+o.rec.name+' » copiée dans tes recettes'+(o.ing?' · '+o.ing+' ingrédient'+(o.ing>1?'s':'')+' ajouté'+(o.ing>1?'s':'')+' au catalogue':''),'ok');
     if(CUR==='partage') partBody();
   });
@@ -548,8 +625,8 @@ function partCopyFolder(key){
   var hasRec=todo.some(function(x){ return shType(x)==='rec'; });
   var cat=hasRec?(addCatIfNew('rec',folder)||folder):folder, ing=0, nr=0, nb=0;
   todo.reduce(function(p,x){ return p.then(function(){
-    if(shType(x)==='bon'){ var r=shrCopyBon(x); ing+=r.ing; nb++; return; }
-    return shrCopyRow(x,cat).then(function(o){ ing+=o.ing; nr++; });
+    if(shType(x)==='bon'){ var r=shrCopyBon(x); ing+=r.ing; nb++; partLogCopy(x.id); return; }
+    return shrCopyRow(x,cat).then(function(o){ ing+=o.ing; nr++; partLogCopy(x.id); });
   }); },Promise.resolve()).then(function(){
     persist(); updBadges(); partBody();
     var parts=[]; if(nr) parts.push(nr+' recette'+(nr>1?'s':'')+' copiée'+(nr>1?'s':'')+' dans la catégorie « '+cat+' »'); if(nb) parts.push(nb+' bon'+(nb>1?'s':'')+' copié'+(nb>1?'s':''));

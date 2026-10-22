@@ -2,7 +2,7 @@
 // Réservé aux comptes administrateurs : valider les inscriptions, gérer les
 // comptes et retirer n'importe quel partage. Le serveur vérifie chaque action
 // (fonctions admin_*) : l'appli ne fait qu'afficher.
-var ADM={users:null,err:'',busy:false,q:'',open:{accts:false,del:false,shares:false}};
+var ADM={users:null,err:'',busy:false,q:'',open:{accts:false,del:false,shares:false,copies:false},copies:null,copErr:'',cq:''};
 function admSec(key,title,count,body,forceOpen){
   var open=forceOpen||ADM.open[key];
   return '<details class="adm-sec"'+(open?' open':'')+' ontoggle="ADM.open[\''+key+'\']=this.open"><summary><span class="adm-st">'+title+'</span><span class="adm-cnt">'+count+'</span>'+ic('chev-down')+'</summary><div class="adm-sb">'+body+'</div></details>';
@@ -19,7 +19,38 @@ function admLoad(){
   return clAuthed(function(){ return clFetch('/rest/v1/profiles?select=id,email,display_name,status,is_admin,created_at'); })
     .then(function(r){ ADM.users=(r||[]).sort(function(a,b){ return a.created_at<b.created_at?1:-1; }); CLOUD.pendingN=ADM.users.filter(function(u){ return u.status==='pending'; }).length; admNav(); },
           function(e){ ADM.err=e.message||String(e); })
+    .then(function(){ return admLoadCopies(); })
     .then(function(){ ADM.busy=false; renderAdmin(); });
+}
+// qui a copié / ouvert les partages
+function admLoadCopies(){
+  return clRpc('admin_share_copies',{}).then(function(r){ ADM.copies=Array.isArray(r)?r:[]; ADM.copErr=''; },
+    function(e){ ADM.copies=[]; ADM.copErr=(e&&(e.status===404||e.status===400))?'missing':(e.message||String(e)); });
+}
+function admDateTime(t){ try{ var d=new Date(t); return d.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' à '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
+function admCopiesHTML(){
+  if(ADM.copErr==='missing') return '<div class="imp-msg imp-warn">'+ic('info')+' Le serveur n’a pas encore le journal des copies. Lance <b>supabase-update-v8.sql</b> dans Supabase → SQL Editor.</div>';
+  if(ADM.copErr) return '<div class="imp-msg imp-warn">'+esc(ADM.copErr)+'</div>';
+  var all=ADM.copies||[], q=normTxt(ADM.cq), TY={rec:['book','Recette'],bon:['bon','Bon d’économat'],doc:['file','Document']};
+  var rows=all.filter(function(c){ return !q||normTxt([c.item_name,c.copier_name,c.copier_email,c.owner_name,c.folder].join(' ')).indexOf(q)>=0; });
+  var by={}, order=[];
+  rows.forEach(function(c){ var k=c.item_id; if(!by[k]){ by[k]={c:c,list:[]}; order.push(k); } by[k].list.push(c); });
+  var h='<div class="srch">'+ic('search')+'<input class="sinp" id="adm-cq" placeholder="Rechercher une recette ou une personne…" value="'+esc(ADM.cq)+'" oninput="ADM.cq=this.value;ADM.open.copies=true;renderAdmin();var i=document.getElementById(\'adm-cq\');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length);}"></div>'+
+    '<div class="adm-cpbar"><span>Chaque copie de recette ou de bon et chaque document ouvert par quelqu’un d’autre que son auteur.</span><button class="btn btn-ghost btn-sm" onclick="admLoadCopies().then(function(){ADM.open.copies=true;renderAdmin();})">'+ic('refresh')+' Actualiser</button></div>';
+  if(!all.length) return h+'<div class="empty" style="padding:14px"><div class="empty-s">Personne n’a encore copié de partage. Chaque copie de recette ou de bon, et chaque document ouvert, apparaîtra ici.</div></div>';
+  if(!rows.length) return h+'<div class="empty" style="padding:14px"><div class="empty-s">Aucun résultat.</div></div>';
+  h+='<div class="adm-cp">'+order.map(function(k){
+    var g=by[k], c=g.c, ty=TY[c.item_type]||TY.rec, who={};
+    g.list.forEach(function(x){ who[x.copier]=1; });
+    var nw=Object.keys(who).length;
+    return '<div class="adm-cpg"><div class="adm-cph"><span class="adm-cpi">'+ic(ty[0])+'</span><div class="adm-b"><div class="adm-n">'+esc(c.item_name||'—')+'</div>'+
+      '<div class="adm-s">'+ty[1]+' de '+esc(c.owner_name||'—')+(c.folder?' · dossier « '+esc(c.folder)+' »':'')+'</div></div><span class="adm-cnt">'+nw+' personne'+(nw>1?'s':'')+'</span></div>'+
+      g.list.map(function(x){
+        var u={display_name:x.copier_name,email:x.copier_email};
+        return '<div class="adm-cpr">'+admAvatar(u)+'<div class="adm-b"><div class="adm-n">'+esc(x.copier_name||'—')+'</div><div class="adm-s">'+(x.action==='open'?'a ouvert le document':'a copié')+' · '+admDateTime(x.created_at)+'</div></div></div>';
+      }).join('')+'</div>';
+  }).join('')+'</div>';
+  return h;
 }
 function admName(u){ return u.display_name||String(u.email||'').split('@')[0]||'—'; }
 function admDate(t){ try{ return new Date(t).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}); }catch(e){ return ''; } }
@@ -89,6 +120,8 @@ function renderAdmin(){
   }).join(''):'<div class="empty" style="padding:14px"><div class="empty-s">Rien n’est partagé pour l’instant.</div></div>';
   shr+='<div class="shr-info" style="margin-top:12px">'+ic('info')+'<span>Retirer un partage le fait disparaître pour tout le monde ; la recette reste dans l’espace de son auteur, qui est prévenu. Les copies déjà faites restent chez ceux qui les ont faites.</span></div>';
   h+=admSec('shares','Partages',rows.length+' recette'+(rows.length>1?'s':''),shr);
+  var ncp=(ADM.copies||[]).length;
+  h+=admSec('copies',ic('download')+' Qui a copié les partages',ncp?ncp+' copie'+(ncp>1?'s':''):'—',admCopiesHTML(),!!ADM.cq);
   w.innerHTML=h;
 }
 function admShRow(x){

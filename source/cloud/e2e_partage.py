@@ -48,7 +48,7 @@ with sync_playwright() as p:
     A.click('#nav-partage'); A.wait_for_timeout(300)
     A.click("text=Les miens"); A.wait_for_timeout(200)
     A.evaluate("partPick('Stage traiteur',true)"); A.wait_for_timeout(300)
-    for n in names[:3]: A.locator('#pk-list label.pk-r', has_text=n).first.click()
+    for n in names[:3]: A.locator('#pk-list label.pk-it', has_text=n).first.click()
     ok('Partager 3 éléments' in A.inner_text('#pk-foot'),'sélection de 3 recettes')
     A.screenshot(path=OUT+'part_pick.png')
     A.click('#pk-foot .btn-gold'); A.wait_for_timeout(300)
