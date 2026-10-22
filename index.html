@@ -1370,6 +1370,18 @@ html.cn-lock,html.cn-lock body{overflow:hidden}
 @keyframes cnUp{from{transform:translateY(24px);opacity:.4}to{transform:none;opacity:1}}
 @keyframes cnFade{from{opacity:0}to{opacity:1}}
 html.cn-lock #scroll{overflow:hidden}
+/* détail des sous-recettes dans l'éditeur */
+.ir-sd{display:inline-flex;align-items:center;gap:3px;margin-left:7px;white-space:nowrap;border:0;background:transparent;color:var(--bl);font:inherit;font-size:10.5px;font-weight:600;cursor:pointer;padding:2px 4px;border-radius:6px}
+.ir-sd .ic{width:11px;height:11px}
+.ir-sd:hover,.ir-sd.on{background:rgba(61,101,135,.1)}
+.ir-subd{background:var(--alt);border-left:2px solid var(--bl);border-bottom:1px solid var(--bd);padding:6px 10px 8px 18px}
+.sd-l{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:3px 0;border-bottom:1px dashed var(--bd);color:var(--i2)}
+.sd-l:last-child{border-bottom:0}
+.sd-q{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--i3)}
+.sd-r .sd-n{color:var(--bl);font-weight:600;display:inline-flex;align-items:center;gap:4px}
+.sd-r .ic{width:12px;height:12px}
+.sd-in{padding-left:14px;border-left:1px solid var(--bd);margin:2px 0 4px 6px}
+.sd-miss{color:var(--re)}
 
 /* mode mobile forcé */
 html.lay-mob .esplit{grid-template-columns:minmax(0,1fr) minmax(0,440px);}
@@ -1395,7 +1407,7 @@ html.lay-mob .ov.show .modal{animation:sheetIn .24s cubic-bezier(.2,.8,.2,1);}
 html.lay-mob .upd-bar{bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 10px);width:calc(100vw - 24px);}html.lay-mob .upd-t small{display:none;}
 html.lay-mob .cn-flipb span{display:none;}html.lay-mob .cn-flipb{width:36px!important;padding:0;justify-content:center;}html.lay-mob .rgrid.tiles.big{grid-template-columns:1fr;}html.lay-mob .re-thumb.cover{height:180px;}html.lay-mob .flip{padding:56px 10px 40px;}html.lay-mob .flip-nav{display:none;}html.lay-mob .flip-b span{display:none;}html.lay-mob .flip-b{width:36px;padding:0;justify-content:center;}html.lay-mob .flip-stage{max-height:none;}html.lay-mob .flip-page{grid-template-columns:1fr;overflow-y:auto;display:block;}html.lay-mob .flip-page::after{display:none;}html.lay-mob .flip-l{padding:14px;}html.lay-mob .flip-r{padding:16px 16px 24px;overflow:visible;}html.lay-mob .flip-t{font-size:22px;}
 </style>
-<script>window.ECO_SERVER={"url": "https://fbwuhejcphsjhhkfkjku.supabase.co", "key": "sb_publishable_QRPVGvql3M2eSfvwkBDTfw_9Pc8fuo0"};window.ECO_BUILD="d6c4bde858";</script>
+<script>window.ECO_SERVER={"url": "https://fbwuhejcphsjhhkfkjku.supabase.co", "key": "sb_publishable_QRPVGvql3M2eSfvwkBDTfw_9Pc8fuo0"};window.ECO_BUILD="3664828b41";</script>
 <script>/* Apparence : mode clair / sombre et couleur de l'application.
    Lu de façon synchrone au chargement pour éviter un flash de couleur. */
 (function(){
@@ -6605,7 +6617,7 @@ function recEdApply(rec){
   var _n=openNewRec; openNewRec=function(){ var r=_n.apply(this,arguments); reLoad(); return r; };
   var _e=openEditRec; openEditRec=function(){ var r=_e.apply(this,arguments); if(CUR==='rec-edit') reLoad(); return r; };
   var _c=calcRecTots; calcRecTots=function(){ var r=_c.apply(this,arguments); rePcsHint(); reHistPush(); if(RE_TAB==='prix') renderRePrix(); return r; };
-  var _r=renderRItems; renderRItems=function(){ var r=_r.apply(this,arguments); reHistPush(); reThumb(); reMeta(); return r; };
+  var _r=renderRItems; renderRItems=function(){ var r=_r.apply(this,arguments); reSubDetails(); reHistPush(); reThumb(); reMeta(); return r; };
   var _p=showRecImgPrev; showRecImgPrev=function(){ var r=_p.apply(this,arguments); reThumb(); return r; };
   var _g=goPage; goPage=function(p){
     var r=_g.apply(this,arguments);
@@ -6754,6 +6766,44 @@ function reSellHTML(tot,pcs,coef){
   return '<div class="re-kv"><span>Prix de la recette</span><b>'+fEur(s)+'</b></div>'+(pcs?'<div class="re-kv"><span>Prix par pièce</span><b>'+fEur(s/pcs)+'</b></div>':'')+'<div class="re-kv"><span>Marge brute</span><b>'+fEur(s-tot)+'</b></div>';
 }
 function reSetCoef(v){ var c=parseFloat(String(v).replace(',','.'))||0; REC_ED.coef=c>0?c:0; var b=document.getElementById('re-sell-r'); if(b) b.innerHTML=reSellHTML(reCostAll(),REC_ED.pcs||0,REC_ED.coef); }
+
+// ══ DÉTAIL DES SOUS-RECETTES DANS L'ÉDITEUR ═══════════════════
+// Chaque sous-recette de la composition peut se déplier pour montrer ses
+// ingrédients, aux quantités réellement utilisées dans cette recette.
+var RE_SUBOPEN={};
+function reSubQty(it,ing,mult){
+  var q=Number(it.qty)||0; if(!(q>0)) return 'Q.S.';
+  if(typeof ingNoW==='function'&&ingNoW(ing)){ var n=+(q*mult).toFixed(2); return String(n).replace('.',',')+' '+unitPl(n,ing.unit); }
+  var kg=toKg(q,it.unit,ing)*mult;
+  if(isCountable(it.unit)){ var c=+(q*mult).toFixed(2); return String(c).replace('.',',')+' '+unitPl(c,it.unit); }
+  return /^(l|ml|cl|dl)$/i.test(it.unit||'')?((kg>0&&kg<1)?fNum(kg*1000,1)+' ml':fNum(kg,3)+' L'):fQtyNice(kg);
+}
+function reSubHTML(rid,mult,depth,seen){
+  var r=recipes.find(function(x){ return x.id===rid; });
+  if(!r) return '<div class="sd-l sd-miss">Sous-recette introuvable (supprimée ?)</div>';
+  seen=seen||{}; if(seen[rid]) return ''; seen[rid]=1;
+  return (r.items||[]).map(function(it){
+    if(it.type==='recipe'){
+      var sr=recipes.find(function(x){ return x.id===it.refId; }), m=(Number(it.qty)||0)*mult;
+      var w=sr?recWeight(sr.id)*m:0;
+      return '<div class="sd-l sd-r"><span class="sd-n">'+ic('sub')+' '+esc(sr?sr.name:'?')+'</span><span class="sd-q">'+(w>0?fQtyNice(w):'')+'</span></div>'+
+        (depth<3&&sr?'<div class="sd-in">'+reSubHTML(sr.id,m,depth+1,Object.assign({},seen))+'</div>':'');
+    }
+    var ing=ingredients.find(function(x){ return x.id===it.refId; });
+    return '<div class="sd-l"><span class="sd-n">'+esc(ing?ing.name:'?')+'</span><span class="sd-q">'+reSubQty(it,ing,mult)+'</span></div>';
+  }).join('');
+}
+function reSubToggle(e,id){ if(e) e.stopPropagation(); RE_SUBOPEN[id]=!RE_SUBOPEN[id]; renderRItems(); }
+function reSubDetails(){
+  var rows=document.querySelectorAll('#r-items .ir');
+  rows.forEach(function(row,idx){
+    var it=recItems[idx]; if(!it||it.type!=='recipe') return;
+    var c=row.querySelector('.ir-c'); if(!c||c.querySelector('.ir-sd')) return;
+    var sr=recipes.find(function(x){ return x.id===it.refId; }), n=sr?(sr.items||[]).length:0, open=!!RE_SUBOPEN[it.id];
+    c.insertAdjacentHTML('beforeend','<button type="button" class="ir-sd'+(open?' on':'')+'" title="'+(open?'Masquer':'Voir')+' les ingrédients de la sous-recette" onclick="reSubToggle(event,\''+it.id+'\')">'+ic(open?'chev-down':'chev-right')+'Ingrédients'+(n?' ('+n+')':'')+'</button>');
+    if(open) row.insertAdjacentHTML('afterend','<div class="ir-subd">'+reSubHTML(it.refId,Number(it.qty)||0,1)+'</div>');
+  });
+}
 
 // ══ CHANGER UN ÉLÉMENT DE RECETTE (avec recherche) ═════════════
 // Fenêtre commune à l'éditeur de recette et à l'import : on cherche dans

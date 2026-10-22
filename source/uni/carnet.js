@@ -228,7 +228,7 @@ function recEdApply(rec){
   var _n=openNewRec; openNewRec=function(){ var r=_n.apply(this,arguments); reLoad(); return r; };
   var _e=openEditRec; openEditRec=function(){ var r=_e.apply(this,arguments); if(CUR==='rec-edit') reLoad(); return r; };
   var _c=calcRecTots; calcRecTots=function(){ var r=_c.apply(this,arguments); rePcsHint(); reHistPush(); if(RE_TAB==='prix') renderRePrix(); return r; };
-  var _r=renderRItems; renderRItems=function(){ var r=_r.apply(this,arguments); reHistPush(); reThumb(); reMeta(); return r; };
+  var _r=renderRItems; renderRItems=function(){ var r=_r.apply(this,arguments); reSubDetails(); reHistPush(); reThumb(); reMeta(); return r; };
   var _p=showRecImgPrev; showRecImgPrev=function(){ var r=_p.apply(this,arguments); reThumb(); return r; };
   var _g=goPage; goPage=function(p){
     var r=_g.apply(this,arguments);
@@ -377,3 +377,41 @@ function reSellHTML(tot,pcs,coef){
   return '<div class="re-kv"><span>Prix de la recette</span><b>'+fEur(s)+'</b></div>'+(pcs?'<div class="re-kv"><span>Prix par pièce</span><b>'+fEur(s/pcs)+'</b></div>':'')+'<div class="re-kv"><span>Marge brute</span><b>'+fEur(s-tot)+'</b></div>';
 }
 function reSetCoef(v){ var c=parseFloat(String(v).replace(',','.'))||0; REC_ED.coef=c>0?c:0; var b=document.getElementById('re-sell-r'); if(b) b.innerHTML=reSellHTML(reCostAll(),REC_ED.pcs||0,REC_ED.coef); }
+
+// ══ DÉTAIL DES SOUS-RECETTES DANS L'ÉDITEUR ═══════════════════
+// Chaque sous-recette de la composition peut se déplier pour montrer ses
+// ingrédients, aux quantités réellement utilisées dans cette recette.
+var RE_SUBOPEN={};
+function reSubQty(it,ing,mult){
+  var q=Number(it.qty)||0; if(!(q>0)) return 'Q.S.';
+  if(typeof ingNoW==='function'&&ingNoW(ing)){ var n=+(q*mult).toFixed(2); return String(n).replace('.',',')+' '+unitPl(n,ing.unit); }
+  var kg=toKg(q,it.unit,ing)*mult;
+  if(isCountable(it.unit)){ var c=+(q*mult).toFixed(2); return String(c).replace('.',',')+' '+unitPl(c,it.unit); }
+  return /^(l|ml|cl|dl)$/i.test(it.unit||'')?((kg>0&&kg<1)?fNum(kg*1000,1)+' ml':fNum(kg,3)+' L'):fQtyNice(kg);
+}
+function reSubHTML(rid,mult,depth,seen){
+  var r=recipes.find(function(x){ return x.id===rid; });
+  if(!r) return '<div class="sd-l sd-miss">Sous-recette introuvable (supprimée ?)</div>';
+  seen=seen||{}; if(seen[rid]) return ''; seen[rid]=1;
+  return (r.items||[]).map(function(it){
+    if(it.type==='recipe'){
+      var sr=recipes.find(function(x){ return x.id===it.refId; }), m=(Number(it.qty)||0)*mult;
+      var w=sr?recWeight(sr.id)*m:0;
+      return '<div class="sd-l sd-r"><span class="sd-n">'+ic('sub')+' '+esc(sr?sr.name:'?')+'</span><span class="sd-q">'+(w>0?fQtyNice(w):'')+'</span></div>'+
+        (depth<3&&sr?'<div class="sd-in">'+reSubHTML(sr.id,m,depth+1,Object.assign({},seen))+'</div>':'');
+    }
+    var ing=ingredients.find(function(x){ return x.id===it.refId; });
+    return '<div class="sd-l"><span class="sd-n">'+esc(ing?ing.name:'?')+'</span><span class="sd-q">'+reSubQty(it,ing,mult)+'</span></div>';
+  }).join('');
+}
+function reSubToggle(e,id){ if(e) e.stopPropagation(); RE_SUBOPEN[id]=!RE_SUBOPEN[id]; renderRItems(); }
+function reSubDetails(){
+  var rows=document.querySelectorAll('#r-items .ir');
+  rows.forEach(function(row,idx){
+    var it=recItems[idx]; if(!it||it.type!=='recipe') return;
+    var c=row.querySelector('.ir-c'); if(!c||c.querySelector('.ir-sd')) return;
+    var sr=recipes.find(function(x){ return x.id===it.refId; }), n=sr?(sr.items||[]).length:0, open=!!RE_SUBOPEN[it.id];
+    c.insertAdjacentHTML('beforeend','<button type="button" class="ir-sd'+(open?' on':'')+'" title="'+(open?'Masquer':'Voir')+' les ingrédients de la sous-recette" onclick="reSubToggle(event,\''+it.id+'\')">'+ic(open?'chev-down':'chev-right')+'Ingrédients'+(n?' ('+n+')':'')+'</button>');
+    if(open) row.insertAdjacentHTML('afterend','<div class="ir-subd">'+reSubHTML(it.refId,Number(it.qty)||0,1)+'</div>');
+  });
+}

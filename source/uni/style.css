@@ -1357,3 +1357,15 @@ html.cn-lock,html.cn-lock body{overflow:hidden}
 @keyframes cnUp{from{transform:translateY(24px);opacity:.4}to{transform:none;opacity:1}}
 @keyframes cnFade{from{opacity:0}to{opacity:1}}
 html.cn-lock #scroll{overflow:hidden}
+/* détail des sous-recettes dans l'éditeur */
+.ir-sd{display:inline-flex;align-items:center;gap:3px;margin-left:7px;white-space:nowrap;border:0;background:transparent;color:var(--bl);font:inherit;font-size:10.5px;font-weight:600;cursor:pointer;padding:2px 4px;border-radius:6px}
+.ir-sd .ic{width:11px;height:11px}
+.ir-sd:hover,.ir-sd.on{background:rgba(61,101,135,.1)}
+.ir-subd{background:var(--alt);border-left:2px solid var(--bl);border-bottom:1px solid var(--bd);padding:6px 10px 8px 18px}
+.sd-l{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:3px 0;border-bottom:1px dashed var(--bd);color:var(--i2)}
+.sd-l:last-child{border-bottom:0}
+.sd-q{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--i3)}
+.sd-r .sd-n{color:var(--bl);font-weight:600;display:inline-flex;align-items:center;gap:4px}
+.sd-r .ic{width:12px;height:12px}
+.sd-in{padding-left:14px;border-left:1px solid var(--bd);margin:2px 0 4px 6px}
+.sd-miss{color:var(--re)}
