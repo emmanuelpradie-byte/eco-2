@@ -1000,6 +1000,12 @@ function applyBackup(d, mode){
     (d.recipes||[]).forEach(function(x){
       var ex=byId[x.id];
       if(ex){
+        // Fichier de correction : la composition de la recette est remplacée
+        // par celle du fichier (même recette, mêmes identifiants).
+        if(x._replaceItems&&x.items&&x.items.length){
+          ex.items=x.items.map(function(it){ var c=Object.assign({},it); if(c.type==='ingredient'&&ingMap[c.refId]) c.refId=ingMap[c.refId]; return c; });
+          ex.updatedAt=now_; d._nReplaced=(d._nReplaced||0)+1;
+        }
         // Déjà importée : on complète seulement les tags (rien n'est retiré)
         var add=(x.tags||[]).filter(function(t){ return !(ex.tags||[]).some(function(u){ return same(u,t); }); });
         if(add.length){ ex.tags=(ex.tags||[]).concat(add); ex.updatedAt=now_; }
@@ -1012,12 +1018,12 @@ function applyBackup(d, mode){
       }
       (x.items||[]).forEach(function(it){ if(it.type==='ingredient'&&ingMap[it.refId]) it.refId=ingMap[it.refId]; });
       if(x.sub&&subMap[x.sub]) x.sub=subMap[x.sub];
-      recipes.push(x); byId[x.id]=x; fresh[x.id]=1;
+      delete x._replaceItems; recipes.push(x); byId[x.id]=x; fresh[x.id]=1;
     });
     // Recettes du fichier déjà présentes : leurs sous-recettes et ingrédients
     // repointent vers ceux du fichier s'ils avaient été confondus avec d'autres.
     (d.recipes||[]).forEach(function(x){
-      var ex=byId[x.id]; if(!ex||fresh[x.id]) return;
+      var ex=byId[x.id]; if(!ex||fresh[x.id]||x._replaceItems) return;
       (x.items||[]).forEach(function(fi){
         var it=(ex.items||[]).find(function(i){ return i.id===fi.id; }); if(!it) return;
         var want=fi.type==='ingredient'?(ingMap[fi.refId]||fi.refId):fi.refId;

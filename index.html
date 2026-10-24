@@ -1481,7 +1481,7 @@ html.lay-mob .ov.show .modal{animation:sheetIn .24s cubic-bezier(.2,.8,.2,1);}
 html.lay-mob .upd-bar{bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 10px);width:calc(100vw - 24px);}html.lay-mob .upd-t small{display:none;}
 html.lay-mob .cn-flipb span{display:none;}html.lay-mob .cn-flipb{width:36px!important;padding:0;justify-content:center;}html.lay-mob .rgrid.tiles.big{grid-template-columns:1fr;}html.lay-mob .re-thumb.cover{height:180px;}html.lay-mob .flip{padding:56px 10px 40px;}html.lay-mob .flip-nav{display:none;}html.lay-mob .flip-b span{display:none;}html.lay-mob .flip-b{width:36px;padding:0;justify-content:center;}html.lay-mob .flip-stage{max-height:none;}html.lay-mob .flip-page{grid-template-columns:1fr;overflow-y:auto;display:block;}html.lay-mob .flip-page::after{display:none;}html.lay-mob .flip-l{padding:14px;}html.lay-mob .flip-r{padding:16px 16px 24px;overflow:visible;}html.lay-mob .flip-t{font-size:22px;}
 </style>
-<script>window.ECO_SERVER={"url": "https://fbwuhejcphsjhhkfkjku.supabase.co", "key": "sb_publishable_QRPVGvql3M2eSfvwkBDTfw_9Pc8fuo0"};window.ECO_BUILD="661045a2f0";</script>
+<script>window.ECO_SERVER={"url": "https://fbwuhejcphsjhhkfkjku.supabase.co", "key": "sb_publishable_QRPVGvql3M2eSfvwkBDTfw_9Pc8fuo0"};window.ECO_BUILD="66834dbd3f";</script>
 <script>/* Apparence : mode clair / sombre et couleur de l'application.
    Lu de façon synchrone au chargement pour éviter un flash de couleur. */
 (function(){
@@ -3013,6 +3013,12 @@ function applyBackup(d, mode){
     (d.recipes||[]).forEach(function(x){
       var ex=byId[x.id];
       if(ex){
+        // Fichier de correction : la composition de la recette est remplacée
+        // par celle du fichier (même recette, mêmes identifiants).
+        if(x._replaceItems&&x.items&&x.items.length){
+          ex.items=x.items.map(function(it){ var c=Object.assign({},it); if(c.type==='ingredient'&&ingMap[c.refId]) c.refId=ingMap[c.refId]; return c; });
+          ex.updatedAt=now_; d._nReplaced=(d._nReplaced||0)+1;
+        }
         // Déjà importée : on complète seulement les tags (rien n'est retiré)
         var add=(x.tags||[]).filter(function(t){ return !(ex.tags||[]).some(function(u){ return same(u,t); }); });
         if(add.length){ ex.tags=(ex.tags||[]).concat(add); ex.updatedAt=now_; }
@@ -3025,12 +3031,12 @@ function applyBackup(d, mode){
       }
       (x.items||[]).forEach(function(it){ if(it.type==='ingredient'&&ingMap[it.refId]) it.refId=ingMap[it.refId]; });
       if(x.sub&&subMap[x.sub]) x.sub=subMap[x.sub];
-      recipes.push(x); byId[x.id]=x; fresh[x.id]=1;
+      delete x._replaceItems; recipes.push(x); byId[x.id]=x; fresh[x.id]=1;
     });
     // Recettes du fichier déjà présentes : leurs sous-recettes et ingrédients
     // repointent vers ceux du fichier s'ils avaient été confondus avec d'autres.
     (d.recipes||[]).forEach(function(x){
-      var ex=byId[x.id]; if(!ex||fresh[x.id]) return;
+      var ex=byId[x.id]; if(!ex||fresh[x.id]||x._replaceItems) return;
       (x.items||[]).forEach(function(fi){
         var it=(ex.items||[]).find(function(i){ return i.id===fi.id; }); if(!it) return;
         var want=fi.type==='ingredient'?(ingMap[fi.refId]||fi.refId):fi.refId;
@@ -3871,6 +3877,7 @@ function fillStorageInfo(){
   }catch(err){}
 }
 function restoreExtras(d,mode){
+  if(d._nReplaced) setTimeout(function(){ toast(d._nReplaced+' recette'+(d._nReplaced>1?'s':'')+' corrigée'+(d._nReplaced>1?'s':'')+' (composition mise à jour)','ok'); },600);
   if(d.attachments) Object.keys(d.attachments).forEach(function(id){ if(!attLocal(id)) attPut(id,d.attachments[id]); });
   // Pages sources des livres : chaque document est joint à la recette indiquée
   // (identifiant de recette → fiches des documents). Rien n'est retiré.
@@ -3886,13 +3893,15 @@ function restoreExtras(d,mode){
     // Réparation : pages et tags du fichier posés par erreur sur d'autres
     // recettes (homonymes) lors d'un import précédent → retirés.
     if(d.cleanStray){
-      var mine={}, aid={}, tg=d.cleanStray.tags||[], nc=0;
-      (d.recipes||[]).forEach(function(x){ mine[x.id]=1; });
+      // Un tag ou une page du fichier n'est gardé que sur la recette à laquelle
+      // le fichier l'attribue lui-même.
+      var ftags={}, aid={}, tg=d.cleanStray.tags||[], nc=0;
+      (d.recipes||[]).forEach(function(x){ ftags[x.id]=x.tags||[]; });
       Object.keys(d.attLinks).forEach(function(k){ (d.attLinks[k]||[]).forEach(function(m){ if(m&&m.id) aid[m.id]=1; }); });
       recipes.forEach(function(r){
-        if(mine[r.id]) return; var ch=false;
-        if(r.attachments){ var a2=r.attachments.filter(function(a){ return !aid[a.id]; }); if(a2.length!==r.attachments.length){ ch=true; if(a2.length) r.attachments=a2; else delete r.attachments; } }
-        if(r.tags){ var t2=r.tags.filter(function(t){ return tg.indexOf(t)<0; }); if(t2.length!==r.tags.length){ ch=true; if(t2.length) r.tags=t2; else delete r.tags; } }
+        var ch=false, own=(d.attLinks[r.id]||[]).map(function(m){ return m&&m.id; }), keepT=ftags[r.id]||[];
+        if(r.attachments){ var a2=r.attachments.filter(function(a){ return !aid[a.id]||own.indexOf(a.id)>=0; }); if(a2.length!==r.attachments.length){ ch=true; if(a2.length) r.attachments=a2; else delete r.attachments; } }
+        if(r.tags){ var t2=r.tags.filter(function(t){ return tg.indexOf(t)<0||keepT.indexOf(t)>=0; }); if(t2.length!==r.tags.length){ ch=true; if(t2.length) r.tags=t2; else delete r.tags; } }
         if(ch){ r.updatedAt=new Date().toISOString(); nc++; }
       });
       if(nc) setTimeout(function(){ toast(nc+' recette'+(nc>1?'s':'')+' corrigée'+(nc>1?'s':'')+' : page ou tag d’un autre livre retiré','info'); },4200);

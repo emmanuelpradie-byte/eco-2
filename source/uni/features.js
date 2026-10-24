@@ -614,6 +614,7 @@ function fillStorageInfo(){
   }catch(err){}
 }
 function restoreExtras(d,mode){
+  if(d._nReplaced) setTimeout(function(){ toast(d._nReplaced+' recette'+(d._nReplaced>1?'s':'')+' corrigée'+(d._nReplaced>1?'s':'')+' (composition mise à jour)','ok'); },600);
   if(d.attachments) Object.keys(d.attachments).forEach(function(id){ if(!attLocal(id)) attPut(id,d.attachments[id]); });
   // Pages sources des livres : chaque document est joint à la recette indiquée
   // (identifiant de recette → fiches des documents). Rien n'est retiré.
@@ -629,13 +630,15 @@ function restoreExtras(d,mode){
     // Réparation : pages et tags du fichier posés par erreur sur d'autres
     // recettes (homonymes) lors d'un import précédent → retirés.
     if(d.cleanStray){
-      var mine={}, aid={}, tg=d.cleanStray.tags||[], nc=0;
-      (d.recipes||[]).forEach(function(x){ mine[x.id]=1; });
+      // Un tag ou une page du fichier n'est gardé que sur la recette à laquelle
+      // le fichier l'attribue lui-même.
+      var ftags={}, aid={}, tg=d.cleanStray.tags||[], nc=0;
+      (d.recipes||[]).forEach(function(x){ ftags[x.id]=x.tags||[]; });
       Object.keys(d.attLinks).forEach(function(k){ (d.attLinks[k]||[]).forEach(function(m){ if(m&&m.id) aid[m.id]=1; }); });
       recipes.forEach(function(r){
-        if(mine[r.id]) return; var ch=false;
-        if(r.attachments){ var a2=r.attachments.filter(function(a){ return !aid[a.id]; }); if(a2.length!==r.attachments.length){ ch=true; if(a2.length) r.attachments=a2; else delete r.attachments; } }
-        if(r.tags){ var t2=r.tags.filter(function(t){ return tg.indexOf(t)<0; }); if(t2.length!==r.tags.length){ ch=true; if(t2.length) r.tags=t2; else delete r.tags; } }
+        var ch=false, own=(d.attLinks[r.id]||[]).map(function(m){ return m&&m.id; }), keepT=ftags[r.id]||[];
+        if(r.attachments){ var a2=r.attachments.filter(function(a){ return !aid[a.id]||own.indexOf(a.id)>=0; }); if(a2.length!==r.attachments.length){ ch=true; if(a2.length) r.attachments=a2; else delete r.attachments; } }
+        if(r.tags){ var t2=r.tags.filter(function(t){ return tg.indexOf(t)<0||keepT.indexOf(t)>=0; }); if(t2.length!==r.tags.length){ ch=true; if(t2.length) r.tags=t2; else delete r.tags; } }
         if(ch){ r.updatedAt=new Date().toISOString(); nc++; }
       });
       if(nc) setTimeout(function(){ toast(nc+' recette'+(nc>1?'s':'')+' corrigée'+(nc>1?'s':'')+' : page ou tag d’un autre livre retiré','info'); },4200);
