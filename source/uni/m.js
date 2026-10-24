@@ -1826,7 +1826,7 @@ function normUnit(u){var k=cslug(u);return UNIT_NORM[k]||UNIT_NORM[k.replace(/s$
 var NUTRITION_LINE=/^(valeurs?\s+nutritionnelles?|valeur\s+[ée]nerg[ée]tique|prot[ée]ines?|glucides?|lipides?|fibres?\s+alimentaires?|dont\s+(sucres?|acides?\s+gras)|acides?\s+gras|apports?\s+de\s+r[ée]f[ée]rence|[ée]nergie)\b/i;
 var NUTRITION_HINT=/valeurs?\s+nutritionnelles?|pour\s+100\s*g\b|kcal|kj\b/i;
 var MAIN_HEADER_COLS=/^ingr[ée]dients?(\s+(%|recette|au|kilo|la|commande|gramme?s?|quantit[ée]s?|poids|unit[ée]s?))+\s*$/i;
-var MAIN_HEADER=/^(ingr[ée]dients?(\s+(du|de)\s+p[ée]trissage)?(\s+e)?|ingr[ée]dients? de base|composition|recette de base|p[ée]trissage direct|fin de p[ée]trissage|p[âa]te finale)\s*:?\s*$/i;
+var MAIN_HEADER=/^(ingr[ée]dients?(\s+(du|de)\s+p[ée]trissage)?(\s+e)?|ingr[ée]dients? de base|ingr[ée]dients? de la pr[ée]paration|ingr[ée]dients? du tourage|composition|recette de base|p[ée]trissage direct|p[ée]trissage final|fin de p[ée]trissage|p[âa]te finale|tourage)\s*:?\s*$/i;
 // Rubriques de livre (en-tête de page) : jamais un titre de recette
 var RUBRICS=['painsregionaux','painsspeciaux','painsdumonde','briochesdumonde','briochesetclassiquesfrancais',
   'douceursboulangeres','levains','sommaire','preface','presentation','glossairetechnique','lespartenaires',
@@ -2079,6 +2079,7 @@ function parseFiche(rawText, confOf){
 
     // Un titre rouvre une zone ingrédients
     if(b.type==='sub_recipe_title'){
+      if(cur&&cur===main0&&!main0.ingredients.length&&/^p[âa]te\b/i.test(b.text.trim())) return;
       cur={name:cleanSubName(b.text), ingredients:[], confidence:b.confidence};
       subs.push(cur); inProcessZone=false; return;
     }
@@ -2098,9 +2099,10 @@ function parseFiche(rawText, confOf){
       // Les phases du pétrissage final ramènent à la recette principale,
       // même sans titre « Méthode de travail ».
       if(procSection && /^(incorporation|pointage|pesage|d[ée]tente|fa[çc]onnage|appr[eê]t|cuisson|ressuage|division|frasage|mise en forme)\b/i.test(b.text)) procSection='';
+      var finSub=/^finition\b/i.test(b.text)&&subs.filter(function(s){ return s.name&&cslug(s.name)==='finition'; })[0];
       process.push({type:b.type, text:b.text, label:b.label,
                     temperature:b.temperature, duration:b.duration, confidence:b.confidence,
-                    section:(procSection!==null?procSection:(cur?cur.name:''))});
+                    section:finSub?finSub.name:(procSection!==null?procSection:(cur?cur.name:''))});
       return;
     }
 
@@ -2529,7 +2531,18 @@ function aiPrompt(text, catalogue){
   '- N\'invente jamais un ingrédient absent du texte. En cas de doute, baisse la confiance.\n'+
   '- Si un même ingrédient apparaît plusieurs fois (ex. eau puis eau de bassinage), rends CHAQUE ligne '+
   'séparément avec sa propre quantité : ne les additionne jamais, ne les fusionne jamais.\n'+
-  '- « QS » ou « Q.S. » (quantité suffisante) : quantity = 0.\n\n'+
+  '- « QS » ou « Q.S. » (quantité suffisante) : quantity = 0.\n'+
+  '- « Ingrédients du pétrissage », « Fin de pétrissage », « Pétrissage final », « Tourage » et '+
+  '« Ingrédients de la préparation » forment la recette principale (ingredients). « Pâte à brioche » '+
+  'écrit sous ces titres n\'est qu\'une précision.\n'+
+  '- Toute autre partie titrée du tableau (Finition, Macaronade, Sirop, Rafraîchi, Levain levure, '+
+  'Garniture, Mélange de graines, Pâte sucrée, Glaçage, Glace, Appareil, Raisins macérés…) est une '+
+  'sous-recette : FINITION comprise, même si ses ingrédients sont en QS.\n'+
+  '- Si la recette principale contient une ligne qui porte le nom d\'une de ces parties '+
+  '(« Rafraîchi 2800 g », « Sirop 450 g »), c\'est l\'utilisation de la sous-recette : '+
+  'garde-la dans ingredients avec ce nom et ce poids, ne recopie pas ses ingrédients.\n'+
+  '- Lis les tableaux colonne par colonne : la colonne de gauche est souvent le pétrissage, celle '+
+  'de droite les autres parties.\n\n'+
   (catalogue.length?('CATALOGUE EXISTANT (rapproche si c\'est le même produit) :\n'+
     catalogue.slice(0,120).join(', ')+'\n\n'):'')+
   'Réponds UNIQUEMENT par du JSON valide, sans texte autour, sans balises markdown :\n'+
@@ -4044,9 +4057,9 @@ function buildDraft(parsed,res,files){
     src:{thumb:res.thumb, fileName:res.fileName, ts:now()}, raw:res.text };
   parsed.main.forEach(function(it){ d.lines.push(mkLine(it,'')); });
   parsed.subRecipes.forEach(function(s){
-    // Une « finition » (2-3 ingrédients QS) n'a pas vocation à devenir une
-    // recette à part : ses ingrédients rejoignent la recette principale.
-    d.subs.push({ name:s.name, create:cslug(s.name)!=='finition', id:uid() });
+    // Toute partie titrée devient une sous-recette, FINITION comprise :
+    // elle est rattachée à la recette (« Finition – Brioche royale »).
+    d.subs.push({ name:s.name, create:true, id:uid() });
     s.items.forEach(function(it){ d.lines.push(mkLine(it,s.name)); });
   });
   // La recette principale cite souvent la sous-recette comme un ingrédient

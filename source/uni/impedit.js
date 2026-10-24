@@ -46,13 +46,44 @@ function impItem(l){
   return {id:uid(),type:'ingredient',refId:r.id,qty:l.qty,unit:l.unit,
     imp:{isNew:r.isNew,conf:l.confidence,score:l.matchScore||0,orig:l.originalName||'',lid:l.id}};
 }
+// « Rafraîchi 2800 g » dans la liste principale = utilisation de la sous-recette
+// « Rafraîchi » pour ce poids (pas un ingrédient, pas de double comptage).
+function impRefLines(d){
+  (d.subs||[]).forEach(function(s){
+    if(!s.create) return;
+    var key=rslug(s.name); if(!key) return;
+    var mine=d.lines.filter(function(l){ return l.sel&&l.subName===s.name; });
+    var subKg=0; mine.forEach(function(l){ subKg+=toKg(l.qty,l.unit,{unit:l.unit}); });
+    var refs=d.lines.filter(function(l){ if(!l.sel||l.subName||l.useRecipeId) return false; var k=rslug(l.name); return k===key||k.indexOf(key+' ')===0; });
+    if(!refs.length) return;
+    var refKg=0; refs.forEach(function(l){ refKg+=toKg(l.qty,l.unit,{unit:l.unit}); l.sel=false; l.refOf=s.name; });
+    var add=subKg>0&&refKg>0?refKg/subKg:0;
+    s.mult=Math.round(((s.mult!=null?s.mult:0)+add)*1e4)/1e4||1;
+  });
+}
+function impPretty(t){
+  t=String(t||'').replace(/\s+/g,' ').trim();
+  if(t&&t===t.toUpperCase()&&/[A-ZÀ-Ý]/.test(t)){ t=t.toLowerCase(); t=t.charAt(0).toUpperCase()+t.slice(1); }
+  return t;
+}
+function impSubName(d,s){
+  var p=impPretty(d.name), n=impPretty(s);
+  if(!n) return p;
+  return p&&rslug(n).indexOf(rslug(p))<0?n+' – '+p:n;
+}
+function impBookTag(){
+  if(!draftQueue||draftQueue.length<2||!draft||!draft.src||!draft.src.fileName) return '';
+  return String(draft.src.fileName).replace(/\.[a-z0-9]{2,5}$/i,'').replace(/[_]+/g,' ').replace(/\s*[-–]\s*p\.?\s*\d.*$/i,'').trim();
+}
 function impBuildItems(d){
+  impRefLines(d);
   var sel=d.lines.filter(function(l){ return l.sel; }), items=[];
   sel.filter(function(l){ return !l.subName; }).forEach(function(l){ items.push(impItem(l)); });
   (d.subs||[]).forEach(function(s){
     var mine=sel.filter(function(l){ return l.subName===s.name; });
     if(s.create&&mine.length){
-      var sr={id:uid(),name:s.name,cat:d.cat,image:'⊛',notes:impSubNotes(d,s.name),items:mine.map(impItem),
+      var tg=impBookTag();
+      var sr={id:uid(),name:impSubName(d,s.name),cat:d.cat,image:'⊛',notes:impSubNotes(d,s.name),items:mine.map(impItem),tags:tg?[tg]:undefined,
         createdAt:now(),updatedAt:now(),_imp:true,
         source:{fileName:d.src.fileName,thumb:d.src.thumb,importedAt:d.src.ts}};
       recipes.push(sr);
@@ -89,6 +120,8 @@ function impOpen(){
   document.getElementById('r-img').value=f.img;
   document.getElementById('r-notes').value=f.notes;
   recItems=f.items;
+  var tg=impBookTag();
+  if(tg&&typeof REC_ED!=='undefined'&&!(REC_ED.tags||[]).length){ REC_ED.tags=[tg]; if(typeof renderReTags==='function') renderReTags(); }
   renderRItems(); calcRecTots();
   impBar(); persistDraft();
   var sc=document.getElementById('scroll'); if(sc) sc.scrollTop=0;
@@ -105,7 +138,7 @@ function impBar(){
   if(!box){ box=document.createElement('div'); box.id='imp-bar'; page.insertBefore(box,page.firstChild); }
   var d=draft, q=draftQueue, n=q?q.length:1, i=q?draftQueueIdx:0;
   var nNew=ingredients.filter(function(x){ return x._imp&&recItems.some(function(it){ return it.type==='ingredient'&&it.refId===x.id; }); }).length;
-  var nIgn=d.lines.filter(function(l){ return !l.sel; }).length;
+  var nIgn=d.lines.filter(function(l){ return !l.sel&&!l.refOf; }).length;
   var nChk=recItems.filter(function(it){ return it.imp&&!it.imp.isNew&&!it.imp.isSub&&(it.imp.score<0.9||it.imp.conf<70); }).length;
   var msg=[];
   if(nNew) msg.push('<b>'+nNew+'</b> ingrédient'+(nNew>1?'s':'')+' absent'+(nNew>1?'s':'')+' du catalogue '+(nNew>1?'seront ajoutés':'sera ajouté')+' à l’enregistrement (repérés « Nouveau »).');
