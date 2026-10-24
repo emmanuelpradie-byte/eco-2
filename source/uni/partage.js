@@ -566,7 +566,7 @@ function shrCopyBon(x){
       allergens:(it.allergens||[]).slice(),allergensSet:!!it.allergensSet,priceHistory:[]}; ingredients.push(g); created++; }
     return {id:uid(),ingId:g.id,qty:it.qty,cost:rnd((it.qty||0)*(g.price||0)),uses:[{n:'Copie du bon de '+(x.owner_name||'—'),q:it.qty}]};
   });
-  o.fromShared={id:x.id,by:x.owner_name||''};
+  o.fromShared={id:x.id,by:x.owner_name||'',at:x.updated_at};
   o.history=[{ts:now(),desc:'Copié depuis le partage de '+(x.owner_name||'—')}];
   orders.unshift(o);
   return {bon:o,ing:created};
@@ -597,7 +597,7 @@ function shrCopyRow(x,cat){
     });
     var r={id:uid(),name:s.name,cat:(top&&cat)||s.cat||'',image:s.image||'📖',notes:s.notes||'',items:items,createdAt:now(),updatedAt:now()};
     if(top&&s.tags&&s.tags.length) r.tags=s.tags.slice(); if(top&&s.time) r.time=s.time; if(top&&s.pcs) r.pcs=s.pcs;
-    if(top) r.fromShared={id:x.id,by:x.owner_name||''};
+    if(top) r.fromShared={id:x.id,by:x.owner_name||'',at:x.updated_at};
     recipes.unshift(r); return r;
   }
   var atts=(x.data.attachments||[]);

@@ -1457,6 +1457,34 @@ html.cn-lock #scroll{overflow:hidden}
 .adm-cpr .adm-av{width:30px;height:30px;font-size:12.5px;}
 .adm-sec summary .adm-st svg{width:16px;height:16px;vertical-align:-3px;margin-right:4px;}
 
+/* ── Cloche de notifications ── */
+.tb-bell{position:relative;}
+.tb-bell.has{color:var(--i1);border-color:var(--gold,#C9A227);}
+.tb-dot{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:#D9342B;color:#fff;font:700 10px/17px var(--ff,inherit);font-style:normal;text-align:center;display:none;box-shadow:0 0 0 2px var(--bg,#fff);}
+.tb-dot.on{display:block;}
+.ntf{display:flex;gap:11px;padding:12px 4px;border-bottom:1px solid var(--bd);}
+.ntf:last-child{border-bottom:0;}
+.ntf-ic{width:34px;height:34px;border-radius:10px;background:var(--beige,#F2DCBA);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;color:var(--i1);}
+.ntf.upd .ntf-ic{background:#FFF1DC;color:#B26A00;}
+.ntf.unread .ntf-t{font-weight:600;}
+.ntf-b{flex:1;min-width:0;}
+.ntf-t{font-size:13.5px;line-height:1.4;color:var(--i1);}
+.ntf-s{font-size:11.5px;color:var(--i4);margin-top:2px;}
+.ntf-a{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+/* ── Ingrédient : recettes qui l'utilisent ── */
+.use-list{border:1px solid var(--bd);border-radius:10px;overflow:hidden;margin-top:6px;max-height:260px;overflow-y:auto;}
+.use-r{display:flex;align-items:center;gap:8px;padding:9px 11px;border-bottom:1px solid var(--bd);cursor:pointer;font-size:13px;}
+.use-r:last-child{border-bottom:0;}
+.use-r:hover{background:var(--bg2,rgba(0,0,0,.03));}
+.use-n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--i1);}
+.use-m{font-size:11.5px;color:var(--i4);white-space:nowrap;display:flex;align-items:center;gap:4px;}
+.use-r>.ic{color:var(--i4);font-size:13px;}
+.use-empty{font-size:12px;color:var(--i4);margin-top:4px;}
+
+#edit-cat-use{margin-bottom:12px;}
+.use-h{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--i2);text-transform:uppercase;letter-spacing:.3px;}
+.use-list{max-height:190px;}
+
 /* mode mobile forcé */
 html.lay-mob .esplit{grid-template-columns:minmax(0,1fr) minmax(0,440px);}
 html.lay-mob .re-side{width:256px;}html.lay-mob .re-fold.l{left:243px;}html.lay-mob .re-fold.r{right:243px;}html.lay-mob .re-mid{padding:22px 24px 110px;}
@@ -1481,7 +1509,7 @@ html.lay-mob .ov.show .modal{animation:sheetIn .24s cubic-bezier(.2,.8,.2,1);}
 html.lay-mob .upd-bar{bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 10px);width:calc(100vw - 24px);}html.lay-mob .upd-t small{display:none;}
 html.lay-mob .cn-flipb span{display:none;}html.lay-mob .cn-flipb{width:36px!important;padding:0;justify-content:center;}html.lay-mob .rgrid.tiles.big{grid-template-columns:1fr;}html.lay-mob .re-thumb.cover{height:180px;}html.lay-mob .flip{padding:56px 10px 40px;}html.lay-mob .flip-nav{display:none;}html.lay-mob .flip-b span{display:none;}html.lay-mob .flip-b{width:36px;padding:0;justify-content:center;}html.lay-mob .flip-stage{max-height:none;}html.lay-mob .flip-page{grid-template-columns:1fr;overflow-y:auto;display:block;}html.lay-mob .flip-page::after{display:none;}html.lay-mob .flip-l{padding:14px;}html.lay-mob .flip-r{padding:16px 16px 24px;overflow:visible;}html.lay-mob .flip-t{font-size:22px;}
 </style>
-<script>window.ECO_SERVER={"url": "https://fbwuhejcphsjhhkfkjku.supabase.co", "key": "sb_publishable_QRPVGvql3M2eSfvwkBDTfw_9Pc8fuo0"};window.ECO_BUILD="4940f3c0d7";</script>
+<script>window.ECO_SERVER={"url": "https://fbwuhejcphsjhhkfkjku.supabase.co", "key": "sb_publishable_QRPVGvql3M2eSfvwkBDTfw_9Pc8fuo0"};window.ECO_BUILD="8da38a7ce0";</script>
 <script>/* Apparence : mode clair / sombre et couleur de l'application.
    Lu de façon synchrone au chargement pour éviter un flash de couleur. */
 (function(){
@@ -1589,6 +1617,7 @@ html.lay-mob .cn-flipb span{display:none;}html.lay-mob .cn-flipb{width:36px!impo
     <div id="tb-act"></div>
     <button class="tb-cloud" id="tb-cloud" style="display:none" onclick="goPage('backup');setTimeout(function(){var c=document.getElementById('cl-card');if(c)c.scrollIntoView({block:'start'});},60)" aria-label="Équipe"></button>
     <button class="tb-srch tb-lay" id="tb-lay" onclick="toggleLayout()" title="Passer en affichage mobile" aria-label="Changer d’affichage"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></button>
+    <button class="tb-srch tb-bell" id="tb-bell" onclick="openNotifs()" title="Notifications" aria-label="Notifications"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><i class="tb-dot" id="tb-bell-n"></i></button>
     <button class="tb-srch" id="tb-srch" onclick="openSearch()" title="Rechercher (Ctrl+K)" aria-label="Rechercher"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg></button>
   </header>
   <div id="scroll">
@@ -3267,7 +3296,7 @@ function loadDefaults(){if(ingredients.length)return;ingredients=[{id:'i1',name:
 // ══════════════════════════════════════════════════════════════
 
 // ── Icônes au trait ───────────────────────────────────────────
-var ICONS={"lock": "<rect x=\"5\" y=\"10.5\" width=\"14\" height=\"10\" rx=\"2.5\"/><path d=\"M8 10.5V7.5a4 4 0 0 1 8 0v3\"/><path d=\"M12 14.5v2.5\"/>", "unlock": "<rect x=\"5\" y=\"10.5\" width=\"14\" height=\"10\" rx=\"2.5\"/><path d=\"M8 10.5V7.5a4 4 0 0 1 7.6-1.7\"/><path d=\"M12 14.5v2.5\"/>", "undo": "<path d=\"M9 14 4 9l5-5\"/><path d=\"M4 9h10.5a5.5 5.5 0 0 1 0 11H11\"/>", "redo": "<path d=\"m15 14 5-5-5-5\"/><path d=\"M20 9H9.5a5.5 5.5 0 0 0 0 11H13\"/>", "chev-left": "<path d=\"m15 6-6 6 6 6\"/>", "plus-circle": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 8v8M8 12h8\"/>", "sort": "<path d=\"M7 4v16M3.5 16.5 7 20l3.5-3.5M17 20V4M13.5 7.5 17 4l3.5 3.5\"/>", "eye-off": "<path d=\"M3 3l18 18\"/><path d=\"M10.6 5.1A9.8 9.8 0 0 1 12 5c5 0 9 4.5 10 7-.4 1-1.2 2.3-2.4 3.5M6.6 6.6C4.4 8 2.8 10.2 2 12c1 2.5 5 7 10 7 1.7 0 3.3-.5 4.6-1.3\"/><path d=\"M9.9 9.9a3 3 0 0 0 4.2 4.2\"/>", "mobile": "<rect x=\"7\" y=\"2.5\" width=\"10\" height=\"19\" rx=\"2.5\"/><path d=\"M11 18.5h2\"/>", "monitor": "<rect x=\"2.5\" y=\"4\" width=\"19\" height=\"13\" rx=\"2\"/><path d=\"M8.5 21h7M12 17v4\"/>", "panel": "<rect x=\"3\" y=\"4\" width=\"18\" height=\"16\" rx=\"3\"/><path d=\"M9 4v16\"/>", "home": "<path d=\"M3 10.5 12 3l9 7.5\"/><path d=\"M5 9.5V20h14V9.5\"/><path d=\"M10 20v-6h4v6\"/>", "bon": "<rect x=\"5.5\" y=\"4\" width=\"13\" height=\"17\" rx=\"2\"/><path d=\"M9 4.5V3h6v1.5\"/><path d=\"M9 10h6M9 14h6M9 18h3.5\"/>", "book": "<path d=\"M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z\"/><path d=\"M5 19.5A1.5 1.5 0 0 0 6.5 21H19\"/><path d=\"M9 7.5h6\"/>", "box": "<path d=\"M21 8 12 3 3 8v8l9 5 9-5z\"/><path d=\"M3 8l9 5 9-5M12 13v8\"/>", "truck": "<path d=\"M2.5 6h11.5v10H2.5z\"/><path d=\"M14 9h4l3.5 3.5V16H14\"/><circle cx=\"7\" cy=\"17.5\" r=\"1.8\"/><circle cx=\"17.5\" cy=\"17.5\" r=\"1.8\"/>", "settings": "<path d=\"M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1\"/><circle cx=\"15\" cy=\"6\" r=\"2\"/><circle cx=\"9\" cy=\"12\" r=\"2\"/><circle cx=\"17\" cy=\"18\" r=\"2\"/>", "shield": "<path d=\"M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6z\"/><path d=\"m9 12 2 2 4-4\"/>", "save": "<path d=\"M5 3h11l3 3v15H5z\"/><path d=\"M8 3v5h7V3\"/><path d=\"M8 21v-7h8v7\"/>", "download": "<path d=\"M12 4v11M7 10l5 5 5-5\"/><path d=\"M4 19.5h16\"/>", "upload": "<path d=\"M12 20V9M7 14l5-5 5 5\"/><path d=\"M4 4.5h16\"/>", "plus": "<path d=\"M12 5v14M5 12h14\"/>", "search": "<circle cx=\"11\" cy=\"11\" r=\"6.5\"/><path d=\"m20 20-4.2-4.2\"/>", "edit": "<path d=\"M4 20h4L19 9l-4-4L4 16z\"/><path d=\"m13.5 6.5 4 4\"/>", "copy": "<rect x=\"8\" y=\"8\" width=\"12\" height=\"12\" rx=\"2\"/><path d=\"M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3\"/>", "trash": "<path d=\"M4 7h16M10 11v6M14 11v6\"/><path d=\"M6 7l1 13h10l1-13M9 7V4h6v3\"/>", "x": "<path d=\"M6 6l12 12M18 6 6 18\"/>", "check": "<path d=\"m5 12.5 4.5 4.5L19 7.5\"/>", "check-circle": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"m8 12.5 2.8 2.8 5.2-5.8\"/>", "back": "<path d=\"M15 5l-7 7 7 7\"/>", "chev-down": "<path d=\"m6 9 6 6 6-6\"/>", "chev-right": "<path d=\"m9 6 6 6-6 6\"/>", "arrow-right": "<path d=\"M5 12h14M13 6l6 6-6 6\"/>", "camera": "<path d=\"M3.5 8h3.5l2-3h6l2 3h3.5v11.5h-17z\"/><circle cx=\"12\" cy=\"13.2\" r=\"3.5\"/>", "image": "<rect x=\"3\" y=\"4\" width=\"18\" height=\"16\" rx=\"2\"/><circle cx=\"9\" cy=\"10\" r=\"1.8\"/><path d=\"m21 16-5-5-9 9\"/>", "file": "<path d=\"M14 3H6v18h12V7z\"/><path d=\"M14 3v4h4\"/><path d=\"M9 13h6M9 17h6\"/>", "pdf": "<path d=\"M14 3H6v18h12V7z\"/><path d=\"M14 3v4h4\"/><path d=\"M8.5 16.5v-4h1.5a1.2 1.2 0 0 1 0 2.4H8.5M13 12.5v4h1a2 2 0 0 0 0-4z\"/>", "sheet": "<rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M4 10h16M4 15h16M10 4v16\"/>", "layers": "<path d=\"m12 3 9 5-9 5-9-5z\"/><path d=\"m3 13 9 5 9-5\"/>", "sparkle": "<path d=\"M11 3l1.8 5.2L18 10l-5.2 1.8L11 17l-1.8-5.2L4 10l5.2-1.8z\"/><path d=\"M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z\"/>", "alert": "<path d=\"M12 4 2.5 20h19z\"/><path d=\"M12 10v4.5M12 17.4v.1\"/>", "info": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 11v5M12 7.9v.1\"/>", "help": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 16.9v.1\"/>", "euro": "<path d=\"M17.5 6.5A7 7 0 1 0 17.5 17.5\"/><path d=\"M4 10.5h9M4 13.5h9\"/>", "clock": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/>", "calendar": "<rect x=\"4\" y=\"5\" width=\"16\" height=\"15\" rx=\"2\"/><path d=\"M4 10h16M8 3v4M16 3v4\"/>", "wheat": "<path d=\"M12 21V8\"/><path d=\"M12 8c-2.5 0-4-1.5-4-4 2.5 0 4 1.5 4 4zM12 8c2.5 0 4-1.5 4-4-2.5 0-4 1.5-4 4zM12 13c-2.5 0-4-1.5-4-4 2.5 0 4 1.5 4 4zM12 13c2.5 0 4-1.5 4-4-2.5 0-4 1.5-4 4zM12 18c-2.5 0-4-1.5-4-4 2.5 0 4 1.5 4 4zM12 18c2.5 0 4-1.5 4-4-2.5 0-4 1.5-4 4z\"/>", "droplet": "<path d=\"M12 3s-6 6.5-6 11a6 6 0 0 0 12 0c0-4.5-6-11-6-11z\"/>", "cube": "<path d=\"M12 3 4 7.5v9L12 21l8-4.5v-9z\"/><path d=\"M4 7.5 12 12l8-4.5M12 12v9\"/>", "bubbles": "<circle cx=\"8\" cy=\"14.5\" r=\"4\"/><circle cx=\"16\" cy=\"8.5\" r=\"3\"/><circle cx=\"17\" cy=\"17\" r=\"2\"/>", "egg": "<path d=\"M12 3c-3.5 0-6.5 5.5-6.5 10a6.5 6.5 0 0 0 13 0C18.5 8.5 15.5 3 12 3z\"/>", "salt": "<path d=\"M8 9.5h8l-1.2 11H9.2z\"/><path d=\"M8.5 9.5a3.5 3.5 0 0 1 7 0\"/><path d=\"M10.5 5.5v.1M13.5 5.5v.1M12 3.5v.1\"/>", "cherry": "<circle cx=\"7.5\" cy=\"16.5\" r=\"3.5\"/><circle cx=\"16.5\" cy=\"17.5\" r=\"3.5\"/><path d=\"M7.5 13c1-4 4-7.5 9-9.5M16.5 14c-1-3-1.5-6-.5-10.5\"/>", "tag": "<path d=\"M3 12V4h8l10 10-8 8z\"/><circle cx=\"7.5\" cy=\"8.5\" r=\"1.3\"/>", "folder": "<path d=\"M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2.5h8.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z\"/>", "grid": "<rect x=\"4\" y=\"4\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"13\" y=\"4\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"4\" y=\"13\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"13\" y=\"13\" width=\"7\" height=\"7\" rx=\"1.5\"/>", "cloud": "<path d=\"M7 18.5h10.5a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.6 9.2 4.7 4.7 0 0 0 7 18.5z\"/>", "cloud-off": "<path d=\"M7 18.5h10.5M20.6 16.4a4 4 0 0 0-2.5-5.85A6 6 0 0 0 9 6.3M6.3 9.4A4.7 4.7 0 0 0 7 18.5M3 3l18 18\"/>", "users": "<circle cx=\"9\" cy=\"8\" r=\"3.5\"/><path d=\"M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6\"/><path d=\"M16 4.7a3.5 3.5 0 0 1 0 6.6M18 14.3c2.2.7 3.5 2.8 3.5 5.7\"/>", "link": "<path d=\"M10 14a4.5 4.5 0 0 0 6.4 0l3.2-3.2a4.5 4.5 0 0 0-6.4-6.4L12 5.6\"/><path d=\"M14 10a4.5 4.5 0 0 0-6.4 0l-3.2 3.2a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2\"/>", "logout": "<path d=\"M14 4h4.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H14M10 16l-4-4 4-4M6 12h10\"/>", "clip": "<path d=\"M20 11.5l-7.8 7.8a5 5 0 0 1-7.1-7.1l8.2-8.2a3.4 3.4 0 0 1 4.8 4.8l-8.2 8.2a1.7 1.7 0 0 1-2.4-2.4l7.4-7.4\"/>", "list": "<path d=\"M8.5 6H21M8.5 12H21M8.5 18H21M4 6v.1M4 12v.1M4 18v.1\"/>", "eye": "<path d=\"M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>", "chart": "<path d=\"M4 4v16h16\"/><path d=\"M8.5 16v-4M12.5 16V8M16.5 16v-6\"/>", "user": "<circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4 21c0-4 3.5-7 8-7s8 3 8 7\"/>", "refresh": "<path d=\"M20 11a8 8 0 1 0-2.3 5.7\"/><path d=\"M20 4v7h-7\"/>", "sub": "<circle cx=\"12\" cy=\"12\" r=\"8.5\"/><circle cx=\"12\" cy=\"12\" r=\"3.5\"/>", "up": "<path d=\"m4 16 6-6 4 4 6-6\"/><path d=\"M15 8h5v5\"/>", "down": "<path d=\"m4 8 6 6 4-4 6 6\"/><path d=\"M15 16h5v-5\"/>", "mail": "<rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"/><path d=\"m3 7 9 6 9-6\"/>", "phone": "<path d=\"M5 4h3.5l1.5 4-2 1.5a11 11 0 0 0 6.5 6.5l1.5-2 4 1.5V19a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z\"/>", "printer": "<path d=\"M7 9V3.5h10V9\"/><rect x=\"3.5\" y=\"9\" width=\"17\" height=\"8\" rx=\"1.5\"/><path d=\"M7 14h10v6.5H7z\"/>", "scale": "<path d=\"M12 4v16M5 20h14M6 8h12\"/><path d=\"M6 8l-3 6a3 3 0 0 0 6 0zM18 8l-3 6a3 3 0 0 0 6 0z\"/>", "menu": "<path d=\"M4 7h16M4 12h16M4 17h16\"/>", "dots": "<circle cx=\"5.5\" cy=\"12\" r=\"1\"/><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"18.5\" cy=\"12\" r=\"1\"/>"};
+var ICONS={"bell": "<path d=\"M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z\"/><path d=\"M10 20.5a2 2 0 0 0 4 0\"/>", "lock": "<rect x=\"5\" y=\"10.5\" width=\"14\" height=\"10\" rx=\"2.5\"/><path d=\"M8 10.5V7.5a4 4 0 0 1 8 0v3\"/><path d=\"M12 14.5v2.5\"/>", "unlock": "<rect x=\"5\" y=\"10.5\" width=\"14\" height=\"10\" rx=\"2.5\"/><path d=\"M8 10.5V7.5a4 4 0 0 1 7.6-1.7\"/><path d=\"M12 14.5v2.5\"/>", "undo": "<path d=\"M9 14 4 9l5-5\"/><path d=\"M4 9h10.5a5.5 5.5 0 0 1 0 11H11\"/>", "redo": "<path d=\"m15 14 5-5-5-5\"/><path d=\"M20 9H9.5a5.5 5.5 0 0 0 0 11H13\"/>", "chev-left": "<path d=\"m15 6-6 6 6 6\"/>", "plus-circle": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 8v8M8 12h8\"/>", "sort": "<path d=\"M7 4v16M3.5 16.5 7 20l3.5-3.5M17 20V4M13.5 7.5 17 4l3.5 3.5\"/>", "eye-off": "<path d=\"M3 3l18 18\"/><path d=\"M10.6 5.1A9.8 9.8 0 0 1 12 5c5 0 9 4.5 10 7-.4 1-1.2 2.3-2.4 3.5M6.6 6.6C4.4 8 2.8 10.2 2 12c1 2.5 5 7 10 7 1.7 0 3.3-.5 4.6-1.3\"/><path d=\"M9.9 9.9a3 3 0 0 0 4.2 4.2\"/>", "mobile": "<rect x=\"7\" y=\"2.5\" width=\"10\" height=\"19\" rx=\"2.5\"/><path d=\"M11 18.5h2\"/>", "monitor": "<rect x=\"2.5\" y=\"4\" width=\"19\" height=\"13\" rx=\"2\"/><path d=\"M8.5 21h7M12 17v4\"/>", "panel": "<rect x=\"3\" y=\"4\" width=\"18\" height=\"16\" rx=\"3\"/><path d=\"M9 4v16\"/>", "home": "<path d=\"M3 10.5 12 3l9 7.5\"/><path d=\"M5 9.5V20h14V9.5\"/><path d=\"M10 20v-6h4v6\"/>", "bon": "<rect x=\"5.5\" y=\"4\" width=\"13\" height=\"17\" rx=\"2\"/><path d=\"M9 4.5V3h6v1.5\"/><path d=\"M9 10h6M9 14h6M9 18h3.5\"/>", "book": "<path d=\"M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z\"/><path d=\"M5 19.5A1.5 1.5 0 0 0 6.5 21H19\"/><path d=\"M9 7.5h6\"/>", "box": "<path d=\"M21 8 12 3 3 8v8l9 5 9-5z\"/><path d=\"M3 8l9 5 9-5M12 13v8\"/>", "truck": "<path d=\"M2.5 6h11.5v10H2.5z\"/><path d=\"M14 9h4l3.5 3.5V16H14\"/><circle cx=\"7\" cy=\"17.5\" r=\"1.8\"/><circle cx=\"17.5\" cy=\"17.5\" r=\"1.8\"/>", "settings": "<path d=\"M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1\"/><circle cx=\"15\" cy=\"6\" r=\"2\"/><circle cx=\"9\" cy=\"12\" r=\"2\"/><circle cx=\"17\" cy=\"18\" r=\"2\"/>", "shield": "<path d=\"M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6z\"/><path d=\"m9 12 2 2 4-4\"/>", "save": "<path d=\"M5 3h11l3 3v15H5z\"/><path d=\"M8 3v5h7V3\"/><path d=\"M8 21v-7h8v7\"/>", "download": "<path d=\"M12 4v11M7 10l5 5 5-5\"/><path d=\"M4 19.5h16\"/>", "upload": "<path d=\"M12 20V9M7 14l5-5 5 5\"/><path d=\"M4 4.5h16\"/>", "plus": "<path d=\"M12 5v14M5 12h14\"/>", "search": "<circle cx=\"11\" cy=\"11\" r=\"6.5\"/><path d=\"m20 20-4.2-4.2\"/>", "edit": "<path d=\"M4 20h4L19 9l-4-4L4 16z\"/><path d=\"m13.5 6.5 4 4\"/>", "copy": "<rect x=\"8\" y=\"8\" width=\"12\" height=\"12\" rx=\"2\"/><path d=\"M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3\"/>", "trash": "<path d=\"M4 7h16M10 11v6M14 11v6\"/><path d=\"M6 7l1 13h10l1-13M9 7V4h6v3\"/>", "x": "<path d=\"M6 6l12 12M18 6 6 18\"/>", "check": "<path d=\"m5 12.5 4.5 4.5L19 7.5\"/>", "check-circle": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"m8 12.5 2.8 2.8 5.2-5.8\"/>", "back": "<path d=\"M15 5l-7 7 7 7\"/>", "chev-down": "<path d=\"m6 9 6 6 6-6\"/>", "chev-right": "<path d=\"m9 6 6 6-6 6\"/>", "arrow-right": "<path d=\"M5 12h14M13 6l6 6-6 6\"/>", "camera": "<path d=\"M3.5 8h3.5l2-3h6l2 3h3.5v11.5h-17z\"/><circle cx=\"12\" cy=\"13.2\" r=\"3.5\"/>", "image": "<rect x=\"3\" y=\"4\" width=\"18\" height=\"16\" rx=\"2\"/><circle cx=\"9\" cy=\"10\" r=\"1.8\"/><path d=\"m21 16-5-5-9 9\"/>", "file": "<path d=\"M14 3H6v18h12V7z\"/><path d=\"M14 3v4h4\"/><path d=\"M9 13h6M9 17h6\"/>", "pdf": "<path d=\"M14 3H6v18h12V7z\"/><path d=\"M14 3v4h4\"/><path d=\"M8.5 16.5v-4h1.5a1.2 1.2 0 0 1 0 2.4H8.5M13 12.5v4h1a2 2 0 0 0 0-4z\"/>", "sheet": "<rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M4 10h16M4 15h16M10 4v16\"/>", "layers": "<path d=\"m12 3 9 5-9 5-9-5z\"/><path d=\"m3 13 9 5 9-5\"/>", "sparkle": "<path d=\"M11 3l1.8 5.2L18 10l-5.2 1.8L11 17l-1.8-5.2L4 10l5.2-1.8z\"/><path d=\"M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z\"/>", "alert": "<path d=\"M12 4 2.5 20h19z\"/><path d=\"M12 10v4.5M12 17.4v.1\"/>", "info": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 11v5M12 7.9v.1\"/>", "help": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 16.9v.1\"/>", "euro": "<path d=\"M17.5 6.5A7 7 0 1 0 17.5 17.5\"/><path d=\"M4 10.5h9M4 13.5h9\"/>", "clock": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/>", "calendar": "<rect x=\"4\" y=\"5\" width=\"16\" height=\"15\" rx=\"2\"/><path d=\"M4 10h16M8 3v4M16 3v4\"/>", "wheat": "<path d=\"M12 21V8\"/><path d=\"M12 8c-2.5 0-4-1.5-4-4 2.5 0 4 1.5 4 4zM12 8c2.5 0 4-1.5 4-4-2.5 0-4 1.5-4 4zM12 13c-2.5 0-4-1.5-4-4 2.5 0 4 1.5 4 4zM12 13c2.5 0 4-1.5 4-4-2.5 0-4 1.5-4 4zM12 18c-2.5 0-4-1.5-4-4 2.5 0 4 1.5 4 4zM12 18c2.5 0 4-1.5 4-4-2.5 0-4 1.5-4 4z\"/>", "droplet": "<path d=\"M12 3s-6 6.5-6 11a6 6 0 0 0 12 0c0-4.5-6-11-6-11z\"/>", "cube": "<path d=\"M12 3 4 7.5v9L12 21l8-4.5v-9z\"/><path d=\"M4 7.5 12 12l8-4.5M12 12v9\"/>", "bubbles": "<circle cx=\"8\" cy=\"14.5\" r=\"4\"/><circle cx=\"16\" cy=\"8.5\" r=\"3\"/><circle cx=\"17\" cy=\"17\" r=\"2\"/>", "egg": "<path d=\"M12 3c-3.5 0-6.5 5.5-6.5 10a6.5 6.5 0 0 0 13 0C18.5 8.5 15.5 3 12 3z\"/>", "salt": "<path d=\"M8 9.5h8l-1.2 11H9.2z\"/><path d=\"M8.5 9.5a3.5 3.5 0 0 1 7 0\"/><path d=\"M10.5 5.5v.1M13.5 5.5v.1M12 3.5v.1\"/>", "cherry": "<circle cx=\"7.5\" cy=\"16.5\" r=\"3.5\"/><circle cx=\"16.5\" cy=\"17.5\" r=\"3.5\"/><path d=\"M7.5 13c1-4 4-7.5 9-9.5M16.5 14c-1-3-1.5-6-.5-10.5\"/>", "tag": "<path d=\"M3 12V4h8l10 10-8 8z\"/><circle cx=\"7.5\" cy=\"8.5\" r=\"1.3\"/>", "folder": "<path d=\"M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2.5h8.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z\"/>", "grid": "<rect x=\"4\" y=\"4\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"13\" y=\"4\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"4\" y=\"13\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"13\" y=\"13\" width=\"7\" height=\"7\" rx=\"1.5\"/>", "cloud": "<path d=\"M7 18.5h10.5a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.6 9.2 4.7 4.7 0 0 0 7 18.5z\"/>", "cloud-off": "<path d=\"M7 18.5h10.5M20.6 16.4a4 4 0 0 0-2.5-5.85A6 6 0 0 0 9 6.3M6.3 9.4A4.7 4.7 0 0 0 7 18.5M3 3l18 18\"/>", "users": "<circle cx=\"9\" cy=\"8\" r=\"3.5\"/><path d=\"M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6\"/><path d=\"M16 4.7a3.5 3.5 0 0 1 0 6.6M18 14.3c2.2.7 3.5 2.8 3.5 5.7\"/>", "link": "<path d=\"M10 14a4.5 4.5 0 0 0 6.4 0l3.2-3.2a4.5 4.5 0 0 0-6.4-6.4L12 5.6\"/><path d=\"M14 10a4.5 4.5 0 0 0-6.4 0l-3.2 3.2a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2\"/>", "logout": "<path d=\"M14 4h4.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H14M10 16l-4-4 4-4M6 12h10\"/>", "clip": "<path d=\"M20 11.5l-7.8 7.8a5 5 0 0 1-7.1-7.1l8.2-8.2a3.4 3.4 0 0 1 4.8 4.8l-8.2 8.2a1.7 1.7 0 0 1-2.4-2.4l7.4-7.4\"/>", "list": "<path d=\"M8.5 6H21M8.5 12H21M8.5 18H21M4 6v.1M4 12v.1M4 18v.1\"/>", "eye": "<path d=\"M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>", "chart": "<path d=\"M4 4v16h16\"/><path d=\"M8.5 16v-4M12.5 16V8M16.5 16v-6\"/>", "user": "<circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4 21c0-4 3.5-7 8-7s8 3 8 7\"/>", "refresh": "<path d=\"M20 11a8 8 0 1 0-2.3 5.7\"/><path d=\"M20 4v7h-7\"/>", "sub": "<circle cx=\"12\" cy=\"12\" r=\"8.5\"/><circle cx=\"12\" cy=\"12\" r=\"3.5\"/>", "up": "<path d=\"m4 16 6-6 4 4 6-6\"/><path d=\"M15 8h5v5\"/>", "down": "<path d=\"m4 8 6 6 4-4 6 6\"/><path d=\"M15 16h5v-5\"/>", "mail": "<rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"/><path d=\"m3 7 9 6 9-6\"/>", "phone": "<path d=\"M5 4h3.5l1.5 4-2 1.5a11 11 0 0 0 6.5 6.5l1.5-2 4 1.5V19a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z\"/>", "printer": "<path d=\"M7 9V3.5h10V9\"/><rect x=\"3.5\" y=\"9\" width=\"17\" height=\"8\" rx=\"1.5\"/><path d=\"M7 14h10v6.5H7z\"/>", "scale": "<path d=\"M12 4v16M5 20h14M6 8h12\"/><path d=\"M6 8l-3 6a3 3 0 0 0 6 0zM18 8l-3 6a3 3 0 0 0 6 0z\"/>", "menu": "<path d=\"M4 7h16M4 12h16M4 17h16\"/>", "dots": "<circle cx=\"5.5\" cy=\"12\" r=\"1\"/><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"18.5\" cy=\"12\" r=\"1\"/>"};
 function ic(n,c){ return '<svg class="ic'+(c?' '+c:'')+'" viewBox="0 0 24 24" aria-hidden="true">'+(ICONS[n]||ICONS.info)+'</svg>'; }
 function catIcon(cat){
   var k=CATI[cat];
@@ -5391,7 +5420,7 @@ function shrCopy(){
     });
     var r={id:uid(),name:s.name,cat:s.cat||'',image:s.image||'📖',notes:s.notes||'',items:items,createdAt:now(),updatedAt:now()};
     if(s.tags&&s.tags.length) r.tags=s.tags.slice(); if(s.time) r.time=s.time; if(s.pcs) r.pcs=s.pcs;
-    if(top) r.fromShared={id:x.id,by:x.owner_name||''}; else created.sub++;
+    if(top) r.fromShared={id:x.id,by:x.owner_name||'',at:x.updated_at}; else created.sub++;
     recipes.unshift(r); return r;
   }
   var atts=(x.data.attachments||[]);
@@ -5975,7 +6004,7 @@ function shrCopyBon(x){
       allergens:(it.allergens||[]).slice(),allergensSet:!!it.allergensSet,priceHistory:[]}; ingredients.push(g); created++; }
     return {id:uid(),ingId:g.id,qty:it.qty,cost:rnd((it.qty||0)*(g.price||0)),uses:[{n:'Copie du bon de '+(x.owner_name||'—'),q:it.qty}]};
   });
-  o.fromShared={id:x.id,by:x.owner_name||''};
+  o.fromShared={id:x.id,by:x.owner_name||'',at:x.updated_at};
   o.history=[{ts:now(),desc:'Copié depuis le partage de '+(x.owner_name||'—')}];
   orders.unshift(o);
   return {bon:o,ing:created};
@@ -6006,7 +6035,7 @@ function shrCopyRow(x,cat){
     });
     var r={id:uid(),name:s.name,cat:(top&&cat)||s.cat||'',image:s.image||'📖',notes:s.notes||'',items:items,createdAt:now(),updatedAt:now()};
     if(top&&s.tags&&s.tags.length) r.tags=s.tags.slice(); if(top&&s.time) r.time=s.time; if(top&&s.pcs) r.pcs=s.pcs;
-    if(top) r.fromShared={id:x.id,by:x.owner_name||''};
+    if(top) r.fromShared={id:x.id,by:x.owner_name||'',at:x.updated_at};
     recipes.unshift(r); return r;
   }
   var atts=(x.data.attachments||[]);
@@ -7624,6 +7653,175 @@ document.addEventListener('keydown',function(e){
   else if(e.key==='Escape'){ e.preventDefault(); flipClose(); }
 });
 (function(){ var _g=goPage; goPage=function(){ flipClose(); return _g.apply(this,arguments); }; })();
+
+// ══ INGRÉDIENT : RECETTES QUI L'UTILISENT ═══════════════════════
+// Directement, ou au travers d'une sous-recette (« via »).
+function ingUsage(id){
+  var direct=[], via=[], memo={};
+  function uses(r,depth,seen){
+    if(memo[r.id]!=null) return memo[r.id];
+    var ok=false;
+    (r.items||[]).forEach(function(it){
+      if(ok) return;
+      if(it.type==='ingredient'){ if(it.refId===id) ok=true; }
+      else if(depth<6&&seen.indexOf(it.refId)<0){ var s=recipes.find(function(x){ return x.id===it.refId; }); if(s&&uses(s,depth+1,seen.concat([r.id]))) ok=true; }
+    });
+    return (memo[r.id]=ok);
+  }
+  recipes.forEach(function(r){
+    var lines=(r.items||[]).filter(function(it){ return it.type==='ingredient'&&it.refId===id; });
+    if(lines.length){
+      var kg=0, qs=false; lines.forEach(function(it){ var g=ingredients.find(function(i){ return i.id===id; }); var k=toKg(it.qty,it.unit,g); kg+=k; if(!(Number(it.qty)>0)) qs=true; });
+      direct.push({r:r, kg:kg, qs:qs&&kg===0, n:lines.length});
+    } else if(uses(r,0,[])) {
+      var subs=(r.items||[]).filter(function(it){ return it.type==='recipe'; }).map(function(it){ return recipes.find(function(x){ return x.id===it.refId; }); })
+        .filter(function(s){ return s&&uses(s,1,[r.id]); }).map(function(s){ return s.name; });
+      via.push({r:r, subs:subs});
+    }
+  });
+  var byName=function(a,b){ return a.r.name.localeCompare(b.r.name,'fr'); };
+  return {direct:direct.sort(byName), via:via.sort(byName)};
+}
+function ingUsageHTML(id){
+  var u=ingUsage(id), n=u.direct.length+u.via.length;
+  var row=function(x,sub){
+    return '<div class="use-r" onclick="closeMod(\'m-editcat\');openEditRec(\''+x.r.id+'\')"><span class="use-n">'+esc(x.r.name)+'</span>'+
+      '<span class="use-m">'+(sub?ic('sub')+' via '+esc(x.subs.join(', ')):(x.qs?'Q.S.':fQtyNice(x.kg))+(x.n>1?' · '+x.n+' lignes':''))+'</span>'+ic('arrow-right')+'</div>';
+  };
+  return '<div class="use-h">'+ic('book')+' Utilisé dans '+(n?n+' recette'+(n>1?'s':''):'aucune recette')+'</div>'+
+    (n?'<div class="use-list">'+u.direct.map(function(x){ return row(x,false); }).join('')+u.via.map(function(x){ return row(x,true); }).join('')+'</div>'
+      :'<div class="use-empty">Cet ingrédient n’apparaît dans aucune recette.</div>');
+}
+(function(){
+  var _o=openEditIng;
+  openEditIng=function(id){
+    _o.apply(this,arguments);
+    var body=document.querySelector('#m-editcat .m-body'); if(!body) return;
+    var box=document.getElementById('edit-cat-use');
+    if(!box){ box=document.createElement('div'); box.id='edit-cat-use'; body.insertBefore(box,body.firstChild); }
+    box.innerHTML=ingUsageHTML(id);
+  };
+})();
+
+// ══ NOTIFICATIONS (cloche) ══════════════════════════════════════
+// · une recette (ou un bon) que tu as copiée depuis le partage a été
+//   modifiée par son auteur ;
+// · quelqu'un a partagé une nouvelle recette, un bon ou un document.
+function ntfSeen(){ var v=Number(LS.getItem('v4_ntf_seen')||0); if(!v){ v=Date.now(); LS.setItem('v4_ntf_seen',String(v)); } return v; }
+function ntfSig(d){ var t=JSON.stringify([d.name,d.items,d.notes,d.time||0,d.pcs||0]); var h=0; for(var i=0;i<t.length;i++){ h=((h<<5)-h+t.charCodeAt(i))|0; } return String(h); }
+function ntfTs(s){ var t=Date.parse(s||''); return isNaN(t)?0:t; }
+function ntfList(){
+  var out=[], sh=(typeof CLOUD!=='undefined'&&CLOUD.shared)||{}, changed=false, seen=ntfSeen();
+  if(!Object.keys(sh).length) return out;
+  function copies(arr,kind){
+    arr.forEach(function(r){
+      var f=r.fromShared; if(!f||!f.id) return;
+      var x=sh[f.id]; if(!x||!x.data||shrIsMine(x)) return;
+      var sg=ntfSig(x.data);
+      if(!f.sig){ f.sig=sg; if(!f.at) f.at=x.updated_at; changed=true; return; }   // repère de départ, sans alerte
+      if(sg!==f.sig&&ntfTs(x.updated_at)>ntfTs(f.at)) out.push({k:'upd', kind:kind, x:x, copy:r, ts:ntfTs(x.updated_at)});
+    });
+  }
+  copies(recipes,'rec'); copies(orders,'bon');
+  if(changed) persist();
+  var limit=Date.now()-21*864e5;
+  Object.keys(sh).forEach(function(id){
+    var x=sh[id]; if(!x||!x.data||shrIsMine(x)) return;
+    var t=ntfTs(x.created_at||x.updated_at); if(t<limit) return;
+    var copied=recipes.some(function(r){ return r.fromShared&&r.fromShared.id===id; })||orders.some(function(o){ return o.fromShared&&o.fromShared.id===id; });
+    if(copied) return;
+    if(!(LS.getItem('v4_ntf_new_'+id))&&t>seen-36e5) out.push({k:'new', x:x, ts:t, unread:t>seen});
+  });
+  out.sort(function(a,b){ return b.ts-a.ts; });
+  return out;
+}
+function ntfCount(){ return ntfList().filter(function(n){ return n.k==='upd'||n.unread; }).length; }
+function updBell(){
+  var b=document.getElementById('tb-bell'), d=document.getElementById('tb-bell-n'); if(!b||!d) return;
+  var n=0; try{ n=ntfCount(); }catch(e){}
+  d.textContent=n>9?'9+':String(n||''); d.classList.toggle('on',n>0);
+  b.classList.toggle('has',n>0);
+}
+function ntfItemHTML(n){
+  var d=n.x.data, who=esc(n.x.owner_name||'Quelqu’un'), t=shType(n.x), what=t==='bon'?'le bon':(t==='doc'?'le document':'la recette');
+  var when=new Date(n.ts).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  if(n.k==='upd') return '<div class="ntf upd">'+
+      '<span class="ntf-ic">'+ic('refresh')+'</span><div class="ntf-b"><div class="ntf-t"><b>'+who+'</b> a modifié '+what+' « '+esc(d.name)+' »</div>'+
+      '<div class="ntf-s">Ta copie : « '+esc(n.copy.name)+' » · '+when+'</div>'+
+      '<div class="ntf-a">'+(t==='rec'?'<button class="btn btn-ghost btn-xs" onclick="closeNotifs();openShared(\''+escJS(n.x.id)+'\')">'+ic('eye')+' Voir</button>':'')+
+      (t==='rec'?'<button class="btn btn-gold btn-xs" onclick="ntfUpdateCopy(\''+escJS(n.x.id)+'\')">'+ic('download')+' Mettre à jour ma copie</button>':'')+
+      '<button class="btn btn-ghost btn-xs" onclick="ntfIgnore(\''+escJS(n.x.id)+'\')">Ignorer</button></div></div></div>';
+  var open=t==='bon'?'openSharedBon':(t==='doc'?'openSharedDoc':'openShared');
+  return '<div class="ntf new'+(n.unread?' unread':'')+'">'+
+    '<span class="ntf-ic">'+ic(t==='bon'?'bon':(t==='doc'?'file':'book'))+'</span><div class="ntf-b"><div class="ntf-t"><b>'+who+'</b> a partagé '+what+' « '+esc(d.name)+' »'+(d.folder?' dans « '+esc(d.folder)+' »':'')+'</div>'+
+    '<div class="ntf-s">'+when+'</div>'+
+    '<div class="ntf-a"><button class="btn btn-ghost btn-xs" onclick="closeNotifs();'+open+'(\''+escJS(n.x.id)+'\')">'+ic('eye')+' Voir</button>'+
+    '<button class="btn btn-ghost btn-xs" onclick="ntfHide(\''+escJS(n.x.id)+'\')">Masquer</button></div></div></div>';
+}
+function renderNotifs(){
+  var box=document.getElementById('ntf-body'); if(!box) return;
+  var L=ntfList();
+  var online=typeof clActive==='function'&&clActive();
+  box.innerHTML=L.length?L.map(ntfItemHTML).join('')
+    :'<div class="empty" style="padding:26px 8px"><span class="empty-i">'+ic('bell')+'</span><div class="empty-t">Aucune notification</div><div class="empty-s">'+
+      (online?'Tu seras prévenu ici quand l’auteur d’une recette que tu as copiée la modifie, ou quand quelqu’un partage quelque chose.'
+             :'Connecte ton espace en ligne pour être prévenu des modifications des recettes partagées.')+'</div></div>';
+}
+function openNotifs(){
+  var ov=document.getElementById('m-ntf');
+  if(!ov){
+    ov=document.createElement('div'); ov.className='ov'; ov.id='m-ntf';
+    ov.innerHTML='<div class="modal" style="max-width:520px"><div class="m-grip"></div><div class="m-hdr"><h3>'+ic('bell')+' Notifications</h3><button class="m-x" onclick="closeNotifs()">'+ic('x')+'</button></div>'+
+      '<div class="m-body" id="ntf-body"></div></div>';
+    ov.addEventListener('click',function(e){ if(e.target===ov) closeNotifs(); });
+    document.body.appendChild(ov);
+  }
+  renderNotifs(); ov.classList.add('show');
+}
+function closeNotifs(){
+  var ov=document.getElementById('m-ntf'); if(ov) ov.classList.remove('show');
+  LS.setItem('v4_ntf_seen',String(Date.now())); updBell();
+}
+function ntfIgnore(id){
+  var x=(CLOUD.shared||{})[id]; if(!x) return;
+  recipes.concat(orders).forEach(function(r){ if(r.fromShared&&r.fromShared.id===id){ r.fromShared.at=x.updated_at; r.fromShared.sig=ntfSig(x.data); r.updatedAt=now(); } });
+  persist(); renderNotifs(); updBell();
+}
+function ntfHide(id){ LS.setItem('v4_ntf_new_'+id,'1'); renderNotifs(); updBell(); }
+// Met à jour la copie avec la nouvelle version de l'auteur (composition,
+// procédé, temps, pièces, tags). Le nom de ta copie est conservé.
+function ntfUpdateCopy(id){
+  var x=(CLOUD.shared||{})[id]; if(!x||!x.data) return;
+  var copy=recipes.find(function(r){ return r.fromShared&&r.fromShared.id===id; }); if(!copy) return;
+  var nIng=0;
+  function ingFor(it){
+    var n=normTxt(it.n), g=ingredients.find(function(i){ return normTxt(i.name)===n; });
+    if(g) return g.id;
+    g={id:uid(),name:it.n,cat:it.cat||'Autre',unit:it.u||'kg',price:it.price||0,buyPrice:it.buyPrice!=null?it.buyPrice:(it.price||0),unitWeight:it.unitWeight||null,
+       allergens:(it.allergens||[]).slice(),allergensSet:!!it.allergensSet,priceHistory:[]};
+    ingredients.push(g); nIng++; return g.id;
+  }
+  function items(s){
+    return (s.items||[]).map(function(it){
+      if(it.t==='i') return {id:uid(),type:'ingredient',refId:ingFor(it),qty:it.qty,unit:it.unit};
+      var nm=normTxt(it.sub&&it.sub.name), ex=recipes.find(function(r){ return normTxt(r.name)===nm; });
+      if(!ex){ ex={id:uid(),name:it.sub&&it.sub.name||'Sous-recette',cat:it.sub&&it.sub.cat||'',image:'⊛',notes:it.sub&&it.sub.notes||'',items:items(it.sub||{}),createdAt:now(),updatedAt:now()}; recipes.push(ex); }
+      return {id:uid(),type:'recipe',refId:ex.id,qty:it.qty,unit:it.unit||'x'};
+    });
+  }
+  var d=x.data;
+  copy.items=items(d); copy.notes=d.notes||''; if(d.time) copy.time=d.time; if(d.pcs) copy.pcs=d.pcs;
+  if(d.tags&&d.tags.length) copy.tags=d.tags.slice();
+  copy.fromShared.at=x.updated_at; copy.fromShared.sig=ntfSig(d); copy.updatedAt=now();
+  persist(); updBadges(); renderNotifs(); updBell();
+  if(CUR==='recettes') renderRec();
+  toast('« '+copy.name+' » mise à jour'+(nIng?' · '+nIng+' ingrédient'+(nIng>1?'s':'')+' ajouté'+(nIng>1?'s':'')+' au catalogue':''),'ok');
+}
+(function(){
+  var _u=updBadges; updBadges=function(){ var r=_u.apply(this,arguments); try{ updBell(); }catch(e){} return r; };
+  if(typeof clAfterRemote==='function'){ var _a=clAfterRemote; clAfterRemote=function(){ var r=_a.apply(this,arguments); try{ updBell(); if(document.getElementById('m-ntf')&&document.getElementById('m-ntf').classList.contains('show')) renderNotifs(); }catch(e){} return r; }; }
+  setTimeout(updBell,1500);
+})();
 
 // ── BOOT ──────────────────────────────────────────────────────
 initApp();var _acctNew=!ingredients.length;loadDefaults();migrateUnits();if(_acctNew)acctMarkPristine();cloudInit();updBadges();renderHome();

@@ -1443,3 +1443,31 @@ html.cn-lock #scroll{overflow:hidden}
 .adm-cpr{display:flex;align-items:center;gap:11px;padding:9px 13px;border-top:1px solid var(--bd);}
 .adm-cpr .adm-av{width:30px;height:30px;font-size:12.5px;}
 .adm-sec summary .adm-st svg{width:16px;height:16px;vertical-align:-3px;margin-right:4px;}
+
+/* ── Cloche de notifications ── */
+.tb-bell{position:relative;}
+.tb-bell.has{color:var(--i1);border-color:var(--gold,#C9A227);}
+.tb-dot{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:#D9342B;color:#fff;font:700 10px/17px var(--ff,inherit);font-style:normal;text-align:center;display:none;box-shadow:0 0 0 2px var(--bg,#fff);}
+.tb-dot.on{display:block;}
+.ntf{display:flex;gap:11px;padding:12px 4px;border-bottom:1px solid var(--bd);}
+.ntf:last-child{border-bottom:0;}
+.ntf-ic{width:34px;height:34px;border-radius:10px;background:var(--beige,#F2DCBA);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;color:var(--i1);}
+.ntf.upd .ntf-ic{background:#FFF1DC;color:#B26A00;}
+.ntf.unread .ntf-t{font-weight:600;}
+.ntf-b{flex:1;min-width:0;}
+.ntf-t{font-size:13.5px;line-height:1.4;color:var(--i1);}
+.ntf-s{font-size:11.5px;color:var(--i4);margin-top:2px;}
+.ntf-a{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+/* ── Ingrédient : recettes qui l'utilisent ── */
+.use-list{border:1px solid var(--bd);border-radius:10px;overflow:hidden;margin-top:6px;max-height:260px;overflow-y:auto;}
+.use-r{display:flex;align-items:center;gap:8px;padding:9px 11px;border-bottom:1px solid var(--bd);cursor:pointer;font-size:13px;}
+.use-r:last-child{border-bottom:0;}
+.use-r:hover{background:var(--bg2,rgba(0,0,0,.03));}
+.use-n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--i1);}
+.use-m{font-size:11.5px;color:var(--i4);white-space:nowrap;display:flex;align-items:center;gap:4px;}
+.use-r>.ic{color:var(--i4);font-size:13px;}
+.use-empty{font-size:12px;color:var(--i4);margin-top:4px;}
+
+#edit-cat-use{margin-bottom:12px;}
+.use-h{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--i2);text-transform:uppercase;letter-spacing:.3px;}
+.use-list{max-height:190px;}

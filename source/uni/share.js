@@ -246,7 +246,7 @@ function shrCopy(){
     });
     var r={id:uid(),name:s.name,cat:s.cat||'',image:s.image||'📖',notes:s.notes||'',items:items,createdAt:now(),updatedAt:now()};
     if(s.tags&&s.tags.length) r.tags=s.tags.slice(); if(s.time) r.time=s.time; if(s.pcs) r.pcs=s.pcs;
-    if(top) r.fromShared={id:x.id,by:x.owner_name||''}; else created.sub++;
+    if(top) r.fromShared={id:x.id,by:x.owner_name||'',at:x.updated_at}; else created.sub++;
     recipes.unshift(r); return r;
   }
   var atts=(x.data.attachments||[]);

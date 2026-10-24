@@ -33,6 +33,7 @@
     <div id="tb-act"></div>
     <button class="tb-cloud" id="tb-cloud" style="display:none" onclick="goPage('backup');setTimeout(function(){var c=document.getElementById('cl-card');if(c)c.scrollIntoView({block:'start'});},60)" aria-label="Équipe"></button>
     <button class="tb-srch tb-lay" id="tb-lay" onclick="toggleLayout()" title="Passer en affichage mobile" aria-label="Changer d’affichage">{{ic:mobile}}</button>
+    <button class="tb-srch tb-bell" id="tb-bell" onclick="openNotifs()" title="Notifications" aria-label="Notifications">{{ic:bell}}<i class="tb-dot" id="tb-bell-n"></i></button>
     <button class="tb-srch" id="tb-srch" onclick="openSearch()" title="Rechercher (Ctrl+K)" aria-label="Rechercher">{{ic:search}}</button>
   </header>
   <div id="scroll">
