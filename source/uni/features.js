@@ -615,6 +615,24 @@ function fillStorageInfo(){
 }
 function restoreExtras(d,mode){
   if(d.attachments) Object.keys(d.attachments).forEach(function(id){ if(!attLocal(id)) attPut(id,d.attachments[id]); });
+  // Pages sources des livres : chaque document est joint à la recette indiquée
+  // (identifiant de recette → fiches des documents). Rien n'est retiré.
+  if(d.attLinks){
+    var nl=0, nr=0;
+    Object.keys(d.attLinks).forEach(function(rid){
+      var r=recipes.find(function(x){ return x.id===rid; }); if(!r) return;
+      var add=(d.attLinks[rid]||[]).filter(function(m){ return m&&m.id&&attLocal(m.id)&&!(r.attachments||[]).some(function(a){ return a.id===m.id; }); });
+      if(!add.length) return;
+      r.attachments=(r.attachments||[]).concat(add.map(function(m){ return {id:m.id,name:m.name,mime:m.mime,size:m.size,added:m.added||Date.now()}; }));
+      r.updatedAt=new Date().toISOString(); nl+=add.length; nr++;
+    });
+    if(nr) setTimeout(function(){ toast(nl+' page'+(nl>1?'s':'')+' source'+(nl>1?'s':'')+' jointe'+(nl>1?'s':'')+' à '+nr+' recette'+(nr>1?'s':''),'ok'); },1800);
+  }
+  // Les documents restaurés et utilisés par une recette partent aussi en ligne
+  if(d.attachments&&typeof clQueueAttUp==='function'){
+    var ref={}; recipes.forEach(function(r){ (r.attachments||[]).forEach(function(a){ ref[a.id]=1; }); });
+    Object.keys(d.attachments).forEach(function(id){ if(ref[id]) clQueueAttUp(id); });
+  }
   if(d.suppliers&&d.suppliers.length){
     if(mode==='merge'){ d.suppliers.forEach(function(s){ if(!suppliers.some(function(x){ return x.id===s.id||normTxt(x.name)===normTxt(s.name); })) suppliers.push(s); }); }
     else suppliers=d.suppliers.slice();
