@@ -620,7 +620,7 @@ function restoreExtras(d,mode){
   if(d.attLinks){
     var nl=0, nr=0;
     Object.keys(d.attLinks).forEach(function(rid){
-      var r=recipes.find(function(x){ return x.id===rid; }); if(!r) return;
+      var r=recipes.find(function(x){ return x.id===rid; })||recipes.find(function(x){ return x.id===(d._recMap||{})[rid]; }); if(!r) return;
       var add=(d.attLinks[rid]||[]).filter(function(m){ return m&&m.id&&attLocal(m.id)&&!(r.attachments||[]).some(function(a){ return a.id===m.id; }); });
       if(!add.length) return;
       r.attachments=(r.attachments||[]).concat(add.map(function(m){ return {id:m.id,name:m.name,mime:m.mime,size:m.size,added:m.added||Date.now()}; }));

@@ -978,12 +978,33 @@ function applyBackup(d, mode){
        === String(b||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'');
   };
   if(mode==='merge'){
+    // Un ingrédient (ou une recette) déjà présent sous le même nom n'est pas
+    // ajouté une 2e fois : les recettes du fichier sont alors rattachées à
+    // celui de l'utilisateur (identifiants remappés), sinon elles pointeraient
+    // vers un ingrédient introuvable.
+    var ingMap={}, recMap={}, subMap={};
     (d.ingredients||[]).forEach(function(x){
-      if(!ingredients.some(function(y){ return same(y.name,x.name); })) ingredients.push(x);
+      var ex=ingredients.find(function(y){ return same(y.name,x.name); });
+      if(ex){ if(ex.id!==x.id) ingMap[x.id]=ex.id; }
+      else ingredients.push(x);
+    });
+    (d.recSubs||[]).forEach(function(s){
+      var ex=loadSubs('rec').find(function(y){ return y.parent===s.parent && String(y.name).toLowerCase()===String(s.name).toLowerCase(); });
+      if(ex&&ex.id!==s.id) subMap[s.id]=ex.id;
     });
     (d.recipes||[]).forEach(function(x){
-      if(!recipes.some(function(y){ return same(y.name,x.name); })) recipes.push(x);
+      var ex=recipes.find(function(y){ return same(y.name,x.name); });
+      if(ex&&ex.id!==x.id) recMap[x.id]=ex.id;
     });
+    (d.recipes||[]).forEach(function(x){
+      if(recipes.some(function(y){ return same(y.name,x.name); })) return;
+      (x.items||[]).forEach(function(it){
+        var m=(it.type==='ingredient'?ingMap:recMap)[it.refId]; if(m) it.refId=m;
+      });
+      if(x.sub&&subMap[x.sub]) x.sub=subMap[x.sub];
+      recipes.push(x);
+    });
+    d._recMap=recMap;
     (d.orders||[]).forEach(function(x){
       if(!orders.some(function(y){ return y.id===x.id; })) orders.push(x);
     });

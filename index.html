@@ -1481,7 +1481,7 @@ html.lay-mob .ov.show .modal{animation:sheetIn .24s cubic-bezier(.2,.8,.2,1);}
 html.lay-mob .upd-bar{bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 10px);width:calc(100vw - 24px);}html.lay-mob .upd-t small{display:none;}
 html.lay-mob .cn-flipb span{display:none;}html.lay-mob .cn-flipb{width:36px!important;padding:0;justify-content:center;}html.lay-mob .rgrid.tiles.big{grid-template-columns:1fr;}html.lay-mob .re-thumb.cover{height:180px;}html.lay-mob .flip{padding:56px 10px 40px;}html.lay-mob .flip-nav{display:none;}html.lay-mob .flip-b span{display:none;}html.lay-mob .flip-b{width:36px;padding:0;justify-content:center;}html.lay-mob .flip-stage{max-height:none;}html.lay-mob .flip-page{grid-template-columns:1fr;overflow-y:auto;display:block;}html.lay-mob .flip-page::after{display:none;}html.lay-mob .flip-l{padding:14px;}html.lay-mob .flip-r{padding:16px 16px 24px;overflow:visible;}html.lay-mob .flip-t{font-size:22px;}
 </style>
-<script>window.ECO_SERVER={"url": "https://fbwuhejcphsjhhkfkjku.supabase.co", "key": "sb_publishable_QRPVGvql3M2eSfvwkBDTfw_9Pc8fuo0"};window.ECO_BUILD="863199b262";</script>
+<script>window.ECO_SERVER={"url": "https://fbwuhejcphsjhhkfkjku.supabase.co", "key": "sb_publishable_QRPVGvql3M2eSfvwkBDTfw_9Pc8fuo0"};window.ECO_BUILD="a8e51ca7d0";</script>
 <script>/* Apparence : mode clair / sombre et couleur de l'application.
    Lu de façon synchrone au chargement pour éviter un flash de couleur. */
 (function(){
@@ -2991,12 +2991,33 @@ function applyBackup(d, mode){
        === String(b||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'');
   };
   if(mode==='merge'){
+    // Un ingrédient (ou une recette) déjà présent sous le même nom n'est pas
+    // ajouté une 2e fois : les recettes du fichier sont alors rattachées à
+    // celui de l'utilisateur (identifiants remappés), sinon elles pointeraient
+    // vers un ingrédient introuvable.
+    var ingMap={}, recMap={}, subMap={};
     (d.ingredients||[]).forEach(function(x){
-      if(!ingredients.some(function(y){ return same(y.name,x.name); })) ingredients.push(x);
+      var ex=ingredients.find(function(y){ return same(y.name,x.name); });
+      if(ex){ if(ex.id!==x.id) ingMap[x.id]=ex.id; }
+      else ingredients.push(x);
+    });
+    (d.recSubs||[]).forEach(function(s){
+      var ex=loadSubs('rec').find(function(y){ return y.parent===s.parent && String(y.name).toLowerCase()===String(s.name).toLowerCase(); });
+      if(ex&&ex.id!==s.id) subMap[s.id]=ex.id;
     });
     (d.recipes||[]).forEach(function(x){
-      if(!recipes.some(function(y){ return same(y.name,x.name); })) recipes.push(x);
+      var ex=recipes.find(function(y){ return same(y.name,x.name); });
+      if(ex&&ex.id!==x.id) recMap[x.id]=ex.id;
     });
+    (d.recipes||[]).forEach(function(x){
+      if(recipes.some(function(y){ return same(y.name,x.name); })) return;
+      (x.items||[]).forEach(function(it){
+        var m=(it.type==='ingredient'?ingMap:recMap)[it.refId]; if(m) it.refId=m;
+      });
+      if(x.sub&&subMap[x.sub]) x.sub=subMap[x.sub];
+      recipes.push(x);
+    });
+    d._recMap=recMap;
     (d.orders||[]).forEach(function(x){
       if(!orders.some(function(y){ return y.id===x.id; })) orders.push(x);
     });
@@ -3836,7 +3857,7 @@ function restoreExtras(d,mode){
   if(d.attLinks){
     var nl=0, nr=0;
     Object.keys(d.attLinks).forEach(function(rid){
-      var r=recipes.find(function(x){ return x.id===rid; }); if(!r) return;
+      var r=recipes.find(function(x){ return x.id===rid; })||recipes.find(function(x){ return x.id===(d._recMap||{})[rid]; }); if(!r) return;
       var add=(d.attLinks[rid]||[]).filter(function(m){ return m&&m.id&&attLocal(m.id)&&!(r.attachments||[]).some(function(a){ return a.id===m.id; }); });
       if(!add.length) return;
       r.attachments=(r.attachments||[]).concat(add.map(function(m){ return {id:m.id,name:m.name,mime:m.mime,size:m.size,added:m.added||Date.now()}; }));
