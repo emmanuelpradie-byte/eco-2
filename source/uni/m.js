@@ -995,6 +995,11 @@ function applyBackup(d, mode){
     (d.recipes||[]).forEach(function(x){
       var ex=recipes.find(function(y){ return same(y.name,x.name); });
       if(ex&&ex.id!==x.id) recMap[x.id]=ex.id;
+      // Recette déjà là : on lui ajoute les tags du fichier (sans rien retirer)
+      if(ex&&x.tags&&x.tags.length){
+        var add=x.tags.filter(function(t){ return !(ex.tags||[]).some(function(u){ return same(u,t); }); });
+        if(add.length){ ex.tags=(ex.tags||[]).concat(add); ex.updatedAt=new Date().toISOString(); }
+      }
     });
     (d.recipes||[]).forEach(function(x){
       if(recipes.some(function(y){ return same(y.name,x.name); })) return;

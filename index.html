@@ -1481,7 +1481,7 @@ html.lay-mob .ov.show .modal{animation:sheetIn .24s cubic-bezier(.2,.8,.2,1);}
 html.lay-mob .upd-bar{bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 10px);width:calc(100vw - 24px);}html.lay-mob .upd-t small{display:none;}
 html.lay-mob .cn-flipb span{display:none;}html.lay-mob .cn-flipb{width:36px!important;padding:0;justify-content:center;}html.lay-mob .rgrid.tiles.big{grid-template-columns:1fr;}html.lay-mob .re-thumb.cover{height:180px;}html.lay-mob .flip{padding:56px 10px 40px;}html.lay-mob .flip-nav{display:none;}html.lay-mob .flip-b span{display:none;}html.lay-mob .flip-b{width:36px;padding:0;justify-content:center;}html.lay-mob .flip-stage{max-height:none;}html.lay-mob .flip-page{grid-template-columns:1fr;overflow-y:auto;display:block;}html.lay-mob .flip-page::after{display:none;}html.lay-mob .flip-l{padding:14px;}html.lay-mob .flip-r{padding:16px 16px 24px;overflow:visible;}html.lay-mob .flip-t{font-size:22px;}
 </style>
-<script>window.ECO_SERVER={"url": "https://fbwuhejcphsjhhkfkjku.supabase.co", "key": "sb_publishable_QRPVGvql3M2eSfvwkBDTfw_9Pc8fuo0"};window.ECO_BUILD="a8e51ca7d0";</script>
+<script>window.ECO_SERVER={"url": "https://fbwuhejcphsjhhkfkjku.supabase.co", "key": "sb_publishable_QRPVGvql3M2eSfvwkBDTfw_9Pc8fuo0"};window.ECO_BUILD="29ca59c4cd";</script>
 <script>/* Apparence : mode clair / sombre et couleur de l'application.
    Lu de façon synchrone au chargement pour éviter un flash de couleur. */
 (function(){
@@ -3008,6 +3008,11 @@ function applyBackup(d, mode){
     (d.recipes||[]).forEach(function(x){
       var ex=recipes.find(function(y){ return same(y.name,x.name); });
       if(ex&&ex.id!==x.id) recMap[x.id]=ex.id;
+      // Recette déjà là : on lui ajoute les tags du fichier (sans rien retirer)
+      if(ex&&x.tags&&x.tags.length){
+        var add=x.tags.filter(function(t){ return !(ex.tags||[]).some(function(u){ return same(u,t); }); });
+        if(add.length){ ex.tags=(ex.tags||[]).concat(add); ex.updatedAt=new Date().toISOString(); }
+      }
     });
     (d.recipes||[]).forEach(function(x){
       if(recipes.some(function(y){ return same(y.name,x.name); })) return;
