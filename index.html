@@ -1484,6 +1484,9 @@ html.cn-lock #scroll{overflow:hidden}
 #edit-cat-use{margin-bottom:12px;}
 .use-h{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--i2);text-transform:uppercase;letter-spacing:.3px;}
 .use-list{max-height:190px;}
+.cn-row .cat-cnt{margin:0}
+.pk-filters{justify-content:flex-start;margin:0 0 10px}.pk-filters .cn-pop{max-height:300px}
+.cn-sheet.in-mod{z-index:1100}.cn-sheet.in-mod .cn-pop{margin-bottom:calc(8px + env(safe-area-inset-bottom,0px))}
 
 /* mode mobile forcé */
 html.lay-mob .esplit{grid-template-columns:minmax(0,1fr) minmax(0,440px);}
@@ -1509,7 +1512,7 @@ html.lay-mob .ov.show .modal{animation:sheetIn .24s cubic-bezier(.2,.8,.2,1);}
 html.lay-mob .upd-bar{bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 10px);width:calc(100vw - 24px);}html.lay-mob .upd-t small{display:none;}
 html.lay-mob .cn-flipb span{display:none;}html.lay-mob .cn-flipb{width:36px!important;padding:0;justify-content:center;}html.lay-mob .rgrid.tiles.big{grid-template-columns:1fr;}html.lay-mob .re-thumb.cover{height:180px;}html.lay-mob .flip{padding:56px 10px 40px;}html.lay-mob .flip-nav{display:none;}html.lay-mob .flip-b span{display:none;}html.lay-mob .flip-b{width:36px;padding:0;justify-content:center;}html.lay-mob .flip-stage{max-height:none;}html.lay-mob .flip-page{grid-template-columns:1fr;overflow-y:auto;display:block;}html.lay-mob .flip-page::after{display:none;}html.lay-mob .flip-l{padding:14px;}html.lay-mob .flip-r{padding:16px 16px 24px;overflow:visible;}html.lay-mob .flip-t{font-size:22px;}
 </style>
-<script>window.ECO_SERVER={"url": "https://fbwuhejcphsjhhkfkjku.supabase.co", "key": "sb_publishable_QRPVGvql3M2eSfvwkBDTfw_9Pc8fuo0"};window.ECO_BUILD="8da38a7ce0";</script>
+<script>window.ECO_SERVER={"url": "https://fbwuhejcphsjhhkfkjku.supabase.co", "key": "sb_publishable_QRPVGvql3M2eSfvwkBDTfw_9Pc8fuo0"};window.ECO_BUILD="401282f242";</script>
 <script>/* Apparence : mode clair / sombre et couleur de l'application.
    Lu de façon synchrone au chargement pour éviter un flash de couleur. */
 (function(){
@@ -1888,9 +1891,8 @@ html.lay-mob .cn-flipb span{display:none;}html.lay-mob .cn-flipb{width:36px!impo
       <div class="narrow wide">
         <div class="cat-top">
           <label class="cn-srch cat-srch"><input id="cat-srch" type="search" placeholder="Rechercher un ingrédient…" oninput="catSearchIn()" autocomplete="off" enterkeyhint="search"><span class="cn-srch-x" onclick="catClearSearch()" title="Effacer"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg></label>
-          <select class="fi cat-supf" id="cat-supf" onchange="renderCat()"></select>
         </div>
-        <div class="cn-az" id="cat-az"></div><div class="cn-cnt cat-cnt" id="cat-count"></div><div class="chips" id="cat-chips"></div><div class="chips" id="cat-subchips" style="display:none"></div>
+        <div class="cn-az" id="cat-az"></div><div class="cn-row"><div class="cn-cnt cat-cnt" id="cat-count"></div><div class="cn-filters" id="cat-filters"></div></div><div class="cn-active" id="cat-active" style="display:none"></div>
         <div class="inv-bar" style="margin-bottom:12px"><button class="btn btn-ghost btn-sm" onclick="openSubMgr('ing')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2.5h8.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/></svg> Catégories</button><button class="btn btn-ghost btn-sm" onclick="goPage('fournisseurs')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 6h11.5v10H2.5z"/><path d="M14 9h4l3.5 3.5V16H14"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/></svg> Fournisseurs</button><button class="btn btn-ghost btn-sm" id="ref-btn" onclick="refOpen()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.7a3.5 3.5 0 0 1 0 6.6M18 14.3c2.2.7 3.5 2.8 3.5 5.7"/></svg> Catalogue commun<span class="ref-n" id="ref-btn-n" style="display:none"></span></button><button class="btn btn-ghost btn-sm" onclick="autoAllergens()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21V8"/><path d="M12 8c-2.5 0-4-1.5-4-4 2.5 0 4 1.5 4 4zM12 8c2.5 0 4-1.5 4-4-2.5 0-4 1.5-4 4zM12 13c-2.5 0-4-1.5-4-4 2.5 0 4 1.5 4 4zM12 13c2.5 0 4-1.5 4-4-2.5 0-4 1.5-4 4zM12 18c-2.5 0-4-1.5-4-4 2.5 0 4 1.5 4 4zM12 18c2.5 0 4-1.5 4-4-2.5 0-4 1.5-4 4z"/></svg> Compléter les allergènes</button></div>
         <div id="cat-list"></div>
         <div id="cat-empty" class="empty" style="display:none;"><span class="empty-i"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg></span><div class="empty-t">Catalogue vide</div></div>
@@ -3290,6 +3292,126 @@ function migrateUnits(){var ch=false;ingredients.forEach(function(i){if(i.buyPri
 function loadDefaults(){if(ingredients.length)return;ingredients=[{id:'i1',name:'Farine T45',cat:'Farines & Céréales',unit:'kg',price:0.85},{id:'i2',name:'Farine T65',cat:'Farines & Céréales',unit:'kg',price:0.78},{id:'i3',name:'Beurre 82%',cat:'Beurres & MG',unit:'kg',price:7.50},{id:'i4',name:'Sucre cristal',cat:'Sucres',unit:'kg',price:0.95},{id:'i5',name:'Levure fraîche',cat:'Levures',unit:'kg',price:4.20},{id:'i6',name:'Sel fin',cat:'Sel & Épices',unit:'kg',price:0.45},{id:'i7',name:'Oeufs M',cat:'Œufs & Laitages',unit:'kg',price:3.00},{id:'i8',name:'Lait entier',cat:'Œufs & Laitages',unit:'kg',price:0.95},{id:'i9',name:'Chocolat 70%',cat:'Autre',unit:'kg',price:8.50},{id:'i10',name:'Poudre amande',cat:'Fruits & Garnitures',unit:'kg',price:9.50},{id:'i11',name:'Eau',cat:'Autre',unit:'kg',price:0.002},{id:'i12',name:'Levure chimique',cat:'Levures',unit:'kg',price:6.00}];recipes=[{id:'r1',name:'Baguette Tradition',cat:'Boulangerie',image:'🥖',notes:'250°C · 20 min.',items:[{id:'x1',type:'ingredient',refId:'i2',qty:1000,unit:'g'},{id:'x2',type:'ingredient',refId:'i11',qty:650,unit:'g'},{id:'x3',type:'ingredient',refId:'i5',qty:10,unit:'g'},{id:'x4',type:'ingredient',refId:'i6',qty:18,unit:'g'}],createdAt:now()},{id:'r2',name:'Pâte Croissant',cat:'Viennoiseries',image:'🥐',notes:'Tourage ×3.',items:[{id:'x5',type:'ingredient',refId:'i1',qty:500,unit:'g'},{id:'x6',type:'ingredient',refId:'i3',qty:300,unit:'g'},{id:'x7',type:'ingredient',refId:'i8',qty:250,unit:'g'},{id:'x8',type:'ingredient',refId:'i4',qty:60,unit:'g'},{id:'x9',type:'ingredient',refId:'i5',qty:20,unit:'g'},{id:'x10',type:'ingredient',refId:'i6',qty:10,unit:'g'}],createdAt:now()}];persist();}
 
 
+// ══ BARRE DE FILTRES RÉUTILISABLE ═════════════════════════════
+// Même apparence que le carnet de recettes (pastilles + menus déroulants),
+// utilisée par le catalogue, les recettes partagées et la page Partage.
+// cfg = {box, active, q, render, defs()} ; def = {k,title,multi,opts:[{v,l,n,sub,html}],hint,search,all,keep,label}
+var FB={}, FB_CFG={};
+function fbReg(ctx,cfg){ FB_CFG[ctx]=cfg; fbS(ctx); }
+function fbS(ctx){ return FB[ctx]||(FB[ctx]={open:'',iq:'',v:{}}); }
+function fbV(ctx,k,def){ var v=fbS(ctx).v[k]; return v==null?(def!=null?def:''):v; }
+function fbA(ctx,k){ var v=fbS(ctx).v[k]; return Array.isArray(v)?v:[]; }
+function fbQ(ctx){ var c=FB_CFG[ctx], i=c&&c.q&&document.getElementById(c.q); return i?normTxt(i.value||'').trim():''; }
+function fbDefs(ctx){ var c=FB_CFG[ctx]; return c?c.defs():[]; }
+function fbCount(ctx){
+  var n=0; fbDefs(ctx).forEach(function(d){ if(d.keep) return; var v=fbS(ctx).v[d.k]; if(Array.isArray(v)?v.length:v) n++; });
+  return n+(fbQ(ctx)?1:0);
+}
+function fbOptHTML(ctx,d,o){
+  var cur=fbS(ctx).v[d.k], on=d.multi?(Array.isArray(cur)&&cur.indexOf(o.v)>=0):((cur||'')===o.v);
+  var click=o.click||('fbPick(\''+ctx+'\',\''+d.k+'\',\''+escJS(o.v)+'\')');
+  var b=rfOpt(on,o.html||esc(o.l),click,d.multi,o.n);
+  if(d.search) b='<div class="cn-oi" data-n="'+esc(normTxt(o.l))+'">'+b+'</div>';
+  return o.sub?'<div class="cn-sub">'+b+'</div>':b;
+}
+function fbLabel(ctx,d){
+  if(d.label) return d.label;
+  var v=fbS(ctx).v[d.k];
+  var find=function(x){ var o=d.opts.filter(function(o){ return o.v===x; })[0]; return o?(o.short||o.l):x; };
+  if(d.multi){ if(!v||!v.length) return d.title; return v.length===1?find(v[0]):d.title+' · '+v.length; }
+  if(!v) return d.keep?find(''):d.title;
+  return find(v);
+}
+function fbRender(ctx){
+  var c=FB_CFG[ctx], box=c&&document.getElementById(c.box); if(!box) return;
+  var S=fbS(ctx), defs=fbDefs(ctx);
+  var op=document.querySelector('.cn-pop[data-fb="'+ctx+'"]'), keep=op?{k:op.getAttribute('data-k'),a:op.scrollTop,b:(op.querySelector('.cn-ol')||{}).scrollTop||0}:null;
+  var sl=box.scrollLeft; cnSheetRm();
+  if(S.open&&!defs.some(function(d){ return d.k===S.open; })) S.open='';
+  box.innerHTML=defs.map(function(d){
+    var v=S.v[d.k], on=!d.keep&&(Array.isArray(v)?v.length>0:!!v), pop='';
+    if(S.open===d.k){
+      var body=(d.all?rfOpt(d.multi?!(v&&v.length):!v,esc(d.all),'fbClear(\''+ctx+'\',\''+d.k+'\')',false,d.allN):'')+
+        (d.opts.length?d.opts.map(function(o){ return fbOptHTML(ctx,d,o); }).join(''):'<div class="cn-ph">'+esc(d.empty||'Rien à filtrer pour l’instant.')+'</div>');
+      pop=(d.search?'<label class="cn-psrch">'+ic('search')+'<input type="search" placeholder="Chercher…" value="'+esc(S.iq)+'" oninput="fbSearch(\''+ctx+'\',this.value)" autocomplete="off"></label>':'')+
+        (d.hint?'<div class="cn-ph">'+esc(d.hint)+'</div>':'')+(d.search?'<div class="cn-ol">'+body+'</div>':body);
+    }
+    return '<div class="cn-f'+(S.open===d.k?' open':'')+'"><button class="cn-fb'+(on?' on':'')+'" onclick="fbOpen(event,\''+ctx+'\',\''+d.k+'\')">'+esc(fbLabel(ctx,d))+ic('chev-down')+'</button>'+
+      (S.open===d.k?'<div class="cn-pop" data-fb="'+ctx+'" data-k="'+d.k+'" onclick="event.stopPropagation()">'+pop+'</div>':'')+'</div>';
+  }).join('');
+  box.scrollLeft=sl;
+  var pop=box.querySelector('.cn-pop');
+  if(pop){
+    if(cnMobile()){
+      var sh=document.createElement('div'); sh.id='cn-sheet'; sh.className='cn-sheet'+(box.closest('.ov')?' in-mod':'');
+      sh.innerHTML='<div class="cn-sheet-bd" onclick="fbClose(\''+ctx+'\')"></div>';
+      var hd=document.createElement('div'); hd.className='cn-sh';
+      var d0=defs.filter(function(d){ return d.k===S.open; })[0]||{};
+      hd.innerHTML='<b>'+esc(d0.title||'')+'</b><button type="button" class="cn-sh-ok" onclick="fbClose(\''+ctx+'\')">OK</button>';
+      pop.insertBefore(hd,pop.firstChild);
+      sh.appendChild(pop); document.body.appendChild(sh);
+      document.documentElement.classList.add('cn-lock');
+    }
+    if(getComputedStyle(pop).position!=='fixed'){
+      var r=pop.getBoundingClientRect(), vw=document.documentElement.clientWidth, md=box.closest('.modal'), lim=vw-8, l0=8;
+      if(md){ var mr=md.getBoundingClientRect(); lim=Math.min(lim,mr.right-12); l0=mr.left+12; }
+      if(r.right>lim) pop.style.left=Math.max(lim-r.right,l0-r.left)+'px';
+    }
+    if(S.iq) fbSearch(ctx,S.iq);
+    if(keep&&keep.k===S.open){ pop.scrollTop=keep.a; var ol=pop.querySelector('.cn-ol'); if(ol) ol.scrollTop=keep.b; }
+    else { var si=pop.querySelector('input'); if(si&&!('ontouchstart' in window)) si.focus(); }
+  }
+  fbActive(ctx);
+}
+function fbActive(ctx){
+  var c=FB_CFG[ctx], box=c&&c.active&&document.getElementById(c.active); if(!box) return;
+  var S=fbS(ctx), ch=[];
+  fbDefs(ctx).forEach(function(d){
+    if(d.keep) return; var v=S.v[d.k]; if(!v||(Array.isArray(v)&&!v.length)) return;
+    (Array.isArray(v)?v:[v]).forEach(function(x){
+      var o=d.opts.filter(function(o){ return o.v===x; })[0];
+      var txt=(d.chip?d.chip(o?o.l:x):(o?o.l:x));
+      ch.push('<button class="cn-ac" onclick="fbPick(\''+ctx+'\',\''+d.k+'\',\''+escJS(x)+'\')">'+(d.icon?ic(d.icon)+' ':'')+esc(txt)+ic('x')+'</button>');
+    });
+  });
+  box.style.display=ch.length?'':'none';
+  box.innerHTML=ch.join('')+(ch.length>1?'<button class="cn-acx" onclick="fbReset(\''+ctx+'\')">Tout effacer</button>':'');
+}
+function fbGo(ctx){ var c=FB_CFG[ctx]; if(c&&c.render) c.render(); }
+function fbOpen(e,ctx,k){ if(e) e.stopPropagation(); var S=fbS(ctx); Object.keys(FB).forEach(function(x){ if(x!==ctx) FB[x].open=''; }); S.open=S.open===k?'':k; S.iq=''; fbRender(ctx); }
+function fbClose(ctx){ var S=fbS(ctx); if(!S.open){ cnSheetRm(); return; } S.open=''; fbRender(ctx); }
+function fbPick(ctx,k,v){
+  var S=fbS(ctx), d=fbDefs(ctx).filter(function(d){ return d.k===k; })[0]||{};
+  if(d.pick){ S.open=''; d.pick(S.v[k]===v?'':v); return; }
+  if(d.multi){ var a=fbA(ctx,k).slice(), i=a.indexOf(v); if(i>=0) a.splice(i,1); else a.push(v); S.v[k]=a; }
+  else { S.v[k]=(S.v[k]===v&&!d.keep)?'':v; S.open=''; if(d.store) try{ LS.setItem(d.store,S.v[k]); }catch(e){} }
+  fbGo(ctx);
+}
+function fbClear(ctx,k){ var S=fbS(ctx), d=fbDefs(ctx).filter(function(d){ return d.k===k; })[0]||{}; if(d.pick){ S.open=''; d.pick(''); return; } S.v[k]=Array.isArray(S.v[k])?[]:''; S.open=''; fbGo(ctx); }
+function fbReset(ctx){
+  var S=fbS(ctx), c=FB_CFG[ctx];
+  fbDefs(ctx).forEach(function(d){ if(!d.keep) S.v[d.k]=d.multi?[]:''; });
+  S.open=''; var i=c&&c.q&&document.getElementById(c.q); if(i) i.value='';
+  if(c&&c.onReset) c.onReset();
+  fbGo(ctx);
+}
+function fbSearch(ctx,v){
+  fbS(ctx).iq=v; var q=normTxt(v).trim(), pop=document.querySelector('.cn-pop[data-fb="'+ctx+'"]'); if(!pop) return;
+  pop.querySelectorAll('.cn-oi').forEach(function(d){ d.style.display=!q||d.getAttribute('data-n').indexOf(q)>=0?'':'none'; });
+}
+document.addEventListener('click',function(e){
+  if(e.target.closest&&e.target.closest('.cn-f')) return;
+  Object.keys(FB).forEach(function(ctx){ if(FB[ctx].open) fbClose(ctx); });
+});
+document.addEventListener('keydown',function(e){ if(e.key==='Escape') Object.keys(FB).forEach(function(ctx){ if(FB[ctx].open) fbClose(ctx); }); });
+// options utiles
+function fbCountOpts(list,keyFn,labelFn){
+  var n={}; list.forEach(function(x){ [].concat(keyFn(x)||[]).forEach(function(k){ if(k==null||k==='') return; n[k]=(n[k]||0)+1; }); });
+  return Object.keys(n).sort(function(a,b){ return String(labelFn?labelFn(a):a).localeCompare(String(labelFn?labelFn(b):b),'fr'); }).map(function(k){ return {v:k,l:labelFn?labelFn(k):k,n:n[k]}; });
+}
+var FB_DATES=[['7','Cette semaine'],['30','Ce mois-ci'],['365','Cette année']];
+function fbDateOk(ctx,k,iso){ var v=fbV(ctx,k); if(!v) return true; var d=Date.parse(iso||''); return d&&d>=Date.now()-Number(v)*864e5; }
+
 
 // ══════════════════════════════════════════════════════════════
 // IDENTITÉ VISUELLE · ACCUEIL · ALLERGÈNES · FOURNISSEURS · FICHE TECHNIQUE
@@ -3648,25 +3770,48 @@ function catLetter(i){ var c=normTxt(String(i.name||'').trim()).charAt(0).toUppe
 function catLetterGo(l){ CATF.letter=(CATF.letter===l?'':l); renderCat(); }
 function catSearchIn(){ clearTimeout(_catSearchT); _catSearchT=setTimeout(renderCat,100); }
 function catClearSearch(){ var i=document.getElementById('cat-srch'); if(i){ i.value=''; i.focus(); } renderCat(); }
-function renderCat(){
-  var chEl=document.getElementById('cat-chips');
-  var catOrder=loadCats('ing');
-  var cats0=Array.from(new Set(ingredients.map(function(i){return i.cat;}))).sort(function(a,b){
-    var ia=catOrder.indexOf(a), ib=catOrder.indexOf(b); if(ia<0) ia=999; if(ib<0) ib=999; return ia-ib||String(a).localeCompare(String(b),'fr');
+var CAT_SORTS=[['az','Nom : A → Z'],['za','Nom : Z → A'],['cheap','Prix croissant'],['dear','Prix décroissant'],['use','Les plus utilisés']];
+function catUseCount(){ var n={}; recipes.forEach(function(r){ (r.items||[]).forEach(function(it){ if(it.type==='ingredient') n[it.refId]=(n[it.refId]||0)+1; }); }); return n; }
+function catPickCat(v){ activeIngCat=''; activeIngSub=''; if(v.indexOf('s:')===0) activeIngSub=v.slice(2); else if(v.indexOf('c:')===0) activeIngCat=v.slice(2); renderCat(); }
+fbReg('cat',{box:'cat-filters',active:'cat-active',q:'cat-srch',render:function(){ renderCat(); },onReset:function(){ activeIngCat=''; activeIngSub=''; CATF.letter=''; },defs:function(){
+  var catOrder=loadCats('ing'), cnt={}; ingredients.forEach(function(i){ cnt[i.cat]=(cnt[i.cat]||0)+1; });
+  var cats=Object.keys(cnt).sort(function(a,b){ var ia=catOrder.indexOf(a), ib=catOrder.indexOf(b); if(ia<0) ia=999; if(ib<0) ib=999; return ia-ib||String(a).localeCompare(String(b),'fr'); });
+  var subs={}; ingredients.forEach(function(i){ if(i.sub){ var s=subById('ing',i.sub); if(s){ var m=subs[i.cat]||(subs[i.cat]={}); m[s.id]=m[s.id]||{s:s,n:0}; m[s.id].n++; } } });
+  var catOpts=[]; cats.forEach(function(c){
+    catOpts.push({v:'c:'+c,l:c||'Sans catégorie',html:catDot(c)+esc(c||'Sans catégorie'),n:cnt[c]});
+    Object.keys(subs[c]||{}).map(function(k){ return subs[c][k]; }).sort(function(a,b){ return a.s.name.localeCompare(b.s.name,'fr'); }).forEach(function(x){ catOpts.push({v:'s:'+x.s.id,l:x.s.name,html:ic('folder')+' '+esc(x.s.name),n:x.n,sub:true}); });
   });
-  if(chEl) chEl.innerHTML='<div class="chip'+(activeIngCat===''&&!activeIngSub?' on':'')+'" onclick="filterIngCat(\'\')">Tout</div>'+cats0.map(function(c){return '<div class="chip'+(activeIngCat===c&&!activeIngSub?' on':'')+'" onclick="filterIngCat(\''+escJS(c)+'\')">'+catDot(c)+esc(c)+'</div>';}).join('');
-  var usedIds=Array.from(new Set(ingredients.filter(function(i){return i.sub;}).map(function(i){return i.sub;})));
-  var sl=usedIds.map(function(id){return subById('ing',id);}).filter(Boolean).sort(function(a,b){return a.name.localeCompare(b.name,'fr');});
-  var subBox=document.getElementById('cat-subchips');
-  if(subBox){ var sc=sl.map(function(s){return '<div class="chip'+(activeIngSub===s.id?' on':'')+'" onclick="filterIngSub(\''+s.id+'\')">'+ic('folder')+' '+esc(s.name)+'</div>';}).join(''); subBox.innerHTML=sc; subBox.style.display=sc?'':'none'; }
-  var sf=document.getElementById('cat-supf'), supSel=sf?sf.value:'';
-  if(sf){
-    sf.innerHTML='<option value="">Tous les fournisseurs</option>'+supSorted().map(function(s){return '<option value="'+s.id+'">'+esc(s.name)+'</option>';}).join('')+'<option value="__none__">Sans fournisseur</option>';
-    sf.value=supSel; if(sf.value!==supSel){ sf.value=''; supSel=''; }
-    sf.style.display=suppliers.length?'':'none';
-  }
+  var supN={}; ingredients.forEach(function(i){ var k=supById(i.supplierId)?i.supplierId:'__none__'; supN[k]=(supN[k]||0)+1; });
+  var supOpts=supSorted().filter(function(s){ return supN[s.id]; }).map(function(s){ return {v:s.id,l:s.name,n:supN[s.id]}; });
+  if(supN.__none__) supOpts.push({v:'__none__',l:'Sans fournisseur',n:supN.__none__});
+  var use=catUseCount(), st={nop:0,alg:0,used:0,unused:0};
+  ingredients.forEach(function(i){ if(!(i.price>0)) st.nop++; if(!i.allergensSet) st.alg++; if(use[i.id]) st.used++; else st.unused++; });
+  return [
+    {k:'cat',title:'Catégories',all:'Toutes les catégories',allN:ingredients.length,opts:catOpts,pick:catPickCat},
+    {k:'sup',title:'Fournisseurs',multi:true,search:supOpts.length>8,opts:supOpts,icon:'truck',empty:'Aucun fournisseur.'},
+    {k:'alg',title:'Allergènes',multi:true,hint:'Masquer les ingrédients contenant :',opts:ALLERGENS.map(function(a){ return {v:a.k,l:a.n,short:'Sans '+a.n.toLowerCase()}; }),chip:function(l){ return 'Sans '+l.toLowerCase(); }},
+    {k:'unit',title:'Unités',multi:true,opts:fbCountOpts(ingredients,function(i){ return i.unit; })},
+    {k:'st',title:'État',multi:true,opts:[{v:'nop',l:'Sans prix',n:st.nop},{v:'alg',l:'Allergènes à vérifier',n:st.alg},{v:'used',l:'Utilisés dans une recette',n:st.used},{v:'unused',l:'Jamais utilisés',n:st.unused}]},
+    {k:'sort',title:'Trier',keep:true,opts:CAT_SORTS.map(function(x){ return {v:x[0],l:x[1]}; }),store:'v4_catsort'}
+  ];
+}});
+(function(){ try{ var s=LS.getItem('v4_catsort'); if(s) fbS('cat').v.sort=s; }catch(e){} })();
+function renderCat(){
+  var S=fbS('cat'); if(!S.v.sort) S.v.sort='az';
+  S.v.cat=activeIngSub?'s:'+activeIngSub:(activeIngCat?'c:'+activeIngCat:'');
+  var catOrder=loadCats('ing');
   var q=normTxt((document.getElementById('cat-srch').value||'').trim()), words=q.split(/\s+/).filter(Boolean);
   var base=activeIngSub?ingredients.filter(function(i){return i.sub===activeIngSub;}):(activeIngCat?ingredients.filter(function(i){return i.cat===activeIngCat;}):ingredients);
+  var sups=fbA('cat','sup'), algs=fbA('cat','alg'), units=fbA('cat','unit'), sts=fbA('cat','st'), use=catUseCount();
+  base=base.filter(function(i){
+    if(words.length){ var hay=normTxt(i.name+' '+i.cat+' '+supName(i.supplierId)+' '+(i.ref||'')+' '+(i.sub?subLabel('ing',i.sub)||'':'')); if(!words.every(function(w){ return hay.indexOf(w)>=0; })) return false; }
+    if(sups.length&&sups.indexOf(supById(i.supplierId)?i.supplierId:'__none__')<0) return false;
+    if(algs.length&&(i.allergens||[]).some(function(a){ return algs.indexOf(a)>=0; })) return false;
+    if(units.length&&units.indexOf(i.unit)<0) return false;
+    if(sts.length&&!sts.every(function(s){ return s==='nop'?!(i.price>0):s==='alg'?!i.allergensSet:s==='used'?!!use[i.id]:!use[i.id]; })) return false;
+    return true;
+  });
+  fbRender('cat');
   // lettres A–Z (comme le carnet de recettes)
   var has={}; base.forEach(function(i){ has[catLetter(i)]=1; });
   var az=document.getElementById('cat-az');
@@ -3674,22 +3819,19 @@ function renderCat(){
       return '<button class="cn-l'+(CATF.letter===l?' on':'')+(has[l]?'':' off')+'"'+(has[l]||CATF.letter===l?'':' disabled')+' onclick="catLetterGo(\''+l+'\')">'+l+'</button>'; }).join('')+
     (has['#']?'<button class="cn-l'+(CATF.letter==='#'?' on':'')+'" onclick="catLetterGo(\'#\')" title="Autres">#</button>':'')+
     '<button class="cn-l cn-l0'+(CATF.letter?'':' on')+'" onclick="catLetterGo(\'\')" title="Toutes les lettres">'+ic('refresh')+'</button>';
-  var list=base.filter(function(i){
-    if(CATF.letter&&catLetter(i)!==CATF.letter) return false;
-    if(words.length){ var hay=normTxt(i.name+' '+i.cat+' '+supName(i.supplierId)+' '+(i.ref||'')); if(!words.every(function(w){ return hay.indexOf(w)>=0; })) return false; }
-    if(supSel==='__none__') return !supById(i.supplierId);
-    if(supSel) return i.supplierId===supSel;
-    return true;
-  });
+  var list=base.filter(function(i){ return !CATF.letter||catLetter(i)===CATF.letter; });
+  var srt=S.v.sort, cmpN=function(a,b){ return a.name.localeCompare(b.name,'fr',{sensitivity:'base'}); };
+  var sorter=srt==='za'?function(a,b){ return cmpN(b,a); }:srt==='cheap'?function(a,b){ return (a.price||0)-(b.price||0)||cmpN(a,b); }:srt==='dear'?function(a,b){ return (b.price||0)-(a.price||0)||cmpN(a,b); }:srt==='use'?function(a,b){ return (use[b.id]||0)-(use[a.id]||0)||cmpN(a,b); }:cmpN;
   var cc=document.getElementById('cat-count');
   if(cc) cc.innerHTML='Mes ingrédients <b>('+(list.length===ingredients.length?list.length:list.length+' / '+ingredients.length)+')</b>';
   var el=document.getElementById('cat-list'),emp=document.getElementById('cat-empty');
   emp.style.display=list.length?'none':'block';
+  var et=emp.querySelector('.empty-t'); if(et) et.innerHTML=ingredients.length?'Aucun résultat trouvé.'+(fbCount('cat')||CATF.letter?' <button class="cn-reset" onclick="fbReset(\'cat\')">Effacer les filtres</button>':''):'Catalogue vide';
   if(!list.length){ el.innerHTML=''; return; }
   var groups={}; list.forEach(function(i){ (groups[i.cat]||(groups[i.cat]=[])).push(i); });
   var cats=Object.keys(groups).sort(function(a,b){ var ia=catOrder.indexOf(a), ib=catOrder.indexOf(b); if(ia<0) ia=999; if(ib<0) ib=999; return ia-ib||a.localeCompare(b,'fr'); });
   function cardsOf(arr,cat){
-    return arr.slice().sort(function(a,b){return a.name.localeCompare(b.name,'fr');}).map(function(i){
+    return arr.slice().sort(sorter).map(function(i){
       var icn=(i.image&&i.image.length<=4)?i.image:(i.image?'<img src="'+esc(i.image)+'" style="width:100%;height:100%;object-fit:cover">':catIcon(cat));
       var alg=!i.allergensSet?'<span class="alg sm unk">Allergènes ?</span>':((i.allergens||[]).length?algChips(i.allergens,'sm'+(i.allergensAuto?' unk':'')):'');
       var sn=supName(i.supplierId);
@@ -5331,6 +5473,43 @@ function sharedList(){
 }
 function shrIsMine(row){ return typeof CLOUD!=='undefined'&&CLOUD.sess&&row.owner===CLOUD.sess.user.id; }
 function updSharedCount(){ var n=document.getElementById('rt-shared-n'); if(n){ var c=sharedList().length; n.textContent=c?' '+c:''; } }
+// filtres communs aux éléments partagés (onglet « Partagées » et page Partage)
+var SH_SORTS=[['new','Plus récentes'],['old','Plus anciennes'],['az','Nom : A → Z'],['za','Nom : Z → A'],['cheap','Coût croissant'],['dear','Coût décroissant']];
+var SH_TYPES=[['rec','Recettes'],['bon','Bons d’économat'],['pdf','PDF'],['img','Images']];
+function shOwnerKey(x){ return shrIsMine(x)?'__me__':x.owner; }
+function shFilterDefs(ctx,rows,o){
+  o=o||{}; var defs=[], recs=rows.filter(function(x){ return shType(x)==='rec'; });
+  if(o.types){ var tn={}; rows.forEach(function(x){ var t=partSecType(x); tn[t]=(tn[t]||0)+1; });
+    defs.push({k:'type',title:'Types',multi:true,opts:SH_TYPES.filter(function(t){ return tn[t[0]]; }).map(function(t){ return {v:t[0],l:t[1],n:tn[t[0]]}; })}); }
+  if(o.owners!==false){ var names={}; rows.forEach(function(x){ names[shOwnerKey(x)]=shrIsMine(x)?'Toi':(x.owner_name||'Compte sans nom'); });
+    defs.push({k:'own',title:'Auteurs',multi:true,icon:'user',search:Object.keys(names).length>8,opts:fbCountOpts(rows,shOwnerKey,function(k){ return names[k]; })}); }
+  defs.push({k:'cat',title:'Catégories',multi:true,search:true,opts:fbCountOpts(recs,function(x){ return x.data.cat||''; }).map(function(c){ c.html=catDot(c.v)+esc(c.l); return c; }),empty:'Aucune catégorie.'});
+  defs.push({k:'tags',title:'Tags',multi:true,search:true,icon:'tag',opts:fbCountOpts(recs,function(x){ return x.data.tags||[]; }),empty:'Aucun tag sur les recettes partagées.'});
+  if(o.folders){ defs.push({k:'fold',title:'Dossiers',multi:true,search:true,icon:'folder',opts:fbCountOpts(rows,function(x){ return x.data.folder||''; }),empty:'Aucun dossier.'}); }
+  defs.push({k:'alg',title:'Allergènes',multi:true,hint:'Masquer les recettes contenant :',opts:ALLERGENS.map(function(a){ return {v:a.k,l:a.n,short:'Sans '+a.n.toLowerCase()}; }),chip:function(l){ return 'Sans '+l.toLowerCase(); }});
+  defs.push({k:'date',title:'Dates',all:'Toutes les dates',opts:FB_DATES.map(function(d){ return {v:d[0],l:d[1]}; }),chip:function(l){ return 'Modifiées '+l.toLowerCase(); }});
+  defs.push({k:'sort',title:'Trier',keep:true,opts:(o.sorts||SH_SORTS).map(function(x){ return {v:x[0],l:x[1]}; })});
+  return defs;
+}
+function shRowOk(ctx,x,skipText){
+  var d=x.data||{}, t=fbA(ctx,'type'), ow=fbA(ctx,'own'), ca=fbA(ctx,'cat'), tg=fbA(ctx,'tags'), fo=fbA(ctx,'fold'), al=fbA(ctx,'alg');
+  if(t.length&&t.indexOf(partSecType(x))<0) return false;
+  if(ow.length&&ow.indexOf(shOwnerKey(x))<0) return false;
+  if(ca.length&&ca.indexOf(d.cat||'')<0) return false;
+  if(tg.length&&!(d.tags||[]).some(function(g){ return tg.indexOf(g)>=0; })) return false;
+  if(fo.length&&fo.indexOf(d.folder||'')<0) return false;
+  if(al.length&&(d.allergens||[]).some(function(a){ return al.indexOf(a)>=0; })) return false;
+  if(!fbDateOk(ctx,'date',x.updated_at)) return false;
+  if(!skipText){ var q=fbQ(ctx); if(q){ var hay=normTxt(d.name+' '+(x.owner_name||'')+' '+(d.cat||'')+' '+(d.folder||'')+' '+(d.tags||[]).join(' ')); if(!q.split(/\s+/).every(function(w){ return hay.indexOf(w)>=0; })) return false; } }
+  return true;
+}
+function shSort(ctx,rows){
+  var s=fbV(ctx,'sort','new'), cmpN=function(a,b){ return String(a.data.name).localeCompare(String(b.data.name),'fr',{sensitivity:'base'}); };
+  if(s==='cat') return rows.slice().sort(function(a,b){ return String(a.data.cat||'').localeCompare(String(b.data.cat||''),'fr')||cmpN(a,b); });
+  return rows.slice().sort(s==='az'?cmpN:s==='za'?function(a,b){ return cmpN(b,a); }:s==='old'?function(a,b){ return String(a.updated_at).localeCompare(String(b.updated_at)); }:
+    s==='cheap'?function(a,b){ return (a.data.cost||0)-(b.data.cost||0); }:s==='dear'?function(a,b){ return (b.data.cost||0)-(a.data.cost||0); }:function(a,b){ return String(b.updated_at).localeCompare(String(a.updated_at)); });
+}
+fbReg('shr',{box:'shr-filters',active:'shr-active',q:'shr-srch',onReset:function(){ SHR_Q=''; },render:function(){ renderSharedGrid(); },defs:function(){ return shFilterDefs('shr',sharedList().filter(function(x){ return shType(x)==='rec'; }),{folders:true}); }});
 function renderShared(){
   updSharedCount();
   var w=document.getElementById('shared-wrap'); if(!w) return;
@@ -5338,20 +5517,22 @@ function renderShared(){
     w.innerHTML='<div class="empty shr-empty"><span class="empty-i">'+ic('users')+'</span><div class="empty-t">Recettes partagées</div><div class="empty-s">Connecte-toi à ton espace en ligne pour voir les recettes partagées par les autres et partager les tiennes. Chacun garde son espace perso.</div><button class="btn btn-gold btn-sm" style="margin-top:12px" onclick="goPage(\'backup\');setTimeout(function(){var c=document.getElementById(\'cl-card\');if(c)c.scrollIntoView({block:\'start\'});},60)">'+ic('user')+' Se connecter</button></div>';
     return;
   }
-  var q=normTxt(SHR_Q), all=sharedList();
-  var list=all.filter(function(x){ if(SHR_MINE&&!shrIsMine(x)) return false; if(!q) return true; return normTxt(x.data.name).indexOf(q)>=0||normTxt(x.owner_name).indexOf(q)>=0||normTxt(x.data.cat).indexOf(q)>=0; });
-  var mine=all.filter(shrIsMine).length;
-  var head='<div class="srch">'+ic('search')+'<input class="sinp" id="shr-srch" placeholder="Rechercher une recette ou une personne…" value="'+esc(SHR_Q)+'" oninput="SHR_Q=this.value;renderSharedGrid()"></div>'+
-    '<div class="chips"><div class="chip'+(!SHR_MINE?' on':'')+'" onclick="SHR_MINE=false;renderShared()">Toutes · '+all.length+'</div><div class="chip'+(SHR_MINE?' on':'')+'" onclick="SHR_MINE=true;renderShared()">Les miennes · '+mine+'</div></div>'+
+  var head='<div class="cn-bar"><label class="cn-srch"><input id="shr-srch" type="search" placeholder="Rechercher une recette, une personne, un tag…" value="'+esc(SHR_Q)+'" oninput="SHR_Q=this.value;shrSearchIn()" autocomplete="off"><span class="cn-srch-x" onclick="var i=document.getElementById(\'shr-srch\');i.value=\'\';SHR_Q=\'\';renderSharedGrid()" title="Effacer">'+ic('x')+'</span>'+ic('search')+'</label></div>'+
+    '<div class="cn-row"><div class="cn-cnt" id="shr-count"></div><div class="cn-filters" id="shr-filters"></div></div><div class="cn-active" id="shr-active" style="display:none"></div>'+
     '<div class="shr-info">'+ic('info')+'<span>Pour partager une de tes recettes, ouvre-la et coche « Partager cette recette ». Seul l’auteur d’une recette partagée peut la modifier ; les autres peuvent la copier dans leur espace.</span></div>';
   w.innerHTML=head+'<div class="rgrid tiles" id="shr-grid"></div>';
   renderSharedGrid();
 }
+var _shrT=null;
+function shrSearchIn(){ clearTimeout(_shrT); _shrT=setTimeout(renderSharedGrid,120); }
 function renderSharedGrid(){
   var g=document.getElementById('shr-grid'); if(!g) return;
-  var q=normTxt(SHR_Q);
-  var list=sharedList().filter(function(x){ if(SHR_MINE&&!shrIsMine(x)) return false; if(!q) return true; return normTxt(x.data.name).indexOf(q)>=0||normTxt(x.owner_name).indexOf(q)>=0||normTxt(x.data.cat).indexOf(q)>=0; });
-  if(!list.length){ g.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="empty-s">'+(sharedList().length?'Aucune recette trouvée':'Aucune recette partagée pour l’instant. Sois le premier !')+'</div></div>'; return; }
+  var S=fbS('shr'); if(!S.v.sort) S.v.sort='new';
+  var all=sharedList().filter(function(x){ return shType(x)==='rec'; });
+  var list=shSort('shr',all.filter(function(x){ return shRowOk('shr',x); }));
+  fbRender('shr');
+  var c=document.getElementById('shr-count'); if(c) c.innerHTML='Partagées <b>('+(list.length===all.length?list.length:list.length+' / '+all.length)+')</b>';
+  if(!list.length){ g.innerHTML='<div class="cn-empty" style="grid-column:1/-1">'+(all.length?'Aucune recette trouvée.'+(fbCount('shr')?'<br><button class="cn-reset" onclick="fbReset(\'shr\')">Effacer les filtres</button>':''):'Aucune recette partagée pour l’instant. Sois le premier !')+'</div>'; return; }
   g.innerHTML=list.map(function(x){
     var d=x.data, ph=(d.image&&d.image.length>4)?'<img src="'+esc(d.image)+'" alt="" loading="lazy">':'<span class="rt-em">'+(d.image||ic('book'))+'</span>';
     var natt=(d.attachments||[]).length;
@@ -5522,18 +5703,41 @@ function partMyFolders(){
 function partMineCount(){ return recipes.filter(function(r){ return r.shared; }).length+orders.filter(function(o){ return o.shared; }).length+shDocs().length; }
 function partMatch(txt){ var q=normTxt(PART.q); return !q||normTxt(txt).indexOf(q)>=0; }
 
+var PART_SORTS=[['cat','Par catégorie']].concat(SH_SORTS);
+function partLocRow(kind,o){
+  var me=CLOUD.sess&&CLOUD.sess.user.id;
+  if(kind==='rec') return {owner:me,updated_at:o.updatedAt||o.createdAt||'',data:{type:'rec',name:o.name,cat:o.cat||'',tags:o.tags||[],allergens:recAlgKeys(o),folder:o.shareFolder||'',cost:recCostOf(o)}};
+  if(kind==='bon') return {owner:me,updated_at:o.updatedAt||o.date||'',data:{type:'bon',name:o.name,folder:o.shareFolder||'',cost:orderCost(o)}};
+  return {owner:me,updated_at:o.createdAt||'',data:{type:'doc',name:o.name,folder:o.folder||'',attachments:[o.att],mime:o.att&&o.att.mime}};
+}
+function partLocOk(kind,o){ return shRowOk('part',partLocRow(kind,o),true); }
+function partFiltOn(){ return fbCount('part')-(fbQ('part')?1:0)>0; }
+fbReg('part',{box:'part-filters',active:'part-active',q:'part-q',onReset:function(){ PART.q=''; },render:function(){ partBody(); },defs:function(){
+  if(PART.tab==='mine'){
+    var rows=recipes.filter(function(r){ return r.shared; }).map(function(r){ return partLocRow('rec',r); })
+      .concat(orders.filter(function(o){ return o.shared; }).map(function(o){ return partLocRow('bon',o); }),shDocs().map(function(d){ return partLocRow('doc',d); }));
+    return shFilterDefs('part',rows,{types:true,owners:false,sorts:PART_SORTS});
+  }
+  return shFilterDefs('part',sharedList().filter(function(x){ return !shrIsMine(x); }),{types:true,sorts:PART_SORTS});
+}});
+var _partT=null;
+function partSearchIn(v){ PART.q=v; clearTimeout(_partT); _partT=setTimeout(partBody,120); }
 function renderPartage(){
   var w=document.getElementById('part-wrap'); if(!w) return;
   if(typeof clActive!=='function'||!clActive()){ w.innerHTML=partConnectHTML(); return; }
   var others=sharedList().filter(function(x){ return !shrIsMine(x); }).length+(CLOUD.locks||[]).filter(function(l){ return !l.unlocked; }).reduce(function(s,l){ return s+(l.n||0); },0);
-  var h='<div class="seg part-seg"><button class="'+(PART.tab==='others'?'on':'')+'" onclick="PART.tab=\'others\';PART.open=null;PART.acct=null;renderPartage()">'+ic('users')+' Des autres · '+others+'</button>'+
-    '<button class="'+(PART.tab==='mine'?'on':'')+'" onclick="PART.tab=\'mine\';PART.open=null;renderPartage()">'+ic('upload')+' Les miens · '+partMineCount()+'</button></div>'+
-    '<div class="srch">'+ic('search')+'<input class="sinp" id="part-q" placeholder="Rechercher…" value="'+esc(PART.q)+'" oninput="PART.q=this.value;partBody()"></div>'+
+  var h='<div class="seg part-seg"><button class="'+(PART.tab==='others'?'on':'')+'" onclick="partTab(\'others\')">'+ic('users')+' Des autres · '+others+'</button>'+
+    '<button class="'+(PART.tab==='mine'?'on':'')+'" onclick="partTab(\'mine\')">'+ic('upload')+' Les miens · '+partMineCount()+'</button></div>'+
+    '<div class="cn-bar"><label class="cn-srch"><input id="part-q" type="search" placeholder="Rechercher une recette, un dossier, une personne, un tag…" value="'+esc(PART.q)+'" oninput="partSearchIn(this.value)" autocomplete="off"><span class="cn-srch-x" onclick="var i=document.getElementById(\'part-q\');i.value=\'\';PART.q=\'\';partBody()" title="Effacer">'+ic('x')+'</span>'+ic('search')+'</label></div>'+
+    '<div class="cn-row part-frow"><div class="cn-filters" id="part-filters"></div></div><div class="cn-active" id="part-active" style="display:none"></div>'+
     '<div id="part-body"></div>';
   w.innerHTML=h; partBody();
 }
+function partTab(t){ PART.tab=t; PART.open=null; if(t==='others') PART.acct=null; var S=fbS('part'); S.v.type=[]; S.v.own=[]; S.open=''; renderPartage(); }
 function partBody(){
   var b=document.getElementById('part-body'); if(!b) return;
+  var S=fbS('part'); if(!S.v.sort) S.v.sort='cat';
+  fbRender('part');
   b.innerHTML=PART.tab==='mine'?partMineHTML():partOthersHTML();
 }
 function partCopiedBon(x){ return orders.some(function(o){ return o.fromShared&&o.fromShared.id===x.id; }); }
@@ -5563,7 +5767,7 @@ function partSecType(x){ var t=shType(x); if(t!=='doc') return t; var a=(x.data.
 function partSecsHTML(rows){
   var g={rec:[],bon:[],pdf:[],img:[]};
   rows.forEach(function(x){ g[partSecType(x)].push(x); });
-  g.rec.sort(function(a,b){ return String(a.data.cat||'').localeCompare(String(b.data.cat||''),'fr')||String(a.data.name).localeCompare(String(b.data.name),'fr'); });
+  Object.keys(g).forEach(function(k){ g[k]=shSort('part',g[k]); });
   return PSEC.filter(function(t){ return g[t[0]].length; }).map(function(t){
     var n=g[t[0]].length;
     return '<div class="psec psec-'+t[0]+'"><div class="psec-h"><span class="psec-i">'+ic(t[1])+'</span><b>'+t[2]+'</b><em>'+n+'</em></div><div class="rgrid tiles">'+g[t[0]].map(partTile).join('')+'</div></div>';
@@ -5576,13 +5780,15 @@ function partFolderCard(name,sub,label,onclick,acts,lock){
 }
 function partOwnerName(x){ return x.owner_name||'Compte sans nom'; }
 function partOthersHTML(){
-  var all=sharedList().filter(function(x){ return !shrIsMine(x); });
-  var hidden=(CLOUD.locks||[]).filter(function(l){ return !l.unlocked&&l.n>0; });
-  if(!all.length&&!hidden.length) return '<div class="empty"><div class="empty-s">Personne n’a encore rien partagé.</div></div>';
+  var all0=sharedList().filter(function(x){ return !shrIsMine(x); }), fon=partFiltOn();
+  var all=all0.filter(function(x){ return shRowOk('part',x,true); });
+  var hidden=fon?[]:(CLOUD.locks||[]).filter(function(l){ return !l.unlocked&&l.n>0; });
+  if(!all0.length&&!hidden.length&&!(CLOUD.locks||[]).length) return '<div class="empty"><div class="empty-s">Personne n’a encore rien partagé.</div></div>';
+  if(!all.length&&!hidden.length&&!PART.open&&!PART.acct) return partNoRes();
   var mkBack=function(label,click){ return '<button class="btn btn-ghost btn-sm" onclick="'+click+'">'+ic('back')+' '+esc(label)+'</button>'; };
   // 3 · un dossier ouvert (à l'intérieur d'un compte)
   if(PART.open){
-    var rows=all.filter(function(x){ return partFolderKey(x)===PART.open; });
+    var rows=all0.filter(function(x){ return partFolderKey(x)===PART.open; });
     if(!rows.length){ PART.open=null; return partOthersHTML(); }
     PART.acct=rows[0].owner;
     var f=rows[0].data.folder, owner=partOwnerName(rows[0]);
@@ -5592,12 +5798,12 @@ function partOthersHTML(){
     return mkBack(owner,'PART.open=null;partBody()')+
       '<div class="pf-head"><span class="pf-ic">'+ic('folder')+(lk?'<i class="pf-lk">'+ic('unlock')+'</i>':'')+'</span><div class="pf-b"><div class="pf-n big">'+esc(f)+'</div><div class="pf-s">Dossier de '+esc(owner)+' · '+partCountLabel(partCountRows(rows))+(lk?' · protégé par mot de passe':'')+'</div></div>'+
       (copyable?'<button class="btn btn-gold btn-sm" id="pf-copyall" onclick="partCopyFolder(\''+escJS(PART.open)+'\')"'+(todo?'':' disabled')+'>'+ic('copy')+' '+(todo?(todo===copyable?'Copier tout le dossier':'Copier les '+todo+' manquants'):'Déjà copié')+'</button>':'')+'</div>'+
-      partSecsHTML(rows.filter(function(x){ return qa||partMatch(x.data.name); }));
+      (function(){ var vis=rows.filter(function(x){ return shRowOk('part',x,true)&&(qa||partMatch(x.data.name+' '+(x.data.cat||'')+' '+(x.data.tags||[]).join(' '))); }); return vis.length?partSecsHTML(vis):partNoRes(); })();
   }
   // 2 · un compte ouvert : ses dossiers et ses éléments seuls
   if(PART.acct){
     var mine=all.filter(function(x){ return x.owner===PART.acct; }), lks=partLocksOf(PART.acct).filter(function(l){ return !l.unlocked&&l.n>0; });
-    if(!mine.length&&!lks.length){ PART.acct=null; return partOthersHTML(); }
+    if(!mine.length&&!lks.length){ if(fon&&all0.some(function(x){ return x.owner===PART.acct; })) return mkBack('Tous les comptes','PART.acct=null;PART.open=null;partBody()')+partNoRes(); PART.acct=null; return partOthersHTML(); }
     var name=mine.length?partOwnerName(mine[0]):(lks[0].owner_name||'Compte sans nom'), qa2=partMatch(name), groups={}, loose=[];
     mine.forEach(function(x){ if(x.data.folder){ var k=partFolderKey(x); (groups[k]=groups[k]||[]).push(x); } else loose.push(x); });
     var cards=Object.keys(groups).filter(function(k){ var g=groups[k]; return qa2||partMatch(g[0].data.folder)||g.some(function(x){ return partMatch(x.data.name); }); }).map(function(k){
@@ -5622,17 +5828,24 @@ function partOthersHTML(){
   var list=Object.keys(by).map(function(k){ return by[k]; }).filter(function(a){
     return partMatch(a.name)||a.rows.some(function(x){ return partMatch(x.data.name+' '+(x.data.folder||'')+' '+(x.data.cat||'')); })||Object.keys(a.folders).some(partMatch); })
     .sort(function(a,b){ return a.name.localeCompare(b.name,'fr'); });
-  if(!list.length) return '<div class="empty"><div class="empty-s">Aucun résultat</div></div>';
-  return '<div class="sh"><div class="sh-t">Comptes · '+list.length+'</div></div><div class="pf-list">'+list.map(function(a){
+  var hits=(PART.q||fon)?all.filter(function(x){ return partMatch(x.data.name+' '+(x.data.cat||'')+' '+(x.data.folder||'')+' '+partOwnerName(x)+' '+(x.data.tags||[]).join(' ')); }):[];
+  if(!list.length&&!hits.length) return partNoRes();
+  var res=hits.length?'<div class="sh"><div class="sh-t">Résultats · '+hits.length+'</div></div>'+partSecsHTML(hits.slice(0,120)):'';
+  return res+(list.length?'<div class="sh"><div class="sh-t">Comptes · '+list.length+'</div></div>':'')+'<div class="pf-list">'+list.map(function(a){
     var nf=Object.keys(a.folders).length, c=partCountRows(a.rows), lab=partCountLabel(c);
     if(a.locked) lab=(a.rows.length?lab+' · ':'')+a.locked+' protégé'+(a.locked>1?'s':'');
     return partFolderCard(a.name,nf?nf+' dossier'+(nf>1?'s':''):'',lab,'PART.acct=\''+escJS(a.id)+'\';partBody()'); }).join('')+'</div>';
 }
+function partNoRes(){ return '<div class="cn-empty">Aucun résultat trouvé.'+(fbCount('part')?'<br><button class="cn-reset" onclick="fbReset(\'part\')">Effacer les filtres</button>':'')+'</div>'; }
 function partMineHTML(){
-  var folders=partMyFolders().filter(function(f){ return partMatch(f.name)||f.recs.some(function(r){ return partMatch(r.name); })||f.bons.some(function(o){ return partMatch(o.name); })||f.docs.some(function(d){ return partMatch(d.name); }); });
-  var looseR=recipes.filter(function(r){ return r.shared&&!r.shareFolder&&partMatch(r.name); });
-  var looseB=orders.filter(function(o){ return o.shared&&!o.shareFolder&&partMatch(o.name); });
-  var looseD=shDocs().filter(function(d){ return !d.folder&&partMatch(d.name); });
+  var fon=partFiltOn();
+  var folders=partMyFolders().map(function(f){
+    if(!fon) return f;
+    return {name:f.name,recs:f.recs.filter(function(r){ return partLocOk('rec',r); }),bons:f.bons.filter(function(o){ return partLocOk('bon',o); }),docs:f.docs.filter(function(d){ return partLocOk('doc',d); })};
+  }).filter(function(f){ if(fon&&!f.recs.length&&!f.bons.length&&!f.docs.length) return false; return partMatch(f.name)||f.recs.some(function(r){ return partMatch(r.name+' '+(r.cat||'')+' '+(r.tags||[]).join(' ')); })||f.bons.some(function(o){ return partMatch(o.name); })||f.docs.some(function(d){ return partMatch(d.name); }); });
+  var looseR=shSort('part',recipes.filter(function(r){ return r.shared&&!r.shareFolder&&partMatch(r.name+' '+(r.cat||'')+' '+(r.tags||[]).join(' '))&&(!fon||partLocOk('rec',r)); }).map(function(r){ var x=partLocRow('rec',r); x.r=r; return x; })).map(function(x){ return x.r; });
+  var looseB=orders.filter(function(o){ return o.shared&&!o.shareFolder&&partMatch(o.name)&&(!fon||partLocOk('bon',o)); });
+  var looseD=shDocs().filter(function(d){ return !d.folder&&partMatch(d.name)&&(!fon||partLocOk('doc',d)); });
   var h='<div class="part-acts"><button class="btn btn-gold btn-sm" onclick="partNewFolder()">'+ic('plus')+' Nouveau dossier partagé</button>'+
     '<button class="btn btn-ghost btn-sm" onclick="partShareCat()">'+ic('folder')+' Partager une catégorie</button>'+
     '<button class="btn btn-ghost btn-sm" onclick="partQuick(\'bon\')">'+ic('bon')+' Partager un bon</button>'+
@@ -5657,7 +5870,7 @@ function partMineHTML(){
   [[looseP,'pdf','PDF partagés seuls'],[looseI,'image','Images partagées seules']].forEach(function(z){
     if(z[0].length) h+=mySec(z[1],z[2],z[0].length,'<div class="att-list">'+z[0].map(function(d){ return partMineRow(ic(z[1]),d.name,(z[1]==='pdf'?'PDF':'Image')+' · '+attSize(d.att.size),'partOpenMyDoc(\''+d.id+'\')','partUnshareDoc(\''+d.id+'\')'); }).join('')+'</div>');
   });
-  if(!folders.length&&!looseR.length&&!looseB.length&&!looseD.length) h+='<div class="empty"><div class="empty-s">'+(PART.q?'Aucun résultat':'Tu ne partages rien pour l’instant. Crée un dossier (ex. « Stage traiteur ») et ajoutes-y des recettes, des bons ou des PDF.')+'</div></div>';
+  if(!folders.length&&!looseR.length&&!looseB.length&&!looseD.length) h+='<div class="empty"><div class="empty-s">'+(PART.q||fon?'Aucun résultat':'Tu ne partages rien pour l’instant. Crée un dossier (ex. « Stage traiteur ») et ajoutes-y des recettes, des bons ou des PDF.')+'</div></div>';
   return h;
 }
 function partMineRow(icon,name,sub,open,del){
@@ -5703,8 +5916,29 @@ function partPick(folder,isNew){
   document.getElementById('pk-title').textContent='Dossier « '+folder+' »';
   document.getElementById('pk-body').innerHTML='<div class="pk-hint">Choisis ce qui va dans ce dossier. Chaque type a son onglet ; ils seront rangés séparément mais visibles dans le même dossier.</div>'+
     '<div class="pk-tabs" id="pk-tabs"></div>'+
-    '<div class="srch">'+ic('search')+'<input class="sinp" placeholder="Rechercher…" oninput="PICK.q=this.value;partPickList()"></div><div id="pk-list"></div>';
+    '<div class="srch">'+ic('search')+'<input class="sinp" id="pk-q" placeholder="Rechercher…" oninput="PICK.q=this.value;partPickList()"></div><div class="cn-filters pk-filters" id="pk-filters"></div><div class="cn-active" id="pk-active" style="display:none"></div><div id="pk-list"></div>';
+  var S=fbS('pick'); S.v={}; S.open='';
   partPickList(); openMod('m-pick');
+}
+fbReg('pick',{box:'pk-filters',active:'pk-active',onReset:function(){ PICK.q=''; var i=document.getElementById('pk-q'); if(i) i.value=''; },render:function(){ partPickList(); },defs:function(){
+  if((PICK.tab||'rec')!=='rec') return [];
+  var st={in:0,out:0,else:0}; recipes.forEach(function(r){ st[pkRecState(r)]++; });
+  return [
+    {k:'cat',title:'Catégories',multi:true,search:true,opts:fbCountOpts(recipes,function(r){ return r.cat||''; }).map(function(c){ c.html=catDot(c.v)+esc(c.l||'Sans catégorie'); c.l=c.l||'Sans catégorie'; return c; })},
+    {k:'tags',title:'Tags',multi:true,search:true,icon:'tag',opts:fbCountOpts(recipes,function(r){ return r.tags||[]; }),empty:'Aucun tag pour l’instant.'},
+    {k:'alg',title:'Allergènes',multi:true,hint:'Masquer les recettes contenant :',opts:ALLERGENS.map(function(a){ return {v:a.k,l:a.n,short:'Sans '+a.n.toLowerCase()}; }),chip:function(l){ return 'Sans '+l.toLowerCase(); }},
+    {k:'st',title:'État',all:'Toutes',opts:[{v:'in',l:'Dans ce dossier',n:st.in},{v:'out',l:'Pas encore partagées',n:st.out},{v:'else',l:'Dans un autre dossier',n:st['else']}]}
+  ];
+}});
+function pkRecState(r){ return PICK.sel[r.id]?'in':(r.shared&&r.shareFolder&&r.shareFolder!==PICK.folder?'else':'out'); }
+function pkRecOk(r){
+  var q=normTxt(PICK.q); if(q&&normTxt(r.name+' '+r.cat+' '+(r.tags||[]).join(' ')).indexOf(q)<0) return false;
+  var c=fbA('pick','cat'), t=fbA('pick','tags'), a=fbA('pick','alg'), st=fbV('pick','st');
+  if(c.length&&c.indexOf(r.cat||'')<0) return false;
+  if(t.length&&!(r.tags||[]).some(function(g){ return t.indexOf(g)>=0; })) return false;
+  if(a.length){ var k=recAlgKeys(r); if(a.some(function(x){ return k.indexOf(x)>=0; })) return false; }
+  if(st&&pkRecState(r)!==st) return false;
+  return true;
 }
 function pkDocs(){ return shDocs().filter(function(d){ return d.folder===PICK.folder; }).concat(PICK.newDocs); }
 function pkLists(){
@@ -5745,13 +5979,14 @@ function pkFold(c){ PICK.closed[c]=!PICK.closed[c]; partPickList(); }
 function partPickList(){
   var box=document.getElementById('pk-list'); if(!box) return;
   var tb=document.getElementById('pk-tabs'); if(tb) tb.innerHTML=pkTabsHTML();
-  var q=normTxt(PICK.q), tab=PICK.tab||'rec', h='';
+  var q=normTxt(PICK.q), tab=PICK.tab||'rec', h='', fon=fbCount('pick')>0;
+  fbRender('pick'); var pf=document.getElementById('pk-filters'); if(pf) pf.style.display=tab==='rec'?'':'none';
   if(tab==='rec'){
     var by={};
-    recipes.filter(function(r){ return !q||normTxt(r.name+' '+r.cat).indexOf(q)>=0; }).forEach(function(r){ var c=r.cat||'Sans catégorie'; (by[c]=by[c]||[]).push(r); });
+    recipes.filter(pkRecOk).forEach(function(r){ var c=r.cat||'Sans catégorie'; (by[c]=by[c]||[]).push(r); });
     var cats=Object.keys(by).sort(function(a,b){ return a.localeCompare(b,'fr'); });
     h=cats.length?cats.map(function(c){
-      var rs=by[c].sort(function(a,b){ return a.name.localeCompare(b.name,'fr'); }), on=rs.filter(function(r){ return PICK.sel[r.id]; }).length, all=on===rs.length, shut=PICK.closed[c]&&!q;
+      var rs=by[c].sort(function(a,b){ return a.name.localeCompare(b.name,'fr'); }), on=rs.filter(function(r){ return PICK.sel[r.id]; }).length, all=on===rs.length, shut=PICK.closed[c]&&!q&&!fon;
       return '<div class="pk-grp'+(shut?' shut':'')+'"><div class="pk-gh"><button class="pk-gt" onclick="pkFold(\''+escJS(c)+'\')">'+ic('chev-down')+catDot(c)+'<b>'+esc(c)+'</b><span class="pk-gc">'+on+'/'+rs.length+'</span></button>'+
         '<button class="pk-all" data-v="'+(all?0:1)+'" onclick="partPickCat(\''+escJS(c)+'\',+this.getAttribute(\'data-v\'))">'+(all?'Tout décocher':'Tout cocher')+'</button></div>'+
         (shut?'':'<div class="pk-gb">'+rs.map(function(r){
@@ -5778,7 +6013,7 @@ function partPickList(){
   partPickCount();
 }
 function partPickCat(c,v){
-  recipes.forEach(function(r){ if((r.cat||'Sans catégorie')===c&&(!PICK.q||normTxt(r.name+' '+r.cat).indexOf(normTxt(PICK.q))>=0)) PICK.sel[r.id]=v; });
+  recipes.filter(pkRecOk).forEach(function(r){ if((r.cat||'Sans catégorie')===c) PICK.sel[r.id]=v; });
   partPickList();
 }
 function partPickCount(){

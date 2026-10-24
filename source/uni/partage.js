@@ -84,18 +84,41 @@ function partMyFolders(){
 function partMineCount(){ return recipes.filter(function(r){ return r.shared; }).length+orders.filter(function(o){ return o.shared; }).length+shDocs().length; }
 function partMatch(txt){ var q=normTxt(PART.q); return !q||normTxt(txt).indexOf(q)>=0; }
 
+var PART_SORTS=[['cat','Par catégorie']].concat(SH_SORTS);
+function partLocRow(kind,o){
+  var me=CLOUD.sess&&CLOUD.sess.user.id;
+  if(kind==='rec') return {owner:me,updated_at:o.updatedAt||o.createdAt||'',data:{type:'rec',name:o.name,cat:o.cat||'',tags:o.tags||[],allergens:recAlgKeys(o),folder:o.shareFolder||'',cost:recCostOf(o)}};
+  if(kind==='bon') return {owner:me,updated_at:o.updatedAt||o.date||'',data:{type:'bon',name:o.name,folder:o.shareFolder||'',cost:orderCost(o)}};
+  return {owner:me,updated_at:o.createdAt||'',data:{type:'doc',name:o.name,folder:o.folder||'',attachments:[o.att],mime:o.att&&o.att.mime}};
+}
+function partLocOk(kind,o){ return shRowOk('part',partLocRow(kind,o),true); }
+function partFiltOn(){ return fbCount('part')-(fbQ('part')?1:0)>0; }
+fbReg('part',{box:'part-filters',active:'part-active',q:'part-q',onReset:function(){ PART.q=''; },render:function(){ partBody(); },defs:function(){
+  if(PART.tab==='mine'){
+    var rows=recipes.filter(function(r){ return r.shared; }).map(function(r){ return partLocRow('rec',r); })
+      .concat(orders.filter(function(o){ return o.shared; }).map(function(o){ return partLocRow('bon',o); }),shDocs().map(function(d){ return partLocRow('doc',d); }));
+    return shFilterDefs('part',rows,{types:true,owners:false,sorts:PART_SORTS});
+  }
+  return shFilterDefs('part',sharedList().filter(function(x){ return !shrIsMine(x); }),{types:true,sorts:PART_SORTS});
+}});
+var _partT=null;
+function partSearchIn(v){ PART.q=v; clearTimeout(_partT); _partT=setTimeout(partBody,120); }
 function renderPartage(){
   var w=document.getElementById('part-wrap'); if(!w) return;
   if(typeof clActive!=='function'||!clActive()){ w.innerHTML=partConnectHTML(); return; }
   var others=sharedList().filter(function(x){ return !shrIsMine(x); }).length+(CLOUD.locks||[]).filter(function(l){ return !l.unlocked; }).reduce(function(s,l){ return s+(l.n||0); },0);
-  var h='<div class="seg part-seg"><button class="'+(PART.tab==='others'?'on':'')+'" onclick="PART.tab=\'others\';PART.open=null;PART.acct=null;renderPartage()">'+ic('users')+' Des autres · '+others+'</button>'+
-    '<button class="'+(PART.tab==='mine'?'on':'')+'" onclick="PART.tab=\'mine\';PART.open=null;renderPartage()">'+ic('upload')+' Les miens · '+partMineCount()+'</button></div>'+
-    '<div class="srch">'+ic('search')+'<input class="sinp" id="part-q" placeholder="Rechercher…" value="'+esc(PART.q)+'" oninput="PART.q=this.value;partBody()"></div>'+
+  var h='<div class="seg part-seg"><button class="'+(PART.tab==='others'?'on':'')+'" onclick="partTab(\'others\')">'+ic('users')+' Des autres · '+others+'</button>'+
+    '<button class="'+(PART.tab==='mine'?'on':'')+'" onclick="partTab(\'mine\')">'+ic('upload')+' Les miens · '+partMineCount()+'</button></div>'+
+    '<div class="cn-bar"><label class="cn-srch"><input id="part-q" type="search" placeholder="Rechercher une recette, un dossier, une personne, un tag…" value="'+esc(PART.q)+'" oninput="partSearchIn(this.value)" autocomplete="off"><span class="cn-srch-x" onclick="var i=document.getElementById(\'part-q\');i.value=\'\';PART.q=\'\';partBody()" title="Effacer">'+ic('x')+'</span>'+ic('search')+'</label></div>'+
+    '<div class="cn-row part-frow"><div class="cn-filters" id="part-filters"></div></div><div class="cn-active" id="part-active" style="display:none"></div>'+
     '<div id="part-body"></div>';
   w.innerHTML=h; partBody();
 }
+function partTab(t){ PART.tab=t; PART.open=null; if(t==='others') PART.acct=null; var S=fbS('part'); S.v.type=[]; S.v.own=[]; S.open=''; renderPartage(); }
 function partBody(){
   var b=document.getElementById('part-body'); if(!b) return;
+  var S=fbS('part'); if(!S.v.sort) S.v.sort='cat';
+  fbRender('part');
   b.innerHTML=PART.tab==='mine'?partMineHTML():partOthersHTML();
 }
 function partCopiedBon(x){ return orders.some(function(o){ return o.fromShared&&o.fromShared.id===x.id; }); }
@@ -125,7 +148,7 @@ function partSecType(x){ var t=shType(x); if(t!=='doc') return t; var a=(x.data.
 function partSecsHTML(rows){
   var g={rec:[],bon:[],pdf:[],img:[]};
   rows.forEach(function(x){ g[partSecType(x)].push(x); });
-  g.rec.sort(function(a,b){ return String(a.data.cat||'').localeCompare(String(b.data.cat||''),'fr')||String(a.data.name).localeCompare(String(b.data.name),'fr'); });
+  Object.keys(g).forEach(function(k){ g[k]=shSort('part',g[k]); });
   return PSEC.filter(function(t){ return g[t[0]].length; }).map(function(t){
     var n=g[t[0]].length;
     return '<div class="psec psec-'+t[0]+'"><div class="psec-h"><span class="psec-i">'+ic(t[1])+'</span><b>'+t[2]+'</b><em>'+n+'</em></div><div class="rgrid tiles">'+g[t[0]].map(partTile).join('')+'</div></div>';
@@ -138,13 +161,15 @@ function partFolderCard(name,sub,label,onclick,acts,lock){
 }
 function partOwnerName(x){ return x.owner_name||'Compte sans nom'; }
 function partOthersHTML(){
-  var all=sharedList().filter(function(x){ return !shrIsMine(x); });
-  var hidden=(CLOUD.locks||[]).filter(function(l){ return !l.unlocked&&l.n>0; });
-  if(!all.length&&!hidden.length) return '<div class="empty"><div class="empty-s">Personne n’a encore rien partagé.</div></div>';
+  var all0=sharedList().filter(function(x){ return !shrIsMine(x); }), fon=partFiltOn();
+  var all=all0.filter(function(x){ return shRowOk('part',x,true); });
+  var hidden=fon?[]:(CLOUD.locks||[]).filter(function(l){ return !l.unlocked&&l.n>0; });
+  if(!all0.length&&!hidden.length&&!(CLOUD.locks||[]).length) return '<div class="empty"><div class="empty-s">Personne n’a encore rien partagé.</div></div>';
+  if(!all.length&&!hidden.length&&!PART.open&&!PART.acct) return partNoRes();
   var mkBack=function(label,click){ return '<button class="btn btn-ghost btn-sm" onclick="'+click+'">'+ic('back')+' '+esc(label)+'</button>'; };
   // 3 · un dossier ouvert (à l'intérieur d'un compte)
   if(PART.open){
-    var rows=all.filter(function(x){ return partFolderKey(x)===PART.open; });
+    var rows=all0.filter(function(x){ return partFolderKey(x)===PART.open; });
     if(!rows.length){ PART.open=null; return partOthersHTML(); }
     PART.acct=rows[0].owner;
     var f=rows[0].data.folder, owner=partOwnerName(rows[0]);
@@ -154,12 +179,12 @@ function partOthersHTML(){
     return mkBack(owner,'PART.open=null;partBody()')+
       '<div class="pf-head"><span class="pf-ic">'+ic('folder')+(lk?'<i class="pf-lk">'+ic('unlock')+'</i>':'')+'</span><div class="pf-b"><div class="pf-n big">'+esc(f)+'</div><div class="pf-s">Dossier de '+esc(owner)+' · '+partCountLabel(partCountRows(rows))+(lk?' · protégé par mot de passe':'')+'</div></div>'+
       (copyable?'<button class="btn btn-gold btn-sm" id="pf-copyall" onclick="partCopyFolder(\''+escJS(PART.open)+'\')"'+(todo?'':' disabled')+'>'+ic('copy')+' '+(todo?(todo===copyable?'Copier tout le dossier':'Copier les '+todo+' manquants'):'Déjà copié')+'</button>':'')+'</div>'+
-      partSecsHTML(rows.filter(function(x){ return qa||partMatch(x.data.name); }));
+      (function(){ var vis=rows.filter(function(x){ return shRowOk('part',x,true)&&(qa||partMatch(x.data.name+' '+(x.data.cat||'')+' '+(x.data.tags||[]).join(' '))); }); return vis.length?partSecsHTML(vis):partNoRes(); })();
   }
   // 2 · un compte ouvert : ses dossiers et ses éléments seuls
   if(PART.acct){
     var mine=all.filter(function(x){ return x.owner===PART.acct; }), lks=partLocksOf(PART.acct).filter(function(l){ return !l.unlocked&&l.n>0; });
-    if(!mine.length&&!lks.length){ PART.acct=null; return partOthersHTML(); }
+    if(!mine.length&&!lks.length){ if(fon&&all0.some(function(x){ return x.owner===PART.acct; })) return mkBack('Tous les comptes','PART.acct=null;PART.open=null;partBody()')+partNoRes(); PART.acct=null; return partOthersHTML(); }
     var name=mine.length?partOwnerName(mine[0]):(lks[0].owner_name||'Compte sans nom'), qa2=partMatch(name), groups={}, loose=[];
     mine.forEach(function(x){ if(x.data.folder){ var k=partFolderKey(x); (groups[k]=groups[k]||[]).push(x); } else loose.push(x); });
     var cards=Object.keys(groups).filter(function(k){ var g=groups[k]; return qa2||partMatch(g[0].data.folder)||g.some(function(x){ return partMatch(x.data.name); }); }).map(function(k){
@@ -184,17 +209,24 @@ function partOthersHTML(){
   var list=Object.keys(by).map(function(k){ return by[k]; }).filter(function(a){
     return partMatch(a.name)||a.rows.some(function(x){ return partMatch(x.data.name+' '+(x.data.folder||'')+' '+(x.data.cat||'')); })||Object.keys(a.folders).some(partMatch); })
     .sort(function(a,b){ return a.name.localeCompare(b.name,'fr'); });
-  if(!list.length) return '<div class="empty"><div class="empty-s">Aucun résultat</div></div>';
-  return '<div class="sh"><div class="sh-t">Comptes · '+list.length+'</div></div><div class="pf-list">'+list.map(function(a){
+  var hits=(PART.q||fon)?all.filter(function(x){ return partMatch(x.data.name+' '+(x.data.cat||'')+' '+(x.data.folder||'')+' '+partOwnerName(x)+' '+(x.data.tags||[]).join(' ')); }):[];
+  if(!list.length&&!hits.length) return partNoRes();
+  var res=hits.length?'<div class="sh"><div class="sh-t">Résultats · '+hits.length+'</div></div>'+partSecsHTML(hits.slice(0,120)):'';
+  return res+(list.length?'<div class="sh"><div class="sh-t">Comptes · '+list.length+'</div></div>':'')+'<div class="pf-list">'+list.map(function(a){
     var nf=Object.keys(a.folders).length, c=partCountRows(a.rows), lab=partCountLabel(c);
     if(a.locked) lab=(a.rows.length?lab+' · ':'')+a.locked+' protégé'+(a.locked>1?'s':'');
     return partFolderCard(a.name,nf?nf+' dossier'+(nf>1?'s':''):'',lab,'PART.acct=\''+escJS(a.id)+'\';partBody()'); }).join('')+'</div>';
 }
+function partNoRes(){ return '<div class="cn-empty">Aucun résultat trouvé.'+(fbCount('part')?'<br><button class="cn-reset" onclick="fbReset(\'part\')">Effacer les filtres</button>':'')+'</div>'; }
 function partMineHTML(){
-  var folders=partMyFolders().filter(function(f){ return partMatch(f.name)||f.recs.some(function(r){ return partMatch(r.name); })||f.bons.some(function(o){ return partMatch(o.name); })||f.docs.some(function(d){ return partMatch(d.name); }); });
-  var looseR=recipes.filter(function(r){ return r.shared&&!r.shareFolder&&partMatch(r.name); });
-  var looseB=orders.filter(function(o){ return o.shared&&!o.shareFolder&&partMatch(o.name); });
-  var looseD=shDocs().filter(function(d){ return !d.folder&&partMatch(d.name); });
+  var fon=partFiltOn();
+  var folders=partMyFolders().map(function(f){
+    if(!fon) return f;
+    return {name:f.name,recs:f.recs.filter(function(r){ return partLocOk('rec',r); }),bons:f.bons.filter(function(o){ return partLocOk('bon',o); }),docs:f.docs.filter(function(d){ return partLocOk('doc',d); })};
+  }).filter(function(f){ if(fon&&!f.recs.length&&!f.bons.length&&!f.docs.length) return false; return partMatch(f.name)||f.recs.some(function(r){ return partMatch(r.name+' '+(r.cat||'')+' '+(r.tags||[]).join(' ')); })||f.bons.some(function(o){ return partMatch(o.name); })||f.docs.some(function(d){ return partMatch(d.name); }); });
+  var looseR=shSort('part',recipes.filter(function(r){ return r.shared&&!r.shareFolder&&partMatch(r.name+' '+(r.cat||'')+' '+(r.tags||[]).join(' '))&&(!fon||partLocOk('rec',r)); }).map(function(r){ var x=partLocRow('rec',r); x.r=r; return x; })).map(function(x){ return x.r; });
+  var looseB=orders.filter(function(o){ return o.shared&&!o.shareFolder&&partMatch(o.name)&&(!fon||partLocOk('bon',o)); });
+  var looseD=shDocs().filter(function(d){ return !d.folder&&partMatch(d.name)&&(!fon||partLocOk('doc',d)); });
   var h='<div class="part-acts"><button class="btn btn-gold btn-sm" onclick="partNewFolder()">'+ic('plus')+' Nouveau dossier partagé</button>'+
     '<button class="btn btn-ghost btn-sm" onclick="partShareCat()">'+ic('folder')+' Partager une catégorie</button>'+
     '<button class="btn btn-ghost btn-sm" onclick="partQuick(\'bon\')">'+ic('bon')+' Partager un bon</button>'+
@@ -219,7 +251,7 @@ function partMineHTML(){
   [[looseP,'pdf','PDF partagés seuls'],[looseI,'image','Images partagées seules']].forEach(function(z){
     if(z[0].length) h+=mySec(z[1],z[2],z[0].length,'<div class="att-list">'+z[0].map(function(d){ return partMineRow(ic(z[1]),d.name,(z[1]==='pdf'?'PDF':'Image')+' · '+attSize(d.att.size),'partOpenMyDoc(\''+d.id+'\')','partUnshareDoc(\''+d.id+'\')'); }).join('')+'</div>');
   });
-  if(!folders.length&&!looseR.length&&!looseB.length&&!looseD.length) h+='<div class="empty"><div class="empty-s">'+(PART.q?'Aucun résultat':'Tu ne partages rien pour l’instant. Crée un dossier (ex. « Stage traiteur ») et ajoutes-y des recettes, des bons ou des PDF.')+'</div></div>';
+  if(!folders.length&&!looseR.length&&!looseB.length&&!looseD.length) h+='<div class="empty"><div class="empty-s">'+(PART.q||fon?'Aucun résultat':'Tu ne partages rien pour l’instant. Crée un dossier (ex. « Stage traiteur ») et ajoutes-y des recettes, des bons ou des PDF.')+'</div></div>';
   return h;
 }
 function partMineRow(icon,name,sub,open,del){
@@ -265,8 +297,29 @@ function partPick(folder,isNew){
   document.getElementById('pk-title').textContent='Dossier « '+folder+' »';
   document.getElementById('pk-body').innerHTML='<div class="pk-hint">Choisis ce qui va dans ce dossier. Chaque type a son onglet ; ils seront rangés séparément mais visibles dans le même dossier.</div>'+
     '<div class="pk-tabs" id="pk-tabs"></div>'+
-    '<div class="srch">'+ic('search')+'<input class="sinp" placeholder="Rechercher…" oninput="PICK.q=this.value;partPickList()"></div><div id="pk-list"></div>';
+    '<div class="srch">'+ic('search')+'<input class="sinp" id="pk-q" placeholder="Rechercher…" oninput="PICK.q=this.value;partPickList()"></div><div class="cn-filters pk-filters" id="pk-filters"></div><div class="cn-active" id="pk-active" style="display:none"></div><div id="pk-list"></div>';
+  var S=fbS('pick'); S.v={}; S.open='';
   partPickList(); openMod('m-pick');
+}
+fbReg('pick',{box:'pk-filters',active:'pk-active',onReset:function(){ PICK.q=''; var i=document.getElementById('pk-q'); if(i) i.value=''; },render:function(){ partPickList(); },defs:function(){
+  if((PICK.tab||'rec')!=='rec') return [];
+  var st={in:0,out:0,else:0}; recipes.forEach(function(r){ st[pkRecState(r)]++; });
+  return [
+    {k:'cat',title:'Catégories',multi:true,search:true,opts:fbCountOpts(recipes,function(r){ return r.cat||''; }).map(function(c){ c.html=catDot(c.v)+esc(c.l||'Sans catégorie'); c.l=c.l||'Sans catégorie'; return c; })},
+    {k:'tags',title:'Tags',multi:true,search:true,icon:'tag',opts:fbCountOpts(recipes,function(r){ return r.tags||[]; }),empty:'Aucun tag pour l’instant.'},
+    {k:'alg',title:'Allergènes',multi:true,hint:'Masquer les recettes contenant :',opts:ALLERGENS.map(function(a){ return {v:a.k,l:a.n,short:'Sans '+a.n.toLowerCase()}; }),chip:function(l){ return 'Sans '+l.toLowerCase(); }},
+    {k:'st',title:'État',all:'Toutes',opts:[{v:'in',l:'Dans ce dossier',n:st.in},{v:'out',l:'Pas encore partagées',n:st.out},{v:'else',l:'Dans un autre dossier',n:st['else']}]}
+  ];
+}});
+function pkRecState(r){ return PICK.sel[r.id]?'in':(r.shared&&r.shareFolder&&r.shareFolder!==PICK.folder?'else':'out'); }
+function pkRecOk(r){
+  var q=normTxt(PICK.q); if(q&&normTxt(r.name+' '+r.cat+' '+(r.tags||[]).join(' ')).indexOf(q)<0) return false;
+  var c=fbA('pick','cat'), t=fbA('pick','tags'), a=fbA('pick','alg'), st=fbV('pick','st');
+  if(c.length&&c.indexOf(r.cat||'')<0) return false;
+  if(t.length&&!(r.tags||[]).some(function(g){ return t.indexOf(g)>=0; })) return false;
+  if(a.length){ var k=recAlgKeys(r); if(a.some(function(x){ return k.indexOf(x)>=0; })) return false; }
+  if(st&&pkRecState(r)!==st) return false;
+  return true;
 }
 function pkDocs(){ return shDocs().filter(function(d){ return d.folder===PICK.folder; }).concat(PICK.newDocs); }
 function pkLists(){
@@ -307,13 +360,14 @@ function pkFold(c){ PICK.closed[c]=!PICK.closed[c]; partPickList(); }
 function partPickList(){
   var box=document.getElementById('pk-list'); if(!box) return;
   var tb=document.getElementById('pk-tabs'); if(tb) tb.innerHTML=pkTabsHTML();
-  var q=normTxt(PICK.q), tab=PICK.tab||'rec', h='';
+  var q=normTxt(PICK.q), tab=PICK.tab||'rec', h='', fon=fbCount('pick')>0;
+  fbRender('pick'); var pf=document.getElementById('pk-filters'); if(pf) pf.style.display=tab==='rec'?'':'none';
   if(tab==='rec'){
     var by={};
-    recipes.filter(function(r){ return !q||normTxt(r.name+' '+r.cat).indexOf(q)>=0; }).forEach(function(r){ var c=r.cat||'Sans catégorie'; (by[c]=by[c]||[]).push(r); });
+    recipes.filter(pkRecOk).forEach(function(r){ var c=r.cat||'Sans catégorie'; (by[c]=by[c]||[]).push(r); });
     var cats=Object.keys(by).sort(function(a,b){ return a.localeCompare(b,'fr'); });
     h=cats.length?cats.map(function(c){
-      var rs=by[c].sort(function(a,b){ return a.name.localeCompare(b.name,'fr'); }), on=rs.filter(function(r){ return PICK.sel[r.id]; }).length, all=on===rs.length, shut=PICK.closed[c]&&!q;
+      var rs=by[c].sort(function(a,b){ return a.name.localeCompare(b.name,'fr'); }), on=rs.filter(function(r){ return PICK.sel[r.id]; }).length, all=on===rs.length, shut=PICK.closed[c]&&!q&&!fon;
       return '<div class="pk-grp'+(shut?' shut':'')+'"><div class="pk-gh"><button class="pk-gt" onclick="pkFold(\''+escJS(c)+'\')">'+ic('chev-down')+catDot(c)+'<b>'+esc(c)+'</b><span class="pk-gc">'+on+'/'+rs.length+'</span></button>'+
         '<button class="pk-all" data-v="'+(all?0:1)+'" onclick="partPickCat(\''+escJS(c)+'\',+this.getAttribute(\'data-v\'))">'+(all?'Tout décocher':'Tout cocher')+'</button></div>'+
         (shut?'':'<div class="pk-gb">'+rs.map(function(r){
@@ -340,7 +394,7 @@ function partPickList(){
   partPickCount();
 }
 function partPickCat(c,v){
-  recipes.forEach(function(r){ if((r.cat||'Sans catégorie')===c&&(!PICK.q||normTxt(r.name+' '+r.cat).indexOf(normTxt(PICK.q))>=0)) PICK.sel[r.id]=v; });
+  recipes.filter(pkRecOk).forEach(function(r){ if((r.cat||'Sans catégorie')===c) PICK.sel[r.id]=v; });
   partPickList();
 }
 function partPickCount(){

@@ -157,6 +157,43 @@ function sharedList(){
 }
 function shrIsMine(row){ return typeof CLOUD!=='undefined'&&CLOUD.sess&&row.owner===CLOUD.sess.user.id; }
 function updSharedCount(){ var n=document.getElementById('rt-shared-n'); if(n){ var c=sharedList().length; n.textContent=c?' '+c:''; } }
+// filtres communs aux éléments partagés (onglet « Partagées » et page Partage)
+var SH_SORTS=[['new','Plus récentes'],['old','Plus anciennes'],['az','Nom : A → Z'],['za','Nom : Z → A'],['cheap','Coût croissant'],['dear','Coût décroissant']];
+var SH_TYPES=[['rec','Recettes'],['bon','Bons d’économat'],['pdf','PDF'],['img','Images']];
+function shOwnerKey(x){ return shrIsMine(x)?'__me__':x.owner; }
+function shFilterDefs(ctx,rows,o){
+  o=o||{}; var defs=[], recs=rows.filter(function(x){ return shType(x)==='rec'; });
+  if(o.types){ var tn={}; rows.forEach(function(x){ var t=partSecType(x); tn[t]=(tn[t]||0)+1; });
+    defs.push({k:'type',title:'Types',multi:true,opts:SH_TYPES.filter(function(t){ return tn[t[0]]; }).map(function(t){ return {v:t[0],l:t[1],n:tn[t[0]]}; })}); }
+  if(o.owners!==false){ var names={}; rows.forEach(function(x){ names[shOwnerKey(x)]=shrIsMine(x)?'Toi':(x.owner_name||'Compte sans nom'); });
+    defs.push({k:'own',title:'Auteurs',multi:true,icon:'user',search:Object.keys(names).length>8,opts:fbCountOpts(rows,shOwnerKey,function(k){ return names[k]; })}); }
+  defs.push({k:'cat',title:'Catégories',multi:true,search:true,opts:fbCountOpts(recs,function(x){ return x.data.cat||''; }).map(function(c){ c.html=catDot(c.v)+esc(c.l); return c; }),empty:'Aucune catégorie.'});
+  defs.push({k:'tags',title:'Tags',multi:true,search:true,icon:'tag',opts:fbCountOpts(recs,function(x){ return x.data.tags||[]; }),empty:'Aucun tag sur les recettes partagées.'});
+  if(o.folders){ defs.push({k:'fold',title:'Dossiers',multi:true,search:true,icon:'folder',opts:fbCountOpts(rows,function(x){ return x.data.folder||''; }),empty:'Aucun dossier.'}); }
+  defs.push({k:'alg',title:'Allergènes',multi:true,hint:'Masquer les recettes contenant :',opts:ALLERGENS.map(function(a){ return {v:a.k,l:a.n,short:'Sans '+a.n.toLowerCase()}; }),chip:function(l){ return 'Sans '+l.toLowerCase(); }});
+  defs.push({k:'date',title:'Dates',all:'Toutes les dates',opts:FB_DATES.map(function(d){ return {v:d[0],l:d[1]}; }),chip:function(l){ return 'Modifiées '+l.toLowerCase(); }});
+  defs.push({k:'sort',title:'Trier',keep:true,opts:(o.sorts||SH_SORTS).map(function(x){ return {v:x[0],l:x[1]}; })});
+  return defs;
+}
+function shRowOk(ctx,x,skipText){
+  var d=x.data||{}, t=fbA(ctx,'type'), ow=fbA(ctx,'own'), ca=fbA(ctx,'cat'), tg=fbA(ctx,'tags'), fo=fbA(ctx,'fold'), al=fbA(ctx,'alg');
+  if(t.length&&t.indexOf(partSecType(x))<0) return false;
+  if(ow.length&&ow.indexOf(shOwnerKey(x))<0) return false;
+  if(ca.length&&ca.indexOf(d.cat||'')<0) return false;
+  if(tg.length&&!(d.tags||[]).some(function(g){ return tg.indexOf(g)>=0; })) return false;
+  if(fo.length&&fo.indexOf(d.folder||'')<0) return false;
+  if(al.length&&(d.allergens||[]).some(function(a){ return al.indexOf(a)>=0; })) return false;
+  if(!fbDateOk(ctx,'date',x.updated_at)) return false;
+  if(!skipText){ var q=fbQ(ctx); if(q){ var hay=normTxt(d.name+' '+(x.owner_name||'')+' '+(d.cat||'')+' '+(d.folder||'')+' '+(d.tags||[]).join(' ')); if(!q.split(/\s+/).every(function(w){ return hay.indexOf(w)>=0; })) return false; } }
+  return true;
+}
+function shSort(ctx,rows){
+  var s=fbV(ctx,'sort','new'), cmpN=function(a,b){ return String(a.data.name).localeCompare(String(b.data.name),'fr',{sensitivity:'base'}); };
+  if(s==='cat') return rows.slice().sort(function(a,b){ return String(a.data.cat||'').localeCompare(String(b.data.cat||''),'fr')||cmpN(a,b); });
+  return rows.slice().sort(s==='az'?cmpN:s==='za'?function(a,b){ return cmpN(b,a); }:s==='old'?function(a,b){ return String(a.updated_at).localeCompare(String(b.updated_at)); }:
+    s==='cheap'?function(a,b){ return (a.data.cost||0)-(b.data.cost||0); }:s==='dear'?function(a,b){ return (b.data.cost||0)-(a.data.cost||0); }:function(a,b){ return String(b.updated_at).localeCompare(String(a.updated_at)); });
+}
+fbReg('shr',{box:'shr-filters',active:'shr-active',q:'shr-srch',onReset:function(){ SHR_Q=''; },render:function(){ renderSharedGrid(); },defs:function(){ return shFilterDefs('shr',sharedList().filter(function(x){ return shType(x)==='rec'; }),{folders:true}); }});
 function renderShared(){
   updSharedCount();
   var w=document.getElementById('shared-wrap'); if(!w) return;
@@ -164,20 +201,22 @@ function renderShared(){
     w.innerHTML='<div class="empty shr-empty"><span class="empty-i">'+ic('users')+'</span><div class="empty-t">Recettes partagées</div><div class="empty-s">Connecte-toi à ton espace en ligne pour voir les recettes partagées par les autres et partager les tiennes. Chacun garde son espace perso.</div><button class="btn btn-gold btn-sm" style="margin-top:12px" onclick="goPage(\'backup\');setTimeout(function(){var c=document.getElementById(\'cl-card\');if(c)c.scrollIntoView({block:\'start\'});},60)">'+ic('user')+' Se connecter</button></div>';
     return;
   }
-  var q=normTxt(SHR_Q), all=sharedList();
-  var list=all.filter(function(x){ if(SHR_MINE&&!shrIsMine(x)) return false; if(!q) return true; return normTxt(x.data.name).indexOf(q)>=0||normTxt(x.owner_name).indexOf(q)>=0||normTxt(x.data.cat).indexOf(q)>=0; });
-  var mine=all.filter(shrIsMine).length;
-  var head='<div class="srch">'+ic('search')+'<input class="sinp" id="shr-srch" placeholder="Rechercher une recette ou une personne…" value="'+esc(SHR_Q)+'" oninput="SHR_Q=this.value;renderSharedGrid()"></div>'+
-    '<div class="chips"><div class="chip'+(!SHR_MINE?' on':'')+'" onclick="SHR_MINE=false;renderShared()">Toutes · '+all.length+'</div><div class="chip'+(SHR_MINE?' on':'')+'" onclick="SHR_MINE=true;renderShared()">Les miennes · '+mine+'</div></div>'+
+  var head='<div class="cn-bar"><label class="cn-srch"><input id="shr-srch" type="search" placeholder="Rechercher une recette, une personne, un tag…" value="'+esc(SHR_Q)+'" oninput="SHR_Q=this.value;shrSearchIn()" autocomplete="off"><span class="cn-srch-x" onclick="var i=document.getElementById(\'shr-srch\');i.value=\'\';SHR_Q=\'\';renderSharedGrid()" title="Effacer">'+ic('x')+'</span>'+ic('search')+'</label></div>'+
+    '<div class="cn-row"><div class="cn-cnt" id="shr-count"></div><div class="cn-filters" id="shr-filters"></div></div><div class="cn-active" id="shr-active" style="display:none"></div>'+
     '<div class="shr-info">'+ic('info')+'<span>Pour partager une de tes recettes, ouvre-la et coche « Partager cette recette ». Seul l’auteur d’une recette partagée peut la modifier ; les autres peuvent la copier dans leur espace.</span></div>';
   w.innerHTML=head+'<div class="rgrid tiles" id="shr-grid"></div>';
   renderSharedGrid();
 }
+var _shrT=null;
+function shrSearchIn(){ clearTimeout(_shrT); _shrT=setTimeout(renderSharedGrid,120); }
 function renderSharedGrid(){
   var g=document.getElementById('shr-grid'); if(!g) return;
-  var q=normTxt(SHR_Q);
-  var list=sharedList().filter(function(x){ if(SHR_MINE&&!shrIsMine(x)) return false; if(!q) return true; return normTxt(x.data.name).indexOf(q)>=0||normTxt(x.owner_name).indexOf(q)>=0||normTxt(x.data.cat).indexOf(q)>=0; });
-  if(!list.length){ g.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="empty-s">'+(sharedList().length?'Aucune recette trouvée':'Aucune recette partagée pour l’instant. Sois le premier !')+'</div></div>'; return; }
+  var S=fbS('shr'); if(!S.v.sort) S.v.sort='new';
+  var all=sharedList().filter(function(x){ return shType(x)==='rec'; });
+  var list=shSort('shr',all.filter(function(x){ return shRowOk('shr',x); }));
+  fbRender('shr');
+  var c=document.getElementById('shr-count'); if(c) c.innerHTML='Partagées <b>('+(list.length===all.length?list.length:list.length+' / '+all.length)+')</b>';
+  if(!list.length){ g.innerHTML='<div class="cn-empty" style="grid-column:1/-1">'+(all.length?'Aucune recette trouvée.'+(fbCount('shr')?'<br><button class="cn-reset" onclick="fbReset(\'shr\')">Effacer les filtres</button>':''):'Aucune recette partagée pour l’instant. Sois le premier !')+'</div>'; return; }
   g.innerHTML=list.map(function(x){
     var d=x.data, ph=(d.image&&d.image.length>4)?'<img src="'+esc(d.image)+'" alt="" loading="lazy">':'<span class="rt-em">'+(d.image||ic('book'))+'</span>';
     var natt=(d.attachments||[]).length;

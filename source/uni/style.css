@@ -1471,3 +1471,6 @@ html.cn-lock #scroll{overflow:hidden}
 #edit-cat-use{margin-bottom:12px;}
 .use-h{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--i2);text-transform:uppercase;letter-spacing:.3px;}
 .use-list{max-height:190px;}
+.cn-row .cat-cnt{margin:0}
+.pk-filters{justify-content:flex-start;margin:0 0 10px}.pk-filters .cn-pop{max-height:300px}
+.cn-sheet.in-mod{z-index:1100}.cn-sheet.in-mod .cn-pop{margin-bottom:calc(8px + env(safe-area-inset-bottom,0px))}
