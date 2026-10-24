@@ -620,12 +620,26 @@ function restoreExtras(d,mode){
   if(d.attLinks){
     var nl=0, nr=0;
     Object.keys(d.attLinks).forEach(function(rid){
-      var r=recipes.find(function(x){ return x.id===rid; })||recipes.find(function(x){ return x.id===(d._recMap||{})[rid]; }); if(!r) return;
+      var r=recipes.find(function(x){ return x.id===rid; }); if(!r) return;
       var add=(d.attLinks[rid]||[]).filter(function(m){ return m&&m.id&&attLocal(m.id)&&!(r.attachments||[]).some(function(a){ return a.id===m.id; }); });
       if(!add.length) return;
       r.attachments=(r.attachments||[]).concat(add.map(function(m){ return {id:m.id,name:m.name,mime:m.mime,size:m.size,added:m.added||Date.now()}; }));
       r.updatedAt=new Date().toISOString(); nl+=add.length; nr++;
     });
+    // Réparation : pages et tags du fichier posés par erreur sur d'autres
+    // recettes (homonymes) lors d'un import précédent → retirés.
+    if(d.cleanStray){
+      var mine={}, aid={}, tg=d.cleanStray.tags||[], nc=0;
+      (d.recipes||[]).forEach(function(x){ mine[x.id]=1; });
+      Object.keys(d.attLinks).forEach(function(k){ (d.attLinks[k]||[]).forEach(function(m){ if(m&&m.id) aid[m.id]=1; }); });
+      recipes.forEach(function(r){
+        if(mine[r.id]) return; var ch=false;
+        if(r.attachments){ var a2=r.attachments.filter(function(a){ return !aid[a.id]; }); if(a2.length!==r.attachments.length){ ch=true; if(a2.length) r.attachments=a2; else delete r.attachments; } }
+        if(r.tags){ var t2=r.tags.filter(function(t){ return tg.indexOf(t)<0; }); if(t2.length!==r.tags.length){ ch=true; if(t2.length) r.tags=t2; else delete r.tags; } }
+        if(ch){ r.updatedAt=new Date().toISOString(); nc++; }
+      });
+      if(nc) setTimeout(function(){ toast(nc+' recette'+(nc>1?'s':'')+' corrigée'+(nc>1?'s':'')+' : page ou tag d’un autre livre retiré','info'); },4200);
+    }
     if(nr) setTimeout(function(){ toast(nl+' page'+(nl>1?'s':'')+' source'+(nl>1?'s':'')+' jointe'+(nl>1?'s':'')+' à '+nr+' recette'+(nr>1?'s':''),'ok'); },1800);
   }
   // Les documents restaurés et utilisés par une recette partent aussi en ligne

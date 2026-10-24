@@ -1481,7 +1481,7 @@ html.lay-mob .ov.show .modal{animation:sheetIn .24s cubic-bezier(.2,.8,.2,1);}
 html.lay-mob .upd-bar{bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 10px);width:calc(100vw - 24px);}html.lay-mob .upd-t small{display:none;}
 html.lay-mob .cn-flipb span{display:none;}html.lay-mob .cn-flipb{width:36px!important;padding:0;justify-content:center;}html.lay-mob .rgrid.tiles.big{grid-template-columns:1fr;}html.lay-mob .re-thumb.cover{height:180px;}html.lay-mob .flip{padding:56px 10px 40px;}html.lay-mob .flip-nav{display:none;}html.lay-mob .flip-b span{display:none;}html.lay-mob .flip-b{width:36px;padding:0;justify-content:center;}html.lay-mob .flip-stage{max-height:none;}html.lay-mob .flip-page{grid-template-columns:1fr;overflow-y:auto;display:block;}html.lay-mob .flip-page::after{display:none;}html.lay-mob .flip-l{padding:14px;}html.lay-mob .flip-r{padding:16px 16px 24px;overflow:visible;}html.lay-mob .flip-t{font-size:22px;}
 </style>
-<script>window.ECO_SERVER={"url": "https://fbwuhejcphsjhhkfkjku.supabase.co", "key": "sb_publishable_QRPVGvql3M2eSfvwkBDTfw_9Pc8fuo0"};window.ECO_BUILD="29ca59c4cd";</script>
+<script>window.ECO_SERVER={"url": "https://fbwuhejcphsjhhkfkjku.supabase.co", "key": "sb_publishable_QRPVGvql3M2eSfvwkBDTfw_9Pc8fuo0"};window.ECO_BUILD="45578500fc";</script>
 <script>/* Apparence : mode clair / sombre et couleur de l'application.
    Lu de façon synchrone au chargement pour éviter un flash de couleur. */
 (function(){
@@ -2991,11 +2991,14 @@ function applyBackup(d, mode){
        === String(b||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'');
   };
   if(mode==='merge'){
-    // Un ingrédient (ou une recette) déjà présent sous le même nom n'est pas
-    // ajouté une 2e fois : les recettes du fichier sont alors rattachées à
-    // celui de l'utilisateur (identifiants remappés), sinon elles pointeraient
-    // vers un ingrédient introuvable.
-    var ingMap={}, recMap={}, subMap={};
+    // Ingrédients : un ingrédient déjà présent sous le même nom n'est pas
+    // ajouté une 2e fois ; les recettes du fichier sont rattachées à celui de
+    // l'utilisateur (identifiants remappés).
+    // Recettes : une recette n'est reconnue comme « la même » que si elle a le
+    // même identifiant (déjà importée). Deux recettes différentes peuvent porter
+    // le même nom (ex. deux focaccias de livres différents) : celle du fichier
+    // est alors ajoutée sous un nom distinct, jamais confondue avec l'autre.
+    var ingMap={}, subMap={}, byId={}, now_=new Date().toISOString();
     (d.ingredients||[]).forEach(function(x){
       var ex=ingredients.find(function(y){ return same(y.name,x.name); });
       if(ex){ if(ex.id!==x.id) ingMap[x.id]=ex.id; }
@@ -3005,24 +3008,36 @@ function applyBackup(d, mode){
       var ex=loadSubs('rec').find(function(y){ return y.parent===s.parent && String(y.name).toLowerCase()===String(s.name).toLowerCase(); });
       if(ex&&ex.id!==s.id) subMap[s.id]=ex.id;
     });
+    recipes.forEach(function(r){ byId[r.id]=r; });
+    var fresh={};
     (d.recipes||[]).forEach(function(x){
-      var ex=recipes.find(function(y){ return same(y.name,x.name); });
-      if(ex&&ex.id!==x.id) recMap[x.id]=ex.id;
-      // Recette déjà là : on lui ajoute les tags du fichier (sans rien retirer)
-      if(ex&&x.tags&&x.tags.length){
-        var add=x.tags.filter(function(t){ return !(ex.tags||[]).some(function(u){ return same(u,t); }); });
-        if(add.length){ ex.tags=(ex.tags||[]).concat(add); ex.updatedAt=new Date().toISOString(); }
+      var ex=byId[x.id];
+      if(ex){
+        // Déjà importée : on complète seulement les tags (rien n'est retiré)
+        var add=(x.tags||[]).filter(function(t){ return !(ex.tags||[]).some(function(u){ return same(u,t); }); });
+        if(add.length){ ex.tags=(ex.tags||[]).concat(add); ex.updatedAt=now_; }
+        return;
       }
-    });
-    (d.recipes||[]).forEach(function(x){
-      if(recipes.some(function(y){ return same(y.name,x.name); })) return;
-      (x.items||[]).forEach(function(it){
-        var m=(it.type==='ingredient'?ingMap:recMap)[it.refId]; if(m) it.refId=m;
-      });
+      if(recipes.some(function(y){ return same(y.name,x.name); })){
+        var tag=(x.tags&&x.tags[0])||'importée', nm=x.name+' ('+tag+')', k=2;
+        while(recipes.some(function(y){ return same(y.name,nm); })) nm=x.name+' ('+tag+' '+(k++)+')';
+        x.name=nm;
+      }
+      (x.items||[]).forEach(function(it){ if(it.type==='ingredient'&&ingMap[it.refId]) it.refId=ingMap[it.refId]; });
       if(x.sub&&subMap[x.sub]) x.sub=subMap[x.sub];
-      recipes.push(x);
+      recipes.push(x); byId[x.id]=x; fresh[x.id]=1;
     });
-    d._recMap=recMap;
+    // Recettes du fichier déjà présentes : leurs sous-recettes et ingrédients
+    // repointent vers ceux du fichier s'ils avaient été confondus avec d'autres.
+    (d.recipes||[]).forEach(function(x){
+      var ex=byId[x.id]; if(!ex||fresh[x.id]) return;
+      (x.items||[]).forEach(function(fi){
+        var it=(ex.items||[]).find(function(i){ return i.id===fi.id; }); if(!it) return;
+        var want=fi.type==='ingredient'?(ingMap[fi.refId]||fi.refId):fi.refId;
+        var ok=fi.type==='ingredient'?ingredients.some(function(i){ return i.id===want; }):!!byId[want];
+        if(ok&&it.refId!==want){ it.refId=want; ex.updatedAt=now_; }
+      });
+    });
     (d.orders||[]).forEach(function(x){
       if(!orders.some(function(y){ return y.id===x.id; })) orders.push(x);
     });
@@ -3862,12 +3877,26 @@ function restoreExtras(d,mode){
   if(d.attLinks){
     var nl=0, nr=0;
     Object.keys(d.attLinks).forEach(function(rid){
-      var r=recipes.find(function(x){ return x.id===rid; })||recipes.find(function(x){ return x.id===(d._recMap||{})[rid]; }); if(!r) return;
+      var r=recipes.find(function(x){ return x.id===rid; }); if(!r) return;
       var add=(d.attLinks[rid]||[]).filter(function(m){ return m&&m.id&&attLocal(m.id)&&!(r.attachments||[]).some(function(a){ return a.id===m.id; }); });
       if(!add.length) return;
       r.attachments=(r.attachments||[]).concat(add.map(function(m){ return {id:m.id,name:m.name,mime:m.mime,size:m.size,added:m.added||Date.now()}; }));
       r.updatedAt=new Date().toISOString(); nl+=add.length; nr++;
     });
+    // Réparation : pages et tags du fichier posés par erreur sur d'autres
+    // recettes (homonymes) lors d'un import précédent → retirés.
+    if(d.cleanStray){
+      var mine={}, aid={}, tg=d.cleanStray.tags||[], nc=0;
+      (d.recipes||[]).forEach(function(x){ mine[x.id]=1; });
+      Object.keys(d.attLinks).forEach(function(k){ (d.attLinks[k]||[]).forEach(function(m){ if(m&&m.id) aid[m.id]=1; }); });
+      recipes.forEach(function(r){
+        if(mine[r.id]) return; var ch=false;
+        if(r.attachments){ var a2=r.attachments.filter(function(a){ return !aid[a.id]; }); if(a2.length!==r.attachments.length){ ch=true; if(a2.length) r.attachments=a2; else delete r.attachments; } }
+        if(r.tags){ var t2=r.tags.filter(function(t){ return tg.indexOf(t)<0; }); if(t2.length!==r.tags.length){ ch=true; if(t2.length) r.tags=t2; else delete r.tags; } }
+        if(ch){ r.updatedAt=new Date().toISOString(); nc++; }
+      });
+      if(nc) setTimeout(function(){ toast(nc+' recette'+(nc>1?'s':'')+' corrigée'+(nc>1?'s':'')+' : page ou tag d’un autre livre retiré','info'); },4200);
+    }
     if(nr) setTimeout(function(){ toast(nl+' page'+(nl>1?'s':'')+' source'+(nl>1?'s':'')+' jointe'+(nl>1?'s':'')+' à '+nr+' recette'+(nr>1?'s':''),'ok'); },1800);
   }
   // Les documents restaurés et utilisés par une recette partent aussi en ligne

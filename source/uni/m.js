@@ -978,11 +978,14 @@ function applyBackup(d, mode){
        === String(b||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'');
   };
   if(mode==='merge'){
-    // Un ingrédient (ou une recette) déjà présent sous le même nom n'est pas
-    // ajouté une 2e fois : les recettes du fichier sont alors rattachées à
-    // celui de l'utilisateur (identifiants remappés), sinon elles pointeraient
-    // vers un ingrédient introuvable.
-    var ingMap={}, recMap={}, subMap={};
+    // Ingrédients : un ingrédient déjà présent sous le même nom n'est pas
+    // ajouté une 2e fois ; les recettes du fichier sont rattachées à celui de
+    // l'utilisateur (identifiants remappés).
+    // Recettes : une recette n'est reconnue comme « la même » que si elle a le
+    // même identifiant (déjà importée). Deux recettes différentes peuvent porter
+    // le même nom (ex. deux focaccias de livres différents) : celle du fichier
+    // est alors ajoutée sous un nom distinct, jamais confondue avec l'autre.
+    var ingMap={}, subMap={}, byId={}, now_=new Date().toISOString();
     (d.ingredients||[]).forEach(function(x){
       var ex=ingredients.find(function(y){ return same(y.name,x.name); });
       if(ex){ if(ex.id!==x.id) ingMap[x.id]=ex.id; }
@@ -992,24 +995,36 @@ function applyBackup(d, mode){
       var ex=loadSubs('rec').find(function(y){ return y.parent===s.parent && String(y.name).toLowerCase()===String(s.name).toLowerCase(); });
       if(ex&&ex.id!==s.id) subMap[s.id]=ex.id;
     });
+    recipes.forEach(function(r){ byId[r.id]=r; });
+    var fresh={};
     (d.recipes||[]).forEach(function(x){
-      var ex=recipes.find(function(y){ return same(y.name,x.name); });
-      if(ex&&ex.id!==x.id) recMap[x.id]=ex.id;
-      // Recette déjà là : on lui ajoute les tags du fichier (sans rien retirer)
-      if(ex&&x.tags&&x.tags.length){
-        var add=x.tags.filter(function(t){ return !(ex.tags||[]).some(function(u){ return same(u,t); }); });
-        if(add.length){ ex.tags=(ex.tags||[]).concat(add); ex.updatedAt=new Date().toISOString(); }
+      var ex=byId[x.id];
+      if(ex){
+        // Déjà importée : on complète seulement les tags (rien n'est retiré)
+        var add=(x.tags||[]).filter(function(t){ return !(ex.tags||[]).some(function(u){ return same(u,t); }); });
+        if(add.length){ ex.tags=(ex.tags||[]).concat(add); ex.updatedAt=now_; }
+        return;
       }
-    });
-    (d.recipes||[]).forEach(function(x){
-      if(recipes.some(function(y){ return same(y.name,x.name); })) return;
-      (x.items||[]).forEach(function(it){
-        var m=(it.type==='ingredient'?ingMap:recMap)[it.refId]; if(m) it.refId=m;
-      });
+      if(recipes.some(function(y){ return same(y.name,x.name); })){
+        var tag=(x.tags&&x.tags[0])||'importée', nm=x.name+' ('+tag+')', k=2;
+        while(recipes.some(function(y){ return same(y.name,nm); })) nm=x.name+' ('+tag+' '+(k++)+')';
+        x.name=nm;
+      }
+      (x.items||[]).forEach(function(it){ if(it.type==='ingredient'&&ingMap[it.refId]) it.refId=ingMap[it.refId]; });
       if(x.sub&&subMap[x.sub]) x.sub=subMap[x.sub];
-      recipes.push(x);
+      recipes.push(x); byId[x.id]=x; fresh[x.id]=1;
     });
-    d._recMap=recMap;
+    // Recettes du fichier déjà présentes : leurs sous-recettes et ingrédients
+    // repointent vers ceux du fichier s'ils avaient été confondus avec d'autres.
+    (d.recipes||[]).forEach(function(x){
+      var ex=byId[x.id]; if(!ex||fresh[x.id]) return;
+      (x.items||[]).forEach(function(fi){
+        var it=(ex.items||[]).find(function(i){ return i.id===fi.id; }); if(!it) return;
+        var want=fi.type==='ingredient'?(ingMap[fi.refId]||fi.refId):fi.refId;
+        var ok=fi.type==='ingredient'?ingredients.some(function(i){ return i.id===want; }):!!byId[want];
+        if(ok&&it.refId!==want){ it.refId=want; ex.updatedAt=now_; }
+      });
+    });
     (d.orders||[]).forEach(function(x){
       if(!orders.some(function(y){ return y.id===x.id; })) orders.push(x);
     });
