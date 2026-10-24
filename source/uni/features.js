@@ -681,7 +681,7 @@ function ficheData(rec){
       } else {
         var sr=recipes.find(function(x){return x.id===it.refId;}); if(!sr) return;
         var m=(Number(it.qty)||0)*mult, sw=recWeight(sr.id)*m, scs=recCost(sr.id)*m;
-        rows.push({name:sr.name, sub:true, qty:fQtyNice(sw), price:'—', cost:scs});
+        rows.push({name:sr.name, sub:true, qty:sw>0?fQtyNice(sw):'Q.S.', price:'—', cost:scs});
         w+=sw; c+=scs; subs.push({r:sr,m:m});
       }
     });
@@ -700,7 +700,7 @@ function ficheSubtitle(f){
 }
 function ficheHTML(f){
   var rows=f.sections.map(function(s,si){
-    var head=s.main?'':'<tr class="ct"><td colspan="3">Sous-recette : '+esc(s.title)+'</td><td class="r">'+esc(fQtyNice(s.weight))+'</td></tr>';
+    var head=s.main?'':'<tr class="ct"><td colspan="3">Sous-recette : '+esc(s.title)+'</td><td class="r">'+esc(s.weight>0?fQtyNice(s.weight):'Q.S.')+'</td></tr>';
     var body=s.rows.map(function(r,i){
       return '<tr'+(i%2?' class="al"':'')+'><td'+(r.sub?' style="font-weight:600"':'')+'>'+esc(r.name)+(r.sub?' <span style="color:#9A9A9A;font-weight:400;font-size:8.5px">(sous-recette)</span>':'')+'</td><td class="r q">'+esc(r.qty)+'</td><td class="p">'+esc(r.price)+'</td><td class="k">'+(r.noPrice?'—':fEur(r.cost))+'</td></tr>';
     }).join('');
@@ -781,7 +781,7 @@ function ficheDoPDF(f){
     header();
     f.sections.forEach(function(s,si){
       if(ensure(20+17,true)){}
-      band(si===0?s.title:'Sous-recette : '+s.title, fQtyNice(s.weight));
+      band(si===0?s.title:'Sous-recette : '+s.title, s.weight>0?fQtyNice(s.weight):'Q.S.');
       s.rows.forEach(function(r,i){
         doc.setFont(F,'bold'); doc.setFontSize(9.5);
         var qw=doc.getTextWidth(r.qty);
