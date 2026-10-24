@@ -658,6 +658,7 @@ function restoreExtras(d,mode){
 // ══ FICHE TECHNIQUE ═══════════════════════════════════════════
 var FICHE_CUR=null;
 function ficheQty(qty,unit,kg){
+  if(!(Number(qty)>0)) return 'Q.S.';
   var u=String(unit||'kg').trim();
   if(isCountable(u)){ var n=Number(qty)||0; return fNum(n,2)+' '+u+(n>1&&!/s$/.test(u)?'s':''); }
   if(/^(l|ml|cl|dl)$/i.test(u)){ var L=kg; return (L>0&&L<1)?fNum(L*1000,1)+' ml':fNum(L,3)+' L'; }
@@ -846,9 +847,12 @@ function buildUPills(p,ing){
   (/^(l|ml|cl)$/i.test(u)?['L','ml','kg']:['kg','g']).forEach(function(x){ if(list.indexOf(x)<0) list.push(x); });
   if(isCountable(u)&&!(ing.unitWeight>0)) list=[u];
   box.innerHTML=list.map(function(x){ return '<button type="button" class="upill" data-u="'+esc(x)+'" onclick="setUPill(\''+p+'\',this.dataset.u)">'+esc(x)+'</button>'; }).join('')+
+    (p==='ring'?'<button type="button" class="upill" onclick="ringQS()" title="Quantité suffisante (0 g)">Q.S.</button>':'')+
     '<button type="button" class="upill more" onclick="moreUPills(\''+p+'\')" title="Autres unités">…</button>';
   sel.style.display='none'; syncUPills(p);
+  if(p==='ring'){ var q0=document.getElementById('ring-q'); if(q0) q0.placeholder='Q.S.'; }
 }
+function ringQS(){ var q=document.getElementById('ring-q'); if(q) q.value=''; if(typeof confirmRIng==='function') confirmRIng(); }
 function setUPill(p,u){ var sel=document.getElementById(p+'-u'); sel.value=u; syncUPills(p); var q=document.getElementById(p+'-q'); if(q&&isWide()) q.focus(); }
 function syncUPills(p){
   var sel=document.getElementById(p+'-u'), box=document.getElementById(p+'-upills'); if(!sel||!box) return;
@@ -911,7 +915,7 @@ function refreshRecPrev(){
     if(on){ nOn++; kgOn+=fi.qty; }
     var from=(fi.from&&fi.from!==selRec.name)?'<span class="pbr-f">'+esc(fi.from)+'</span>':'';
     return '<label class="pbr ck'+(on?'':' off')+'"><input type="checkbox"'+(on?' checked':'')+' onchange="recToggle('+i+',this.checked)">'+
-      '<span class="pbr-n">'+esc(it.name)+from+'</span><div class="pbr-r"><span class="pq">'+fKg(fi.qty)+'</span>'+
+      '<span class="pbr-n">'+esc(it.name)+from+'</span><div class="pbr-r"><span class="pq">'+(fi.qty>0?fKg(fi.qty):'Q.S.')+'</span>'+
       (it.status==='merge'?'<span class="tm">FUSION</span>':'<span class="tn">NOUVEAU</span>')+'</div></label>';
   }).join('')||'<div class="empty-s">Aucun composant</div>';
   var s=document.getElementById('rec-incl-s');

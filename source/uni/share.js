@@ -188,6 +188,7 @@ function renderSharedGrid(){
 }
 function shrQty(it){
   if(it.t==='r') return fNum(it.qty,2)+' ×';
+  if(!(Number(it.qty)>0)) return 'Q.S.';
   var u=String(it.unit||'kg'); if(isCountable(u)) return fNum(it.qty,2)+' '+u;
   var t=fNum(it.qty,3); if(t.indexOf(',')>=0) t=t.replace(/0+$/,'').replace(/,$/,'');
   return t+' '+u;
