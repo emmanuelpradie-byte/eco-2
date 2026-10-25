@@ -1514,6 +1514,18 @@ html.th-cdd .bx-band img.c1{width:34px;}
 .cn-row .cat-cnt{margin:0}
 .pk-filters{justify-content:flex-start;margin:0 0 10px}.pk-filters .cn-pop{max-height:300px}
 .cn-sheet.in-mod{z-index:1100}.cn-sheet.in-mod .cn-pop{margin-bottom:calc(8px + env(safe-area-inset-bottom,0px))}
+/* Changement de thème : fondu des couleurs et boutons qui réagissent */
+html.th-anim body, html.th-anim body *{transition:background-color .45s ease,color .45s ease,border-color .45s ease,fill .45s ease!important;}
+.th-s{font-family:inherit;transition:transform .15s ease,border-color .2s ease,box-shadow .2s ease;}
+.th-s:active{transform:scale(.94);}
+.th-s.on{box-shadow:0 0 0 3px rgba(var(--ink-rgb),.08);}
+.th-s.on .th-dot{animation:thPop .35s ease;}
+.th-s.on .th-dot::after{background:var(--i)!important;}
+@keyframes thPop{0%{transform:scale(.7)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
+.seg button{transition:background-color .2s ease,color .2s ease,box-shadow .2s ease,transform .12s ease;}
+.seg button:active{transform:scale(.95);}
+.seg button.on{animation:segIn .25s ease;}
+@keyframes segIn{from{transform:scale(.92);opacity:.6}to{transform:scale(1);opacity:1}}
 
 /* mode mobile forcé */
 html.lay-mob .esplit{grid-template-columns:minmax(0,1fr) minmax(0,440px);}
@@ -1539,14 +1551,16 @@ html.lay-mob .ov.show .modal{animation:sheetIn .24s cubic-bezier(.2,.8,.2,1);}
 html.lay-mob .upd-bar{bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 10px);width:calc(100vw - 24px);}html.lay-mob .upd-t small{display:none;}
 html.lay-mob .cn-flipb span{display:none;}html.lay-mob .cn-flipb{width:36px!important;padding:0;justify-content:center;}html.lay-mob .rgrid.tiles.big{grid-template-columns:1fr;}html.lay-mob .re-thumb.cover{height:180px;}html.lay-mob .flip{padding:56px 10px 40px;}html.lay-mob .flip-nav{display:none;}html.lay-mob .flip-b span{display:none;}html.lay-mob .flip-b{width:36px;padding:0;justify-content:center;}html.lay-mob .flip-stage{max-height:none;}html.lay-mob .flip-page{grid-template-columns:1fr;overflow-y:auto;display:block;}html.lay-mob .flip-page::after{display:none;}html.lay-mob .flip-l{padding:14px;}html.lay-mob .flip-r{padding:16px 16px 24px;overflow:visible;}html.lay-mob .flip-t{font-size:22px;}
 </style>
-<script>window.ECO_SERVER={"url": "https://fbwuhejcphsjhhkfkjku.supabase.co", "key": "sb_publishable_QRPVGvql3M2eSfvwkBDTfw_9Pc8fuo0"};window.ECO_BUILD="bd2aa42c7c";</script>
+<script>window.ECO_SERVER={"url": "https://fbwuhejcphsjhhkfkjku.supabase.co", "key": "sb_publishable_QRPVGvql3M2eSfvwkBDTfw_9Pc8fuo0"};window.ECO_BUILD="716c61ce97";</script>
 <script>/* Apparence : mode clair / sombre et couleur de l'application.
    Lu de façon synchrone au chargement pour éviter un flash de couleur. */
 (function(){
   var PAL={
     ble:{n:'Blé',h:36,s:72}, sauge:{n:'Sauge',h:105,s:24}, ardoise:{n:'Ardoise',h:212,s:32},
     terre:{n:'Terre cuite',h:16,s:56}, lavande:{n:'Lavande',h:262,s:34}, framboise:{n:'Framboise',h:340,s:48},
-    pistache:{n:'Pistache',h:78,s:38}, farine:{n:'Farine',h:30,s:7}
+    pistache:{n:'Pistache',h:78,s:38}, farine:{n:'Farine',h:30,s:7},
+    chocolat:{n:'Chocolat',h:22,s:30}, anthracite:{n:'Anthracite',h:215,s:9}, moutarde:{n:'Moutarde',h:46,s:68}, menthe:{n:'Menthe',h:158,s:34},
+    canard:{n:'Bleu canard',h:186,s:42}, bleuet:{n:'Bleuet',h:222,s:52}, prune:{n:'Prune',h:292,s:28}, cerise:{n:'Cerise',h:354,s:58}
   };
   var KEYS=['--p','--p2','--p3','--card','--alt','--beige','--beige2','--am','--am2','--g2','--bd','--bd2','--i','--i2','--i3','--i4','--g','--on-i','--i-h','--ink-rgb','--on-rgb','--sh',
     '--re','--gr','--gr2','--bl','--warn','--gr-bg','--gr-bd','--gr-bg2','--re-bg','--re-bd','--re-bg2','--warn-bg','--warn-bd','--bl-bg'];
@@ -1610,7 +1624,14 @@ html.lay-mob .cn-flipb span{display:none;}html.lay-mob .cn-flipb{width:36px!impo
   window.applyTheme=apply;
   window.themeLock=function(){ return LOCK?{key:LOCK,n:LOCKS[LOCK].n,logo:LOCKS[LOCK].logo}:null; };
   window.themeLocks=function(){ return Object.keys(LOCKS).map(function(k){ var L=LOCKS[k]; return {key:k,n:L.n,logo:L.logo,colors:[L.vars['--i'],L.vars['--i-h'],'#EC952F',L.vars['--beige']]}; }); };
-  window.themeUnlock=function(){ try{ localStorage.removeItem('v4_theme_lock'); }catch(e){} LOCK=null; };
+  window.themeUnlock=function(){ try{ localStorage.removeItem('v4_theme_lock'); }catch(e){} LOCK=null; themeAnim(); window.applyTheme(); };
+  window.themeSetLock=function(k){ if(!LOCKS[k]) return false; try{ localStorage.setItem('v4_theme_lock',k); }catch(e){} LOCK=k; themeAnim(); window.applyTheme(); return true; };
+  // Changement de thème en fondu (couleurs qui glissent de l'une à l'autre)
+  function themeAnim(){
+    var r=document.documentElement; r.classList.add('th-anim');
+    clearTimeout(themeAnim.t); themeAnim.t=setTimeout(function(){ r.classList.remove('th-anim'); },600);
+  }
+  window.themeAnim=themeAnim;
   // Appli installée sur l'écran d'accueil : elle rouvre avec le même lien et le logo
   if(LOCK) document.addEventListener('DOMContentLoaded',function(){
     try{
@@ -4107,21 +4128,23 @@ function themeLockCardHTML(L){
     '</div>';
 }
 function themeUnlockUI(){
-  if(!confirm('Retirer le thème « '+themeLock().n+' » de cet appareil ?\n\nL’appli reprendra son apparence habituelle. Le lien spécial le remettra si on le rouvre.')) return;
-  themeUnlock(); location.replace(location.pathname);
+  var L=themeLock(); if(!L) return;
+  themeUnlock(); toast('Thème « '+L.n+' » retiré de cet appareil','ok');
+  // rechargement sans le lien : logo et emblème d'origine
+  setTimeout(function(){ location.replace(location.pathname); },700);
 }
 function themeCardHTML(){
   if(typeof themeLock==='function'&&themeLock()) return themeLockCardHTML(themeLock());
   var t=loadTheme(), mode=t.mode||'auto', acc=THEME_PAL[t.accent]?t.accent:'ble';
   var seg=[['auto','Automatique'],['light','Clair'],['dark','Sombre']].map(function(m){ return '<button class="'+(mode===m[0]?'on':'')+'" onclick="setThemeMode(\''+m[0]+'\')">'+m[1]+'</button>'; }).join('');
-  var sw=Object.keys(THEME_PAL).map(function(k){ return '<div class="th-s'+(k===acc?' on':'')+'" onclick="setThemeAccent(\''+k+'\')"><span class="th-dot" style="background-color:'+themeSwatch(k,false)+'"></span>'+esc(THEME_PAL[k].n)+'</div>'; }).join('');
+  var sw=Object.keys(THEME_PAL).map(function(k){ return '<button type="button" class="th-s'+(k===acc?' on':'')+'" onclick="setThemeAccent(\''+k+'\')"><span class="th-dot" style="background-color:'+themeSwatch(k,false)+'"></span>'+esc(THEME_PAL[k].n)+'</button>'; }).join('');
   return '<div class="cw" id="th-card"><div class="cw-t">'+ic('sparkle')+' Apparence</div>'+
     '<div class="th-row"><span class="th-lbl">Mode</span><div class="seg">'+seg+'</div></div>'+
     '<div class="th-row"><span class="th-lbl">Affichage</span><div class="seg">'+[['auto','Automatique'],['desk','Ordinateur'],['mob','Mobile']].map(function(m){ var cur=(typeof getLayout==='function'?getLayout():'auto'); return '<button class="'+(cur===m[0]?'on':'')+'" onclick="setLayout(\''+m[0]+'\')">'+m[1]+'</button>'; }).join('')+'</div></div>'+
     '<div class="th-lbl" style="margin-bottom:8px">Couleur de l’application</div><div class="th-sw">'+sw+'</div>'+
-    '<div style="font-size:11.5px;color:var(--i4);margin-top:10px">« Automatique » suit le réglage clair / sombre du téléphone ou de l’ordinateur, et choisit l’affichage selon la taille de l’écran (le bouton '+ic('mobile')+' en haut passe de l’un à l’autre). Les bons et fiches PDF gardent toujours leur présentation beige.</div></div>';
+    '<div style="font-size:11.5px;color:var(--i4);margin-top:10px">« Automatique » suit le réglage clair / sombre du téléphone ou de l’ordinateur, et choisit l’affichage selon la taille de l’écran (le bouton '+ic('mobile')+' en haut passe de l’un à l’autre). Les bons et fiches PDF prennent la version claire de la couleur choisie.</div></div>';
 }
-function saveTheme(t){ LS.setItem('v4_theme',JSON.stringify(t)); applyTheme(t); var c=document.getElementById('th-card'); if(c) c.outerHTML=themeCardHTML(); }
+function saveTheme(t){ LS.setItem('v4_theme',JSON.stringify(t)); if(window.themeAnim) themeAnim(); applyTheme(t); var c=document.getElementById('th-card'); if(c) c.outerHTML=themeCardHTML(); }
 function setThemeMode(m){ if(typeof themeLock==='function'&&themeLock()) return; var t=loadTheme(); t.mode=m; saveTheme(t); }
 function setThemeAccent(a){ if(typeof themeLock==='function'&&themeLock()) return; var t=loadTheme(); t.accent=a; saveTheme(t); }
 function fillStorageInfo(){
@@ -6670,8 +6693,12 @@ function admThemeShare(key,invite){
     navigator.share({title:'Économat Pro · '+L.n,text:invite?clMyName()+' t’invite sur Économat Pro ('+L.n+')':'Économat Pro · '+L.n,url:link}).catch(function(){}); });
 }
 function admThemeTry(key){
-  if(!confirm('Mettre le thème sur cet appareil ?\n\nTu pourras le retirer ici ou dans les Réglages.')) return;
-  location.href=admThemeLink(key,false);
+  if(!themeSetLock(key)) return;
+  var L=themeLock(); BON_CREST=L.logo; BON_CMARK='';
+  toast('Thème « '+L.n+' » mis sur cet appareil','ok');
+  renderAdmin();
+  // rechargement avec le lien : logo partout et appli installable avec ce thème
+  setTimeout(function(){ location.replace(admThemeLink(key,false)); },700);
 }
 function admShRow(x){
   return '<div class="adm-r"><span onclick="openShared(\''+escJS(x.id)+'\')">'+esc(x.data.name)+'</span><button class="lnk" onclick="admUnshare(\''+escJS(x.id)+'\')">Retirer</button></div>';
