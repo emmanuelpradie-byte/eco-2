@@ -129,7 +129,7 @@ function flipPage(r){
   var a=allergensOfFlat(flat);
   var ph=recHasPhoto(r)?'<img src="'+esc(r.image)+'" alt="">':'<span class="flip-em">'+(recEmoji(r)||ic('book'))+'</span>';
   var items=(r.items||[]).map(function(it){
-    if(it.type==='ingredient'){ var g=ingredients.find(function(x){ return x.id===it.refId; }); return '<li><span>'+catDot(g&&g.cat||'')+esc(g?g.name:'?')+'</span><b>'+esc(flipQ(it.qty))+' '+esc(it.unit||'')+'</b></li>'; }
+    if(it.type==='ingredient'){ var g=ingredients.find(function(x){ return x.id===it.refId; }); return '<li><span>'+catDot(g&&g.cat||'')+esc(g?g.name:'?')+'</span><b>'+(Number(it.qty)>0?esc(flipQ(it.qty))+' '+esc(it.unit||''):'Q.S.')+'</b></li>'; }
     var s=recipes.find(function(x){ return x.id===it.refId; });
     return '<li class="sub"><span>'+ic('sub')+' '+esc(s?s.name:'?')+'</span><b>× '+esc(fNum(it.qty,2))+'</b></li>';
   }).join('');
