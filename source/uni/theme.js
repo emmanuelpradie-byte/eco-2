@@ -35,9 +35,29 @@
     v['--warn-bg']='rgba(226,165,94,.12)'; v['--warn-bd']='rgba(226,165,94,.32)'; v['--bl-bg']='rgba(141,180,218,.15)';
     return v;
   }
+  /* Thèmes verrouillés : ouverts par un lien « ?theme=<nom> ». Le choix est
+     gardé sur l'appareil et ne peut plus être changé dans les Réglages. */
+  var LOCKS={
+    compagnons:{n:'Compagnons du Devoir',cls:'th-cdd',logo:'__CDD_LOGO__',bg:'#F7FAFD',vars:{
+      '--p':'#F7FAFD','--p2':'#EEF3F9','--p3':'#E3ECF5','--card':'#fff','--alt':'#F2F6FB',
+      '--beige':'#DCE8F4','--beige2':'#C5D7EA','--am':'#DCE8F4','--am2':'#C46F0E','--g2':'#C46F0E',
+      '--bd':'#E1E9F2','--bd2':'#CAD7E5','--i':'#0F3B66','--i2':'#294A6D','--i3':'#4F6A86','--i4':'#7F93A8',
+      '--g':'#0F3B66','--i-h':'#0F5A99','--on-i':'#fff','--ink-rgb':'15,59,102','--on-rgb':'255,255,255','--sh':'rgba(15,59,102,.07)',
+      '--bl':'#0F5A99','--bl-bg':'#E4EEF8'}}
+  };
+  function lockKey(){
+    try{
+      var m=/[?&#]theme=([a-z0-9-]+)/i.exec(location.search+location.hash), k=m&&m[1].toLowerCase();
+      if(k&&LOCKS[k]){ localStorage.setItem('v4_theme_lock',k); return k; }
+      k=localStorage.getItem('v4_theme_lock'); return LOCKS[k]?k:null;
+    }catch(e){ return null; }
+  }
+  var LOCK=lockKey();
   function apply(t){
     t=t||get(); var key=PAL[t.accent]?t.accent:'ble', p=PAL[key], dark=isDark(t.mode);
     var root=document.documentElement, v=vars(key,p,dark);
+    if(LOCK){ dark=false; v=LOCKS[LOCK].vars; }
+    Object.keys(LOCKS).forEach(function(k){ root.classList.toggle(LOCKS[k].cls,k===LOCK); });
     root.setAttribute('data-theme',dark?'dark':'light');
     KEYS.forEach(function(k){ if(v[k]) root.style.setProperty(k,v[k]); else root.style.removeProperty(k); });
     var bg=v['--p']||'#FBF8F3';
@@ -46,6 +66,31 @@
   window.THEME_PAL=PAL;
   window.loadTheme=get;
   window.applyTheme=apply;
+  window.themeLock=function(){ return LOCK?{key:LOCK,n:LOCKS[LOCK].n,logo:LOCKS[LOCK].logo}:null; };
+  window.themeUnlock=function(){ try{ localStorage.removeItem('v4_theme_lock'); }catch(e){} LOCK=null; };
+  // Appli installée sur l'écran d'accueil : elle rouvre avec le même lien et le logo
+  if(LOCK) document.addEventListener('DOMContentLoaded',function(){
+    try{
+      var L=LOCKS[LOCK], base=location.origin+location.pathname.replace(/[^\/]*$/,''), url=base+'index.html?theme='+LOCK;
+      if(!/[?&]theme=/.test(location.search)&&history.replaceState) history.replaceState(null,'',location.pathname+(location.search?location.search+'&':'?')+'theme='+LOCK+location.hash);
+      var img=new Image();
+      img.onload=function(){
+        function icon(n){
+          var c=document.createElement('canvas'); c.width=c.height=n; var g=c.getContext('2d');
+          g.fillStyle='#fff'; g.fillRect(0,0,n,n);
+          var s=n*.8/Math.max(img.width,img.height); g.drawImage(img,(n-img.width*s)/2,(n-img.height*s)/2,img.width*s,img.height*s);
+          return c.toDataURL('image/png');
+        }
+        var at=document.querySelector('link[rel=apple-touch-icon]'); if(at) at.href=icon(180);
+        var ml=document.querySelector('link[rel=manifest]');
+        if(ml) ml.href='data:application/manifest+json,'+encodeURIComponent(JSON.stringify({
+          name:'Économat Pro · '+L.n, short_name:'Économat', start_url:url, scope:base, display:'standalone',
+          background_color:L.bg, theme_color:L.bg, lang:'fr',
+          icons:[{src:icon(192),sizes:'192x192',type:'image/png'},{src:icon(512),sizes:'512x512',type:'image/png'}]}));
+      };
+      img.src=L.logo;
+    }catch(e){}
+  });
   window.themeSwatch=function(key,dark){ var p=PAL[key]||PAL.ble; return dark?hsl(p.h,Math.min(p.s,40)*.7+10,40):(key==='ble'?'#F2DCBA':hsl(p.h,p.s,80)); };
   apply();
   var q=mq(); if(q){ var f=function(){ if((get().mode||'auto')==='auto') apply(); }; if(q.addEventListener) q.addEventListener('change',f); else if(q.addListener) q.addListener(f); }

@@ -584,7 +584,23 @@ function renderBackup(){
     '<div id="bk-store" style="font-size:12.5px;color:var(--i3);line-height:1.7"></div></div>');
   fillStorageInfo();
 }
+// Thème verrouillé par le lien d'accès : son logo remplace l'emblème
+// (menu, écran de connexion, bons et fiches)
+if(typeof themeLock==='function'&&themeLock()) BON_CREST=themeLock().logo;
+function themeLockCardHTML(L){
+  var lay=(typeof getLayout==='function'?getLayout():'auto');
+  return '<div class="cw" id="th-card"><div class="cw-t">'+ic('sparkle')+' Apparence</div>'+
+    '<div class="th-lock"><img src="'+L.logo+'" alt=""><div><b>Thème '+esc(L.n)+'</b><small>'+ic('lock')+' Attribué par ton lien d’accès : les couleurs et le logo ne peuvent pas être changés sur cet appareil.</small></div></div>'+
+    '<div class="th-row"><span class="th-lbl">Affichage</span><div class="seg">'+[['auto','Automatique'],['desk','Ordinateur'],['mob','Mobile']].map(function(m){ return '<button class="'+(lay===m[0]?'on':'')+'" onclick="setLayout(\''+m[0]+'\')">'+m[1]+'</button>'; }).join('')+'</div></div>'+
+    (typeof clIsAdmin==='function'&&clIsAdmin()?'<button class="lnk" style="margin-top:10px" onclick="themeUnlockUI()">'+ic('x')+' Administrateur : retirer ce thème de cet appareil</button>':'')+
+    '</div>';
+}
+function themeUnlockUI(){
+  if(!confirm('Retirer le thème « '+themeLock().n+' » de cet appareil ?\n\nL’appli reprendra son apparence habituelle. Le lien spécial le remettra si on le rouvre.')) return;
+  themeUnlock(); location.replace(location.pathname);
+}
 function themeCardHTML(){
+  if(typeof themeLock==='function'&&themeLock()) return themeLockCardHTML(themeLock());
   var t=loadTheme(), mode=t.mode||'auto', acc=THEME_PAL[t.accent]?t.accent:'ble';
   var seg=[['auto','Automatique'],['light','Clair'],['dark','Sombre']].map(function(m){ return '<button class="'+(mode===m[0]?'on':'')+'" onclick="setThemeMode(\''+m[0]+'\')">'+m[1]+'</button>'; }).join('');
   var sw=Object.keys(THEME_PAL).map(function(k){ return '<div class="th-s'+(k===acc?' on':'')+'" onclick="setThemeAccent(\''+k+'\')"><span class="th-dot" style="background-color:'+themeSwatch(k,false)+'"></span>'+esc(THEME_PAL[k].n)+'</div>'; }).join('');
@@ -595,8 +611,8 @@ function themeCardHTML(){
     '<div style="font-size:11.5px;color:var(--i4);margin-top:10px">« Automatique » suit le réglage clair / sombre du téléphone ou de l’ordinateur, et choisit l’affichage selon la taille de l’écran (le bouton '+ic('mobile')+' en haut passe de l’un à l’autre). Les bons et fiches PDF gardent toujours leur présentation beige.</div></div>';
 }
 function saveTheme(t){ LS.setItem('v4_theme',JSON.stringify(t)); applyTheme(t); var c=document.getElementById('th-card'); if(c) c.outerHTML=themeCardHTML(); }
-function setThemeMode(m){ var t=loadTheme(); t.mode=m; saveTheme(t); }
-function setThemeAccent(a){ var t=loadTheme(); t.accent=a; saveTheme(t); }
+function setThemeMode(m){ if(typeof themeLock==='function'&&themeLock()) return; var t=loadTheme(); t.mode=m; saveTheme(t); }
+function setThemeAccent(a){ if(typeof themeLock==='function'&&themeLock()) return; var t=loadTheme(); t.accent=a; saveTheme(t); }
 function fillStorageInfo(){
   var e=document.getElementById('bk-store'); if(!e) return;
   var lines=['Moteur : <b>'+(LS.backend==='idb'?'IndexedDB':'stockage local (mode de secours)')+'</b> — les photos et les gros catalogues ne sont plus limités à 5 Mo.'];

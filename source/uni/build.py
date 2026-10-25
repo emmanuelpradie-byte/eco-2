@@ -66,7 +66,7 @@ def head(manifest=None, icon=None):
     h.append('<title>Économat Pro</title>')
     h.append('<style>'+css+'</style>')
     h.append('<script>window.ECO_SERVER='+json.dumps(SERVER)+';window.ECO_BUILD="'+BUILD+'";</script>')   # serveur intégré (rempli par « Télécharger l’appli préconfigurée »)
-    h.append('<script>'+open('theme.js',encoding='utf-8').read()+'</script>')
+    h.append('<script>'+open('theme.js',encoding='utf-8').read().replace('__CDD_LOGO__',open('logo_cdd.b64').read().strip())+'</script>')
     h.append('</head>')
     return '\n'.join(h)
 SWREG='''<script>
