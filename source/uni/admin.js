@@ -122,7 +122,48 @@ function renderAdmin(){
   h+=admSec('shares','Partages',rows.length+' recette'+(rows.length>1?'s':''),shr);
   var ncp=(ADM.copies||[]).length;
   h+=admSec('copies',ic('download')+' Qui a copié les partages',ncp?ncp+' copie'+(ncp>1?'s':''):'—',admCopiesHTML(),!!ADM.cq);
+  if(typeof themeLocks==='function') themeLocks().forEach(function(L){ h+=admSec('th-'+L.key,ic('sparkle')+' Thème '+esc(L.n),(typeof themeLock==='function'&&themeLock()&&themeLock().key===L.key)?'actif ici':'lien',admThemeHTML(L)); });
   w.innerHTML=h;
+}
+// ── Thèmes verrouillés : liens à donner ──
+function admThemeLink(key,invite){
+  var base=location.href.split('#')[0].split('?')[0]+'?theme='+key;
+  if(!invite) return base;
+  var inv=clInviteLink(); return inv?base+inv.slice(inv.indexOf('#')):'';
+}
+function admThemeHTML(L){
+  var here=typeof themeLock==='function'&&themeLock()&&themeLock().key===L.key;
+  function row(title,sub,invite){
+    return '<div class="adm-th-l"><div class="adm-th-lt"><b>'+title+'</b><small>'+sub+'</small></div>'+
+      '<div class="adm-th-u">'+esc(invite?admThemeLink(L.key,false).replace(/\?.*/,'')+'?theme='+L.key+'#rejoindre=…':admThemeLink(L.key,false))+'</div>'+
+      '<div class="adm-th-b"><button class="btn btn-ghost btn-sm" onclick="admThemeCopy(\''+L.key+'\','+invite+')">'+ic('copy')+' Copier</button>'+
+      (navigator.share?'<button class="btn btn-gold btn-sm" onclick="admThemeShare(\''+L.key+'\','+invite+')">'+ic('share')+' Envoyer</button>':'')+'</div></div>';
+  }
+  return '<div class="adm-th">'+
+    '<div class="adm-th-h"><img src="'+L.logo+'" alt=""><div><b>'+esc(L.n)+'</b><div class="adm-th-c">'+L.colors.map(function(c){ return '<span style="background:'+c+'"></span>'; }).join('')+'</div>'+
+      '<small>Couleurs et logo dans toute l’appli, sur les bons et les fiches (sans le « C »). Celui qui ouvre ce lien garde ce thème et ne peut pas le changer.</small></div></div>'+
+    row('Lien du thème','Pour quelqu’un qui a déjà un compte, ou qui en créera un',false)+
+    row('Invitation avec le thème','Crée le compte, validé d’office, et bloque le thème en même temps',true)+
+    '<div class="adm-th-me">'+(here?ic('check-circle')+'<span>Ce thème est actif sur cet appareil.</span><button class="lnk" onclick="themeUnlockUI()">Le retirer</button>'
+      :ic('mobile')+'<span>Voir l’appli comme ceux qui reçoivent le lien.</span><button class="lnk" onclick="admThemeTry(\''+L.key+'\')">Essayer sur cet appareil</button>')+'</div>'+
+  '</div>';
+}
+function admThemeGet(key,invite){
+  if(invite&&clIsAdmin()&&!(CLOUD.inv&&CLOUD.inv.code)) return clAdminTick().then(function(){ return admThemeLink(key,true); });
+  return Promise.resolve(admThemeLink(key,invite));
+}
+function admThemeCopy(key,invite){
+  admThemeGet(key,invite).then(function(link){ if(!link){ toast('Lien indisponible : vérifie la connexion','err'); return; }
+    clCopy(link).then(function(){ toast(invite?'Invitation copiée : colle-la dans un message':'Lien du thème copié','ok'); },function(){ prompt('Copie ce lien :',link); }); });
+}
+function admThemeShare(key,invite){
+  var L=(themeLocks().filter(function(x){ return x.key===key; })[0])||{n:''};
+  admThemeGet(key,invite).then(function(link){ if(!link) return;
+    navigator.share({title:'Économat Pro · '+L.n,text:invite?clMyName()+' t’invite sur Économat Pro ('+L.n+')':'Économat Pro · '+L.n,url:link}).catch(function(){}); });
+}
+function admThemeTry(key){
+  if(!confirm('Mettre le thème sur cet appareil ?\n\nTu pourras le retirer ici ou dans les Réglages.')) return;
+  location.href=admThemeLink(key,false);
 }
 function admShRow(x){
   return '<div class="adm-r"><span onclick="openShared(\''+escJS(x.id)+'\')">'+esc(x.data.name)+'</span><button class="lnk" onclick="admUnshare(\''+escJS(x.id)+'\')">Retirer</button></div>';

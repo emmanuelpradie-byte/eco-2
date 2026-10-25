@@ -67,6 +67,7 @@
   window.loadTheme=get;
   window.applyTheme=apply;
   window.themeLock=function(){ return LOCK?{key:LOCK,n:LOCKS[LOCK].n,logo:LOCKS[LOCK].logo}:null; };
+  window.themeLocks=function(){ return Object.keys(LOCKS).map(function(k){ var L=LOCKS[k]; return {key:k,n:L.n,logo:L.logo,colors:[L.vars['--i'],L.vars['--i-h'],'#EC952F',L.vars['--beige']]}; }); };
   window.themeUnlock=function(){ try{ localStorage.removeItem('v4_theme_lock'); }catch(e){} LOCK=null; };
   // Appli installée sur l'écran d'accueil : elle rouvre avec le même lien et le logo
   if(LOCK) document.addEventListener('DOMContentLoaded',function(){
