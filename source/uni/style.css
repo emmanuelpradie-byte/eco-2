@@ -1454,3 +1454,7 @@ html.th-cdd .sb-crest{width:150px;mix-blend-mode:normal;}
 html.th-cdd .gate-crest{mix-blend-mode:normal;filter:none;}
 html.th-cdd .sbi.on{box-shadow:inset 3px 0 0 #EC952F;}
 html.th-cdd .sb-logo{border-bottom-color:rgba(236,149,47,.55);}
+.bx,.bx-vt,.bx-t{color:var(--bx-ink,#231F20)!important;}
+.bx-rule,.bx-tb th,.bx-tb tr.tt td{background:var(--bx-ink,#231F20)!important;}
+html.th-cdd .bx-band img.c2{display:none;}
+html.th-cdd .bx-band img.c1{width:34px;}

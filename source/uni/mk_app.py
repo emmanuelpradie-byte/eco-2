@@ -166,8 +166,11 @@ rep("function logLine(txt){\n  var l=document.getElementById('ri-log');",
     "function logLine(txt){\n  txt=String(txt).replace(/^(🧠|⚠️|✓|🔍)\\s*/u,function(m,g){ return ic(g==='🧠'?'sparkle':g==='⚠️'?'alert':g==='🔍'?'search':'check')+' '; });\n  var l=document.getElementById('ri-log');")
 
 # ── Bon PDF : couleur du thème ──
+# Thème verrouillé : pas de « C » quand BON_CMARK est vide
+rep("try{ doc.addImage(BON_CMARK,'PNG',BAND+(PW-BAND-36)/2,63,36,36,'bonCmark','FAST'); }catch(e){}",
+    "if(BON_CMARK) try{ doc.addImage(BON_CMARK,'PNG',BAND+(PW-BAND-36)/2,63,36,36,'bonCmark','FAST'); }catch(e){}")
 rep("var INK=[35,31,32], GREY=[140,140,140], LGREY=[150,150,150], BEIGE=[242,220,186], ALT=[250,244,234], SEP=[228,220,207];",
-    "var INK=[35,31,32], GREY=[140,140,140], LGREY=[150,150,150], BEIGE=bonPal().beige, ALT=bonPal().alt, SEP=bonPal().sep;")
+    "var INK=bonPal().ink, GREY=[140,140,140], LGREY=[150,150,150], BEIGE=bonPal().beige, ALT=bonPal().alt, SEP=bonPal().sep;")
 
 # ── Démarrage ──
 rep("loadDefaults();migrateUnits();updBadges();renderHome();", "initApp();var _acctNew=!ingredients.length;loadDefaults();migrateUnits();if(_acctNew)acctMarkPristine();cloudInit();updBadges();renderHome();")

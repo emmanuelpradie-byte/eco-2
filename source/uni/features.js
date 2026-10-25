@@ -586,7 +586,11 @@ function renderBackup(){
 }
 // Thème verrouillé par le lien d'accès : son logo remplace l'emblème
 // (menu, écran de connexion, bons et fiches)
-if(typeof themeLock==='function'&&themeLock()) BON_CREST=themeLock().logo;
+if(typeof themeLock==='function'&&themeLock()){
+  BON_CREST=themeLock().logo;
+  // pas de « C » sur les bons et les fiches
+  BON_CMARK='';
+}
 function themeLockCardHTML(L){
   var lay=(typeof getLayout==='function'?getLayout():'auto');
   return '<div class="cw" id="th-card"><div class="cw-t">'+ic('sparkle')+' Apparence</div>'+
@@ -736,13 +740,13 @@ function ficheDoPDF(f){
     var F=bonPdfFonts(doc);
     var PW=595.28, PH=841.89, L=40, R=513, BAND=539, BOTTOM=792;
     var X={name:44, qtyR:318, price:330, costR:507, sep1:325, sep2:418};
-    var INK=[35,31,32], GREY=[140,140,140], LGREY=[150,150,150], BEIGE=bonPal().beige, ALT=bonPal().alt, SEP=bonPal().sep;
+    var INK=bonPal().ink, GREY=[140,140,140], LGREY=[150,150,150], BEIGE=bonPal().beige, ALT=bonPal().alt, SEP=bonPal().sep;
     var page=1, y=0;
     function rgb(fn,c){ doc[fn](c[0],c[1],c[2]); }
     function chrome(){
       rgb('setFillColor',BEIGE); doc.rect(BAND,0,PW-BAND,PH,'F');
       try{ doc.addImage(BON_CREST,'PNG',BAND+(PW-BAND-44)/2,18,44,44*219/260,'bonCrest','FAST'); }catch(e){}
-      try{ doc.addImage(BON_CMARK,'PNG',BAND+(PW-BAND-36)/2,63,36,36,'bonCmark','FAST'); }catch(e){}
+      if(BON_CMARK) try{ doc.addImage(BON_CMARK,'PNG',BAND+(PW-BAND-36)/2,63,36,36,'bonCmark','FAST'); }catch(e){}
       doc.setFont(F,'bold'); doc.setFontSize(32); rgb('setTextColor',INK);
       var tw=doc.getTextWidth('FICHE TECHNIQUE');
       doc.text('FICHE TECHNIQUE', 579, PH/2+tw/2, {angle:90});

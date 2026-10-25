@@ -48,14 +48,16 @@ function bonHslRgb(h,s,l){
 }
 function bonPal(){
   var t={}; try{ t=(window.loadTheme&&loadTheme())||{}; }catch(e){}
-  var key=(window.THEME_PAL&&THEME_PAL[t.accent])?t.accent:'ble';
-  if(key==='ble') return {beige:[242,220,186],alt:[250,244,234],sep:[228,220,207]};
+  // Thème verrouillé (lien d'accès) : bleu clair et encre bleu marine
+  if(window.themeLock&&themeLock()) return {beige:[220,232,244],alt:[242,246,251],sep:[201,215,229],ink:[15,59,102]};
+  var key=(window.THEME_PAL&&THEME_PAL[t.accent])?t.accent:'ble', INK0=[35,31,32];
+  if(key==='ble') return {beige:[242,220,186],alt:[250,244,234],sep:[228,220,207],ink:INK0};
   var p=THEME_PAL[key];
-  return {beige:bonHslRgb(p.h,p.s,84),alt:bonHslRgb(p.h,p.s*.89,95),sep:bonHslRgb(p.h,p.s*.5,86)};
+  return {beige:bonHslRgb(p.h,p.s,84),alt:bonHslRgb(p.h,p.s*.89,95),sep:bonHslRgb(p.h,p.s*.5,86),ink:INK0};
 }
 function bonPalApply(){
   var p=bonPal(), r=document.documentElement.style, c=function(a){ return 'rgb('+a.join(',')+')'; };
-  r.setProperty('--bx-beige',c(p.beige)); r.setProperty('--bx-alt',c(p.alt)); r.setProperty('--bx-sep',c(p.sep));
+  r.setProperty('--bx-beige',c(p.beige)); r.setProperty('--bx-alt',c(p.alt)); r.setProperty('--bx-sep',c(p.sep)); r.setProperty('--bx-ink',c(p.ink));
 }
 (function(){
   var _a=window.applyTheme;
