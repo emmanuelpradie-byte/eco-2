@@ -162,8 +162,12 @@ function admThemeShare(key,invite){
     navigator.share({title:'Économat Pro · '+L.n,text:invite?clMyName()+' t’invite sur Économat Pro ('+L.n+')':'Économat Pro · '+L.n,url:link}).catch(function(){}); });
 }
 function admThemeTry(key){
-  if(!confirm('Mettre le thème sur cet appareil ?\n\nTu pourras le retirer ici ou dans les Réglages.')) return;
-  location.href=admThemeLink(key,false);
+  if(!themeSetLock(key)) return;
+  var L=themeLock(); BON_CREST=L.logo; BON_CMARK='';
+  toast('Thème « '+L.n+' » mis sur cet appareil','ok');
+  renderAdmin();
+  // rechargement avec le lien : logo partout et appli installable avec ce thème
+  setTimeout(function(){ location.replace(admThemeLink(key,false)); },700);
 }
 function admShRow(x){
   return '<div class="adm-r"><span onclick="openShared(\''+escJS(x.id)+'\')">'+esc(x.data.name)+'</span><button class="lnk" onclick="admUnshare(\''+escJS(x.id)+'\')">Retirer</button></div>';

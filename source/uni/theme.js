@@ -4,7 +4,9 @@
   var PAL={
     ble:{n:'Blé',h:36,s:72}, sauge:{n:'Sauge',h:105,s:24}, ardoise:{n:'Ardoise',h:212,s:32},
     terre:{n:'Terre cuite',h:16,s:56}, lavande:{n:'Lavande',h:262,s:34}, framboise:{n:'Framboise',h:340,s:48},
-    pistache:{n:'Pistache',h:78,s:38}, farine:{n:'Farine',h:30,s:7}
+    pistache:{n:'Pistache',h:78,s:38}, farine:{n:'Farine',h:30,s:7},
+    chocolat:{n:'Chocolat',h:22,s:30}, anthracite:{n:'Anthracite',h:215,s:9}, moutarde:{n:'Moutarde',h:46,s:68}, menthe:{n:'Menthe',h:158,s:34},
+    canard:{n:'Bleu canard',h:186,s:42}, bleuet:{n:'Bleuet',h:222,s:52}, prune:{n:'Prune',h:292,s:28}, cerise:{n:'Cerise',h:354,s:58}
   };
   var KEYS=['--p','--p2','--p3','--card','--alt','--beige','--beige2','--am','--am2','--g2','--bd','--bd2','--i','--i2','--i3','--i4','--g','--on-i','--i-h','--ink-rgb','--on-rgb','--sh',
     '--re','--gr','--gr2','--bl','--warn','--gr-bg','--gr-bd','--gr-bg2','--re-bg','--re-bd','--re-bg2','--warn-bg','--warn-bd','--bl-bg'];
@@ -68,7 +70,14 @@
   window.applyTheme=apply;
   window.themeLock=function(){ return LOCK?{key:LOCK,n:LOCKS[LOCK].n,logo:LOCKS[LOCK].logo}:null; };
   window.themeLocks=function(){ return Object.keys(LOCKS).map(function(k){ var L=LOCKS[k]; return {key:k,n:L.n,logo:L.logo,colors:[L.vars['--i'],L.vars['--i-h'],'#EC952F',L.vars['--beige']]}; }); };
-  window.themeUnlock=function(){ try{ localStorage.removeItem('v4_theme_lock'); }catch(e){} LOCK=null; };
+  window.themeUnlock=function(){ try{ localStorage.removeItem('v4_theme_lock'); }catch(e){} LOCK=null; themeAnim(); window.applyTheme(); };
+  window.themeSetLock=function(k){ if(!LOCKS[k]) return false; try{ localStorage.setItem('v4_theme_lock',k); }catch(e){} LOCK=k; themeAnim(); window.applyTheme(); return true; };
+  // Changement de thème en fondu (couleurs qui glissent de l'une à l'autre)
+  function themeAnim(){
+    var r=document.documentElement; r.classList.add('th-anim');
+    clearTimeout(themeAnim.t); themeAnim.t=setTimeout(function(){ r.classList.remove('th-anim'); },600);
+  }
+  window.themeAnim=themeAnim;
   // Appli installée sur l'écran d'accueil : elle rouvre avec le même lien et le logo
   if(LOCK) document.addEventListener('DOMContentLoaded',function(){
     try{

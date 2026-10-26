@@ -534,9 +534,9 @@ var selRIng=null,selSubRec=null;
 
 function openNewRec(){editRecId=null;recItems=[];fillCatSelect('r-cat','rec',loadCats('rec')[0]);fillSubSelect('r-sub','rec',loadCats('rec')[0],'');document.getElementById('r-name').value='';document.getElementById('r-img').value='';document.getElementById('r-img').disabled=false;curRecImg=null;var _rf=document.getElementById('r-img-file');if(_rf)_rf.value='';showRecImgPrev();document.getElementById('r-notes').value='';document.getElementById('r-items').innerHTML='';document.getElementById('r-items-empty').style.display='none';document.getElementById('tb-title').textContent='Nouvelle recette';calcRecTots();goPage('rec-edit');}
 function openEditRec(id){var r=recipes.find(function(x){return x.id===id;});if(!r)return;editRecId=id;recItems=r.items.map(function(i){return Object.assign({},i);});document.getElementById('r-name').value=r.name;fillCatSelect('r-cat','rec',r.cat);fillSubSelect('r-sub','rec',r.cat,r.sub||'');var _isImg=r.image&&r.image.length>4;curRecImg=_isImg?r.image:null;document.getElementById('r-img').value=_isImg?'':(r.image||'');document.getElementById('r-img').disabled=!!_isImg;showRecImgPrev();document.getElementById('r-notes').value=r.notes||'';document.getElementById('tb-title').textContent=r.name;goPage('rec-edit');renderRItems();calcRecTots();}
-function renderRItems(){var wrap=document.getElementById('r-items'),emp=document.getElementById('r-items-empty');if(!recItems.length){wrap.innerHTML='';emp.style.display='block';calcRecTots();return;}emp.style.display='none';var html='<div class="ilist"><div class="ihd"><span>Composant</span><span style="text-align:right">Qté</span><span>Unt</span><span></span></div>';recItems.forEach(function(item,idx){if(item.type==='ingredient'){var ing=ingredients.find(function(i){return i.id===item.refId;});html+='<div class="ir"><div class="ir-sw" role="button" tabindex="0" onclick="reSwap('+idx+')" title="Changer d’ingrédient"><div class="ir-n">'+esc(ing?ing.name:'?')+'</div><div class="ir-c">Ingrédient<span class="ir-chg">'+ic('refresh')+'Changer</span></div></div><input class="iq" type="number" value="'+item.qty+'" min="0" step="any" onchange="updRI('+idx+',this.value)"><div class="iu">'+item.unit+'</div><button class="idel" onclick="remRI('+idx+')">✕</button></div>';}else{var rec=recipes.find(function(r){return r.id===item.refId;});var sb=rec?recWeight(rec.id):0;html+='<div class="ir" style="border-left:2px solid var(--bl)"><div class="ir-sw" role="button" tabindex="0" onclick="reSwap('+idx+')" title="Changer"><div class="ir-n" style="color:var(--bl)">⊛ '+esc(rec?rec.name:'?')+'</div><div class="ir-c">Sous-recette'+(sb>0?' · ×'+fQ(Math.round(item.qty*100)/100):'')+'<span class="ir-chg">'+ic('refresh')+'Changer</span></div></div>'+(sb>0?'<input class="iq" type="number" value="'+(Math.round(sb*item.qty*1000)/1000)+'" min="0" step="any" title="Poids voulu (kg)" onchange="updRIkg('+idx+',this.value,this)"><div class="iu">kg</div>':'<input class="iq" type="number" value="'+item.qty+'" min="0" step="0.01" onchange="updRI('+idx+',this.value)"><div class="iu">×</div>')+'<button class="idel" onclick="remRI('+idx+')">✕</button></div>';}});html+='</div>';wrap.innerHTML=html;calcRecTots();}
+function renderRItems(){var wrap=document.getElementById('r-items'),emp=document.getElementById('r-items-empty');if(!recItems.length){wrap.innerHTML='';emp.style.display='block';calcRecTots();return;}emp.style.display='none';var html='<div class="ilist"><div class="ihd"><span>Composant</span><span style="text-align:right">Qté</span><span>Unt</span><span></span></div>';recItems.forEach(function(item,idx){if(item.type==='ingredient'){var ing=ingredients.find(function(i){return i.id===item.refId;});html+='<div class="ir"><div class="ir-sw" role="button" tabindex="0" onclick="reSwap('+idx+')" title="Changer d’ingrédient"><div class="ir-n">'+esc(ing?ing.name:'?')+'</div><div class="ir-c">Ingrédient<span class="ir-chg">'+ic('refresh')+'Changer</span></div></div><input class="iq" type="number" value="'+(Number(item.qty)>0?item.qty:'')+'" placeholder="Q.S." title="Vide ou 0 = Q.S. (0 g)" min="0" step="any" onchange="updRI('+idx+',this.value)"><div class="iu">'+(Number(item.qty)>0?item.unit:'<span style="color:var(--i4)">'+item.unit+'</span>')+'</div><button class="idel" onclick="remRI('+idx+')">✕</button></div>';}else{var rec=recipes.find(function(r){return r.id===item.refId;});var sb=rec?recWeight(rec.id):0;html+='<div class="ir" style="border-left:2px solid var(--bl)"><div class="ir-sw" role="button" tabindex="0" onclick="reSwap('+idx+')" title="Changer"><div class="ir-n" style="color:var(--bl)">⊛ '+esc(rec?rec.name:'?')+'</div><div class="ir-c">Sous-recette'+(sb>0?' · ×'+fQ(Math.round(item.qty*100)/100):'')+'<span class="ir-chg">'+ic('refresh')+'Changer</span></div></div>'+(sb>0?'<input class="iq" type="number" value="'+(Math.round(sb*item.qty*1000)/1000)+'" min="0" step="any" title="Poids voulu (kg)" onchange="updRIkg('+idx+',this.value,this)"><div class="iu">kg</div>':'<input class="iq" type="number" value="'+item.qty+'" min="0" step="0.01" onchange="updRI('+idx+',this.value)"><div class="iu">×</div>')+'<button class="idel" onclick="remRI('+idx+')">✕</button></div>';}});html+='</div>';wrap.innerHTML=html;calcRecTots();}
 function updRIkg(idx,val,el){var it=recItems[idx];if(!it)return;var b=recWeight(it.refId),kg=parseFloat(String(val).replace(',','.'))||0;it.qty=b>0?Math.round(kg/b*1e6)/1e6:kg;var c=el&&el.closest&&el.closest('.ir'),l=c&&c.querySelector('.ir-c');if(l)l.textContent='Sous-recette · ×'+fQ(Math.round(it.qty*100)/100);calcRecTots();}
-function updRI(idx,val){if(recItems[idx])recItems[idx].qty=parseFloat(val)||0;calcRecTots();}
+function updRI(idx,val){if(recItems[idx]){recItems[idx].qty=Math.max(0,parseFloat(String(val).replace(',','.'))||0);}calcRecTots();}
 function remRI(idx){recItems.splice(idx,1);renderRItems();}
 function calcRecTots(){var tmp={id:'__tmp__',name:'',cat:'',image:'',notes:'',items:recItems};var orig=recipes;recipes=orig.concat([tmp]);var w=recWeight('__tmp__'),c=recCost('__tmp__');recipes=orig;document.getElementById('r-w').textContent=fQ(w)+' kg';document.getElementById('r-c').textContent=fEur(c);}
 function saveRecipe(){var name=document.getElementById('r-name').value.trim();if(!name){toast('Nom requis','err');return;}if(!recItems.length){toast('Ajoutez au moins un ingrédient','err');return;}var rec={id:editRecId||uid(),name:name,cat:document.getElementById('r-cat').value,sub:(document.getElementById('r-sub')||{}).value||'',image:curRecImg||document.getElementById('r-img').value.trim(),notes:document.getElementById('r-notes').value.trim(),items:recItems.map(function(i){return Object.assign({},i,{id:i.id||uid()});}),createdAt:editRecId?(function(){var r=recipes.find(function(x){return x.id===editRecId;});return r?r.createdAt:now();})():now()};if(editRecId){var i=recipes.findIndex(function(r){return r.id===editRecId;});if(i>=0)recipes[i]=rec;else recipes.unshift(rec);}else recipes.unshift(rec);persist();updBadges();toast('✓ Recette enregistrée','ok');goPage('recettes');}
@@ -564,7 +564,7 @@ function dupRecette(id){var r=recipes.find(function(x){return x.id===id;});if(!r
 // ── MODAL ING (recette) ───────────────────────────────────────
 function filterRIng(){var s=document.getElementById('ring-s').value.toLowerCase();var f=ingredients.filter(function(i){return!s||i.name.toLowerCase().indexOf(s)>=0;});document.getElementById('ring-list').innerHTML=f.map(function(i){return'<div class="pi2'+(selRIng&&selRIng.id===i.id?' sel':'')+'" onclick="pickRIng(\''+i.id+'\')" ><div><div class="pi2-n">'+esc(i.name)+'</div><div class="pi2-m">'+i.cat+' · '+unitLabel(i)+'</div></div></div>';}).join('');}
 function pickRIng(id){selRIng=ingredients.find(function(i){return i.id===id;});filterRIng();document.getElementById('ring-qty').style.display='block';var u=document.getElementById('ring-u');u.innerHTML=ALLUNITS.map(function(x){return'<option>'+x+'</option>';}).join('');for(var j=0;j<u.options.length;j++){if(u.options[j].value===selRIng.unit){u.selectedIndex=j;break;}}}
-function confirmRIng(){if(!selRIng){toast('Sélectionnez','err');return;}var qty=parseFloat(document.getElementById('ring-q').value)||0;if(!qty){toast('Quantité requise','err');return;}recItems.push({id:uid(),type:'ingredient',refId:selRIng.id,qty:qty,unit:document.getElementById('ring-u').value});closeMod('m-ring');renderRItems();toast('✓ '+selRIng.name+' ajouté','ok');}
+function confirmRIng(){if(!selRIng){toast('Sélectionnez','err');return;}var qty=parseFloat(String(document.getElementById('ring-q').value).replace(',','.'))||0;if(qty<0)qty=0;recItems.push({id:uid(),type:'ingredient',refId:selRIng.id,qty:qty,unit:document.getElementById('ring-u').value});closeMod('m-ring');renderRItems();toast('✓ '+selRIng.name+' ajouté'+(qty?'':' (Q.S.)'),'ok');}
 var subRecMode='mult';
 function initSubRec(){
   selSubRec=null; subRecMode='kg';
@@ -978,11 +978,58 @@ function applyBackup(d, mode){
        === String(b||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'');
   };
   if(mode==='merge'){
+    // Ingrédients : un ingrédient déjà présent sous le même nom n'est pas
+    // ajouté une 2e fois ; les recettes du fichier sont rattachées à celui de
+    // l'utilisateur (identifiants remappés).
+    // Recettes : une recette n'est reconnue comme « la même » que si elle a le
+    // même identifiant (déjà importée). Deux recettes différentes peuvent porter
+    // le même nom (ex. deux focaccias de livres différents) : celle du fichier
+    // est alors ajoutée sous un nom distinct, jamais confondue avec l'autre.
+    var ingMap={}, subMap={}, byId={}, now_=new Date().toISOString();
     (d.ingredients||[]).forEach(function(x){
-      if(!ingredients.some(function(y){ return same(y.name,x.name); })) ingredients.push(x);
+      var ex=ingredients.find(function(y){ return same(y.name,x.name); });
+      if(ex){ if(ex.id!==x.id) ingMap[x.id]=ex.id; }
+      else ingredients.push(x);
     });
+    (d.recSubs||[]).forEach(function(s){
+      var ex=loadSubs('rec').find(function(y){ return y.parent===s.parent && String(y.name).toLowerCase()===String(s.name).toLowerCase(); });
+      if(ex&&ex.id!==s.id) subMap[s.id]=ex.id;
+    });
+    recipes.forEach(function(r){ byId[r.id]=r; });
+    var fresh={};
     (d.recipes||[]).forEach(function(x){
-      if(!recipes.some(function(y){ return same(y.name,x.name); })) recipes.push(x);
+      var ex=byId[x.id];
+      if(ex){
+        // Fichier de correction : la composition de la recette est remplacée
+        // par celle du fichier (même recette, mêmes identifiants).
+        if(x._replaceItems&&x.items&&x.items.length){
+          ex.items=x.items.map(function(it){ var c=Object.assign({},it); if(c.type==='ingredient'&&ingMap[c.refId]) c.refId=ingMap[c.refId]; return c; });
+          ex.updatedAt=now_; d._nReplaced=(d._nReplaced||0)+1;
+        }
+        // Déjà importée : on complète seulement les tags (rien n'est retiré)
+        var add=(x.tags||[]).filter(function(t){ return !(ex.tags||[]).some(function(u){ return same(u,t); }); });
+        if(add.length){ ex.tags=(ex.tags||[]).concat(add); ex.updatedAt=now_; }
+        return;
+      }
+      if(recipes.some(function(y){ return same(y.name,x.name); })){
+        var tag=(x.tags&&x.tags[0])||'importée', nm=x.name+' ('+tag+')', k=2;
+        while(recipes.some(function(y){ return same(y.name,nm); })) nm=x.name+' ('+tag+' '+(k++)+')';
+        x.name=nm;
+      }
+      (x.items||[]).forEach(function(it){ if(it.type==='ingredient'&&ingMap[it.refId]) it.refId=ingMap[it.refId]; });
+      if(x.sub&&subMap[x.sub]) x.sub=subMap[x.sub];
+      delete x._replaceItems; recipes.push(x); byId[x.id]=x; fresh[x.id]=1;
+    });
+    // Recettes du fichier déjà présentes : leurs sous-recettes et ingrédients
+    // repointent vers ceux du fichier s'ils avaient été confondus avec d'autres.
+    (d.recipes||[]).forEach(function(x){
+      var ex=byId[x.id]; if(!ex||fresh[x.id]||x._replaceItems) return;
+      (x.items||[]).forEach(function(fi){
+        var it=(ex.items||[]).find(function(i){ return i.id===fi.id; }); if(!it) return;
+        var want=fi.type==='ingredient'?(ingMap[fi.refId]||fi.refId):fi.refId;
+        var ok=fi.type==='ingredient'?ingredients.some(function(i){ return i.id===want; }):!!byId[want];
+        if(ok&&it.refId!==want){ it.refId=want; ex.updatedAt=now_; }
+      });
     });
     (d.orders||[]).forEach(function(x){
       if(!orders.some(function(y){ return y.id===x.id; })) orders.push(x);
@@ -1779,7 +1826,7 @@ function normUnit(u){var k=cslug(u);return UNIT_NORM[k]||UNIT_NORM[k.replace(/s$
 var NUTRITION_LINE=/^(valeurs?\s+nutritionnelles?|valeur\s+[ée]nerg[ée]tique|prot[ée]ines?|glucides?|lipides?|fibres?\s+alimentaires?|dont\s+(sucres?|acides?\s+gras)|acides?\s+gras|apports?\s+de\s+r[ée]f[ée]rence|[ée]nergie)\b/i;
 var NUTRITION_HINT=/valeurs?\s+nutritionnelles?|pour\s+100\s*g\b|kcal|kj\b/i;
 var MAIN_HEADER_COLS=/^ingr[ée]dients?(\s+(%|recette|au|kilo|la|commande|gramme?s?|quantit[ée]s?|poids|unit[ée]s?))+\s*$/i;
-var MAIN_HEADER=/^(ingr[ée]dients?(\s+(du|de)\s+p[ée]trissage)?(\s+e)?|ingr[ée]dients? de base|composition|recette de base|p[ée]trissage direct|fin de p[ée]trissage|p[âa]te finale)\s*:?\s*$/i;
+var MAIN_HEADER=/^(ingr[ée]dients?(\s+(du|de)\s+p[ée]trissage)?(\s+e)?|ingr[ée]dients? de base|ingr[ée]dients? de la pr[ée]paration|ingr[ée]dients? du tourage|composition|recette de base|p[ée]trissage direct|p[ée]trissage final|fin de p[ée]trissage|p[âa]te finale|tourage)\s*:?\s*$/i;
 // Rubriques de livre (en-tête de page) : jamais un titre de recette
 var RUBRICS=['painsregionaux','painsspeciaux','painsdumonde','briochesdumonde','briochesetclassiquesfrancais',
   'douceursboulangeres','levains','sommaire','preface','presentation','glossairetechnique','lespartenaires',
@@ -2032,6 +2079,7 @@ function parseFiche(rawText, confOf){
 
     // Un titre rouvre une zone ingrédients
     if(b.type==='sub_recipe_title'){
+      if(cur&&cur===main0&&!main0.ingredients.length&&/^p[âa]te\b/i.test(b.text.trim())) return;
       cur={name:cleanSubName(b.text), ingredients:[], confidence:b.confidence};
       subs.push(cur); inProcessZone=false; return;
     }
@@ -2051,9 +2099,10 @@ function parseFiche(rawText, confOf){
       // Les phases du pétrissage final ramènent à la recette principale,
       // même sans titre « Méthode de travail ».
       if(procSection && /^(incorporation|pointage|pesage|d[ée]tente|fa[çc]onnage|appr[eê]t|cuisson|ressuage|division|frasage|mise en forme)\b/i.test(b.text)) procSection='';
+      var finSub=/^finition\b/i.test(b.text)&&subs.filter(function(s){ return s.name&&cslug(s.name)==='finition'; })[0];
       process.push({type:b.type, text:b.text, label:b.label,
                     temperature:b.temperature, duration:b.duration, confidence:b.confidence,
-                    section:(procSection!==null?procSection:(cur?cur.name:''))});
+                    section:finSub?finSub.name:(procSection!==null?procSection:(cur?cur.name:''))});
       return;
     }
 
@@ -2479,7 +2528,21 @@ function aiPrompt(text, catalogue){
   '- Une préparation intermédiaire (empois, tangzhong, crème, appareil, craquelin, '+
   'confit, frangipane…) est une sous-recette avec ses propres ingrédients.\n'+
   '- Un document peut contenir plusieurs recettes : rends-les toutes.\n'+
-  '- N\'invente jamais un ingrédient absent du texte. En cas de doute, baisse la confiance.\n\n'+
+  '- N\'invente jamais un ingrédient absent du texte. En cas de doute, baisse la confiance.\n'+
+  '- Si un même ingrédient apparaît plusieurs fois (ex. eau puis eau de bassinage), rends CHAQUE ligne '+
+  'séparément avec sa propre quantité : ne les additionne jamais, ne les fusionne jamais.\n'+
+  '- « QS » ou « Q.S. » (quantité suffisante) : quantity = 0.\n'+
+  '- « Ingrédients du pétrissage », « Fin de pétrissage », « Pétrissage final », « Tourage » et '+
+  '« Ingrédients de la préparation » forment la recette principale (ingredients). « Pâte à brioche » '+
+  'écrit sous ces titres n\'est qu\'une précision.\n'+
+  '- Toute autre partie titrée du tableau (Finition, Macaronade, Sirop, Rafraîchi, Levain levure, '+
+  'Garniture, Mélange de graines, Pâte sucrée, Glaçage, Glace, Appareil, Raisins macérés…) est une '+
+  'sous-recette : FINITION comprise, même si ses ingrédients sont en QS.\n'+
+  '- Si la recette principale contient une ligne qui porte le nom d\'une de ces parties '+
+  '(« Rafraîchi 2800 g », « Sirop 450 g »), c\'est l\'utilisation de la sous-recette : '+
+  'garde-la dans ingredients avec ce nom et ce poids, ne recopie pas ses ingrédients.\n'+
+  '- Lis les tableaux colonne par colonne : la colonne de gauche est souvent le pétrissage, celle '+
+  'de droite les autres parties.\n\n'+
   (catalogue.length?('CATALOGUE EXISTANT (rapproche si c\'est le même produit) :\n'+
     catalogue.slice(0,120).join(', ')+'\n\n'):'')+
   'Réponds UNIQUEMENT par du JSON valide, sans texte autour, sans balises markdown :\n'+
@@ -3994,9 +4057,9 @@ function buildDraft(parsed,res,files){
     src:{thumb:res.thumb, fileName:res.fileName, ts:now()}, raw:res.text };
   parsed.main.forEach(function(it){ d.lines.push(mkLine(it,'')); });
   parsed.subRecipes.forEach(function(s){
-    // Une « finition » (2-3 ingrédients QS) n'a pas vocation à devenir une
-    // recette à part : ses ingrédients rejoignent la recette principale.
-    d.subs.push({ name:s.name, create:cslug(s.name)!=='finition', id:uid() });
+    // Toute partie titrée devient une sous-recette, FINITION comprise :
+    // elle est rattachée à la recette (« Finition – Brioche royale »).
+    d.subs.push({ name:s.name, create:true, id:uid() });
     s.items.forEach(function(it){ d.lines.push(mkLine(it,s.name)); });
   });
   // La recette principale cite souvent la sous-recette comme un ingrédient
@@ -4351,7 +4414,7 @@ function importWarnings(lines){
   lines.filter(function(l){return l.sel;}).forEach(function(l){
     if(l.useRecipeId) return;
     var key=rslug(l.name)+'|'+(l.subName||'');
-    if(seen[key]!==undefined){
+    if(false&&seen[key]!==undefined){
       var other=seen[key];
       w.push({type:'doublon',
         msg:'« '+l.name+' » apparaît deux fois'+(l.subName?' dans « '+l.subName+' »':'')+
@@ -4359,7 +4422,7 @@ function importWarnings(lines){
         merge:(other.unit===l.unit)?{a:other,b:l}:null});
     } else seen[key]=l;
 
-    if(!l.qty||l.qty<=0) w.push({type:'sans quantité', msg:'« '+l.name+' » n\'a pas de quantité'});
+    if(!l.qty||l.qty<=0) w.push({type:'Q.S.', msg:'« '+l.name+' » sans quantité : compté en Q.S. (0 g)'});
     var kg=toKg(l.qty,l.unit,{unit:l.unit});
     if(kg>50) w.push({type:'quantité élevée', msg:'« '+l.name+' » : '+fQ(kg)+' kg — vérifiez l\'unité'});
   });
