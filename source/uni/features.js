@@ -388,6 +388,10 @@ function renderCat(){
   var catOrder=loadCats('ing');
   var q=normTxt((document.getElementById('cat-srch').value||'').trim()), words=q.split(/\s+/).filter(Boolean);
   var base=activeIngSub?ingredients.filter(function(i){return i.sub===activeIngSub;}):(activeIngCat?ingredients.filter(function(i){return i.cat===activeIngCat;}):ingredients);
+  // affichage en dossiers (dossiers.js) : à la racine, seulement les ingrédients sans catégorie ;
+  // dans une catégorie, seulement ceux qui ne sont dans aucune sous-catégorie
+  if(window.CAT_FOLD==='root') base=base.filter(function(i){ return !i.cat; });
+  else if(window.CAT_FOLD==='cat') base=base.filter(function(i){ return !(i.sub&&subById('ing',i.sub)); });
   var sups=fbA('cat','sup'), algs=fbA('cat','alg'), units=fbA('cat','unit'), sts=fbA('cat','st'), use=catUseCount();
   base=base.filter(function(i){
     if(words.length){ var hay=normTxt(i.name+' '+i.cat+' '+supName(i.supplierId)+' '+(i.ref||'')+' '+(i.sub?subLabel('ing',i.sub)||'':'')); if(!words.every(function(w){ return hay.indexOf(w)>=0; })) return false; }

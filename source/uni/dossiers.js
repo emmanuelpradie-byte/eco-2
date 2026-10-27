@@ -21,10 +21,11 @@ function recFoldBox(){
   if(!b){ var g=document.getElementById('rec-grid'); if(!g) return null; b=document.createElement('div'); b.id='rec-folders'; g.parentNode.insertBefore(b,g); }
   return b;
 }
-function recFoldTile(name,n,sub,click,hue,empty){
+function recFoldTile(name,n,sub,click,hue,empty,word){
+  word=word||'recette';
   return '<div class="rf-fold'+(empty?' rf-empty':'')+'" style="--ch:'+hue+'" onclick="'+click+'">'+
     '<span class="rf-fi">'+ic('folder')+'</span><span class="rf-ft"><b>'+esc(name)+'</b><small>'+
-    (n?n+' recette'+(n>1?'s':''):'Vide')+(sub?' · '+sub+' dossier'+(sub>1?'s':''):'')+'</small></span>'+ic('chev-right')+'</div>';
+    (n?n+' '+word+(n>1?'s':''):'Vide')+(sub?' · '+sub+' dossier'+(sub>1?'s':''):'')+'</small></span>'+ic('chev-right')+'</div>';
 }
 function recFoldCrumb(parts){
   return '<div class="rf-crumb">'+parts.map(function(p,i){
@@ -241,3 +242,52 @@ filterIng=function(){
     return '<div class="pi2'+(selIng&&selIng.id===i.id?' sel':'')+'" onclick="pickIng(\''+i.id+'\')"><div><div class="pi2-n">'+esc(i.name)+'</div><div class="pi2-m">'+catDot(i.cat||'')+esc(i.cat||'')+' · '+unitLabel(i)+' · '+dispPrice(i)+'</div></div><span class="badge bd-g">'+esc(i.unit)+'</span></div>';
   }):'<div class="empty-s" style="padding:8px 2px">Aucun ingrédient trouvé'+(fbCount('bing')?' — <button class="lnk" onclick="fbReset(\'bing\')">effacer les filtres</button>':'')+'</div>';
 };
+
+
+// ══ CATALOGUE RANGÉ EN DOSSIERS ═══════════════════════════════
+// Même principe que les recettes : catégories → sous-catégories → ingrédients.
+function catFoldOn(){ try{ return LS.getItem('v4_catfolders')!=='0'; }catch(e){ return true; } }
+function catFoldToggle(){ try{ LS.setItem('v4_catfolders',catFoldOn()?'0':'1'); }catch(e){} renderCat(); }
+function catFoldFree(){
+  var q=((document.getElementById('cat-srch')||{}).value||'').trim();
+  return !q&&!CATF.letter&&!fbA('cat','sup').length&&!fbA('cat','alg').length&&!fbA('cat','unit').length&&!fbA('cat','st').length;
+}
+function catFoldBox(){
+  var b=document.getElementById('cat-folders');
+  if(!b){ var l=document.getElementById('cat-list'); if(!l) return null; b=document.createElement('div'); b.id='cat-folders'; l.parentNode.insertBefore(b,l); }
+  return b;
+}
+(function(){
+  var _renderCat=renderCat;
+  renderCat=function(){
+    var on=catFoldOn()&&catFoldFree()&&ingredients.length>0;
+    window.CAT_FOLD=on?(activeIngSub?'':(activeIngCat?'cat':'root')):'';
+    try{ _renderCat.apply(this,arguments); } finally { window.CAT_FOLD=''; }
+    var fb=document.getElementById('cv-fold'); if(fb){ fb.classList.toggle('on',catFoldOn()); fb.title=catFoldOn()?'Dossiers : activés':'Dossiers : désactivés'; }
+    var box=catFoldBox(); if(!box) return;
+    var cl=document.getElementById('cat-list'); if(cl) cl.classList.toggle('folding',on);
+    if(!on){ box.innerHTML=''; box.style.display='none'; return; }
+    box.style.display='';
+    var list=document.getElementById('cat-list'), emp=document.getElementById('cat-empty'), cc=document.getElementById('cat-count');
+    if(cc) cc.innerHTML='Mes ingrédients <b>('+ingredients.length+')</b>';
+    var hasList=!!(list&&list.innerHTML);
+    if(!activeIngCat&&!activeIngSub){
+      box.innerHTML='<div class="rf-grid">'+catAll('ing').map(function(c){
+        if(c==='') return '';
+        var n=catItems('ing',c).length, s=subsOf('ing',c).length;
+        return recFoldTile(c,n,s,'catPickCat(\'c:'+escJS(c)+'\')',catHue(c),!n,'ingrédient');
+      }).join('')+'</div>'+(hasList?'<div class="cat-loose">Sans catégorie</div>':'');
+      if(emp) emp.style.display='none';
+      return;
+    }
+    if(activeIngSub){
+      var sb=subById('ing',activeIngSub);
+      box.innerHTML=recFoldCrumb([{l:'Toutes les catégories',click:'catPickCat(\'\')'}].concat(sb?[{l:sb.parent||'Sans catégorie',click:'catPickCat(\'c:'+escJS(sb.parent)+'\')'}]:[]).concat([{l:sb?sb.name:'Dossier'}]));
+      return;
+    }
+    var subs=subsOf('ing',activeIngCat);
+    box.innerHTML=recFoldCrumb([{l:'Toutes les catégories',click:'catPickCat(\'\')'},{l:activeIngCat}])+
+      (subs.length?'<div class="rf-grid sub">'+subs.map(function(s){ var n=subCount('ing',s.id); return recFoldTile(s.name,n,0,'catPickCat(\'s:'+s.id+'\')',catHue(activeIngCat),!n,'ingrédient'); }).join('')+'</div>':'');
+    if(!hasList&&emp){ emp.style.display=subs.length?'none':'block'; var et=emp.querySelector('.empty-t'); if(et&&!subs.length) et.textContent='Aucun ingrédient dans cette catégorie.'; }
+  };
+})();

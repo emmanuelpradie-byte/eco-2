@@ -1592,3 +1592,8 @@ html.lay-mob .cn-catb{width:36px!important;padding:0;justify-content:center;}
 html.lay-mob .rf-fold{flex-direction:column;align-items:flex-start;gap:8px;position:relative;}
 html.lay-mob .rf-fold>.ic{position:absolute;top:12px;right:10px;}
 html.lay-mob .rf-ft b{white-space:normal;line-height:1.25;}
+/* ── Catalogue en dossiers ── */
+#cat-folders{margin-bottom:14px;}
+.cv-fold.on{background:var(--i);color:var(--on-i);border-color:var(--i);}
+.cat-loose{font-size:12px;font-weight:700;color:var(--i3);text-transform:uppercase;letter-spacing:.6px;margin:18px 2px 8px;}
+#cat-list.folding .cat-grp-hd{display:none;}
