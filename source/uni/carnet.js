@@ -206,7 +206,7 @@ function reCostAll(){ return reTmp(recItems,recCost)||0; }
 // ouverture : on charge les champs propres au nouvel éditeur
 function reLoad(){
   var r=editRecId&&recipes.find(function(x){ return x.id===editRecId; });
-  REC_ED.tags=(r&&r.tags||[]).slice(); REC_ED.time=(r&&r.time)||0; REC_ED.pcs=(r&&r.pcs)||0; REC_ED.coef=(r&&r.coef)||0;
+  REC_ED.tags=(r&&r.tags||[]).slice(); REC_ED.time=(r&&r.time)||0; REC_ED.pcs=(r&&r.pcs)||0; REC_ED.coef=(r&&r.coef)||0; REC_ED.loss=(r&&r.loss)||0; REC_ED.sell=(r&&r.sell)||0;
   var t=REC_ED.time, u=t&&t%60===0?60:1;
   document.getElementById('re-time').value=t?t/u:''; document.getElementById('re-time-u').value=String(u);
   document.getElementById('re-pcs').value=REC_ED.pcs||'';
@@ -222,6 +222,8 @@ function recEdApply(rec){
   if(REC_ED.time>0) rec.time=REC_ED.time; else delete rec.time;
   if(REC_ED.pcs>0) rec.pcs=REC_ED.pcs; else delete rec.pcs;
   if(REC_ED.coef>0) rec.coef=REC_ED.coef; else delete rec.coef;
+  if(REC_ED.loss>0) rec.loss=REC_ED.loss; else delete rec.loss;
+  if(REC_ED.sell>0) rec.sell=REC_ED.sell; else delete rec.sell;
   if(CUR==='recettes') renderRec();   // la liste a été dessinée avant ces champs
 }
 (function(){
@@ -369,7 +371,44 @@ function renderRePrix(){
     '<section class="re-card"><div class="re-card-t">Prix de vente conseillé</div>'+
       '<div class="re-sell"><div><div class="re-lb">Coefficient</div><input class="fi" type="number" inputmode="decimal" min="0" step="0.1" id="re-coef" value="'+(coef||'')+'" placeholder="Ex : 3,5" oninput="reSetCoef(this.value)"></div>'+
       '<div class="re-sell-r" id="re-sell-r">'+reSellHTML(tot,pcs,coef)+'</div></div>'+
-      '<div class="re-hint">Prix TTC = coût matière × coefficient. Le coefficient est enregistré avec la recette.</div></section>';
+      '<div class="re-hint">Prix TTC = coût matière × coefficient. Le coefficient est enregistré avec la recette.</div></section>'+
+    crCardHTML(tot,w,pcs);
+}
+
+// ══ COÛT DE REVIENT : matière + main-d'œuvre + charges, pertes, marge ═══
+// Taux horaire et charges (%) sont communs à toutes les recettes (réglés sur
+// l'appareil) ; perte et prix de vente réel sont propres à chaque recette.
+function crGet(){ try{ var o=JSON.parse(localStorage.getItem('v4_cr'))||{}; return {rate:+o.rate||0,ch:+o.ch||0}; }catch(e){ return {rate:0,ch:0}; } }
+function crNum(v){ return Math.max(0,parseFloat(String(v).replace(',','.'))||0); }
+function crSetG(k,v){ var o=crGet(); o[k]=crNum(v); try{ localStorage.setItem('v4_cr',JSON.stringify(o)); }catch(e){} crRefresh(); }
+function crSetR(k,v){ REC_ED[k]=crNum(v); if(k==='loss') REC_ED.loss=Math.min(95,REC_ED.loss); crRefresh(); }
+function crRefresh(){ var b=document.getElementById('re-cr-r'); if(b) b.innerHTML=crResHTML(reCostAll(),reWeight(),REC_ED.pcs||0); }
+function crCalc(tot,w,pcs){
+  var s=crGet(), t=REC_ED.time||0, loss=REC_ED.loss||0, sell=REC_ED.sell||0, k=1-loss/100;
+  var mo=t/60*s.rate, ch=(tot+mo)*s.ch/100, rev=tot+mo+ch;
+  var per=pcs>0?rev/(pcs*k):null, kg=w>0?rev/(w*k):null;
+  var mg=(per!=null&&sell>0)?sell-per:null;
+  return {mo:mo,ch:ch,rev:rev,per:per,kg:kg,mg:mg,pct:(mg!=null&&sell>0)?mg/sell*100:null,t:t,rate:s.rate};
+}
+function crResHTML(tot,w,pcs){
+  var c=crCalc(tot,w,pcs), sell=REC_ED.sell||0;
+  function kv(a,b,cls){ return '<div class="re-kv"'+(cls?' style="'+cls+'"':'')+'><span>'+a+'</span><b>'+b+'</b></div>'; }
+  var h=kv('Matière TTC',fEur(tot))+kv('Main-d’œuvre'+(c.t?' ('+fDur(c.t)+')':''),fEur(c.mo))+kv('Charges',fEur(c.ch))+
+    kv('Coût de revient',fEur(c.rev),'border-top:1px solid var(--bd);margin-top:4px;padding-top:6px')+
+    (c.per!=null?kv('Par pièce vendable',fEur(c.per)):'')+(c.kg!=null?kv('Au kilo',fEur(c.kg)):'');
+  if(c.mg!=null) h+=kv('Marge par pièce',fEur(c.mg)+' · '+Math.round(c.pct)+' %','color:'+(c.mg<0?'var(--re)':'var(--gr)'));
+  else if(sell>0&&!(pcs>0)) h+='<div class="re-hint">Indique le nombre de pièces pour calculer la marge.</div>';
+  if(!c.rate&&c.t) h+='<div class="re-hint">Renseigne le taux horaire pour compter la main-d’œuvre.</div>';
+  return h;
+}
+function crCardHTML(tot,w,pcs){
+  var s=crGet(), v=function(x){ return x>0?String(x).replace('.',','):''; };
+  function f(lb,id,val,ph,fn,key){ return '<div><div class="re-lb">'+lb+'</div><input class="fi" type="text" inputmode="decimal" id="'+id+'" value="'+v(val)+'" placeholder="'+ph+'" oninput="'+fn+'(\''+key+'\',this.value)"></div>'; }
+  return '<section class="re-card"><div class="re-card-t">Coût de revient</div>'+
+    '<div class="re-cr-f">'+f('Taux horaire (€/h)','re-cr-rate',s.rate,'Ex : 25','crSetG','rate')+f('Charges (%)','re-cr-ch',s.ch,'Ex : 15','crSetG','ch')+
+      f('Perte (%)','re-cr-loss',REC_ED.loss,'Ex : 5','crSetR','loss')+f('Prix de vente réel / pièce TTC','re-cr-sell',REC_ED.sell,'Ex : 1,40','crSetR','sell')+'</div>'+
+    '<div class="re-sell-r" id="re-cr-r" style="margin-top:10px">'+crResHTML(tot,w,pcs)+'</div>'+
+    '<div class="re-hint" style="margin-top:8px">Main-d’œuvre = durée de la recette × taux horaire. Charges (énergie, frais fixes) en % de matière + main-d’œuvre. Taux horaire et charges sont communs à toutes les recettes ; perte et prix de vente sont enregistrés avec la recette.</div></section>';
 }
 function reSellHTML(tot,pcs,coef){
   if(!(coef>0)) return '<span class="re-hint">Indique un coefficient pour calculer le prix de vente.</span>';
