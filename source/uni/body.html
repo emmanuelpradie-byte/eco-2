@@ -11,10 +11,12 @@
   <button class="sb-srch" onclick="openSearch()" title="Rechercher">{{ic:search}}<span>Rechercher…</span><kbd>Ctrl K</kbd></button>
   <nav class="sb-nav">
     <div class="sbi on" id="nav-home" title="Accueil" onclick="goPage('home')"><span class="sb-ic">{{ic:home}}</span><span class="sb-lb">Accueil</span></div>
+    <div class="sb-grp" role="presentation">Espace de travail</div>
     <div class="sbi" id="nav-bons" title="Bons d’économat" onclick="goPage('bons')"><span class="sb-ic">{{ic:bon}}</span><span class="sb-lb">Bons d’économat</span><span class="sb-bd" id="nd-bons">0</span></div>
     <div class="sbi" id="nav-recettes" title="Recettes" onclick="goPage('recettes')"><span class="sb-ic">{{ic:book}}</span><span class="sb-lb">Recettes</span><span class="sb-bd" id="nd-rec">0</span></div>
-    <div class="sbi" id="nav-partage" title="Partage" onclick="goPage('partage')"><span class="sb-ic">{{ic:users}}</span><span class="sb-lb">Partage</span></div>
     <div class="sbi" id="nav-catalogue" title="Catalogue" onclick="goPage('catalogue')"><span class="sb-ic">{{ic:box}}</span><span class="sb-lb">Catalogue</span></div>
+    <div class="sb-grp" role="presentation">Autres</div>
+    <div class="sbi" id="nav-partage" title="Partage" onclick="goPage('partage')"><span class="sb-ic">{{ic:users}}</span><span class="sb-lb">Partage</span></div>
     <div class="sbi" id="nav-fournisseurs" title="Fournisseurs" onclick="goPage('fournisseurs')"><span class="sb-ic">{{ic:truck}}</span><span class="sb-lb">Fournisseurs</span></div>
     <div class="sb-div"></div>
     <div class="sbi" id="nav-admin" title="Administration" style="display:none" onclick="goPage('admin')"><span class="sb-ic">{{ic:shield}}</span><span class="sb-lb">Administration</span><span class="sb-bd warn" id="nd-admin"></span></div>
@@ -327,8 +329,9 @@
     <div class="bni on" id="bn-home" onclick="goPage('home')"><div class="bni-ic">{{ic:home}}</div><div class="bni-lb">Accueil</div></div>
     <div class="bni" id="bn-bons" onclick="goPage('bons')"><div class="bni-ic">{{ic:bon}}</div><div class="bni-lb">Bons</div><div class="bni-bd" id="bnd-bons">0</div></div>
     <div class="bni" id="bn-recettes" onclick="goPage('recettes')"><div class="bni-ic">{{ic:book}}</div><div class="bni-lb">Recettes</div><div class="bni-bd" id="bnd-rec">0</div></div>
-    <div class="bni" id="bn-partage" onclick="goPage('partage')"><div class="bni-ic">{{ic:users}}</div><div class="bni-lb">Partage</div></div>
     <div class="bni" id="bn-catalogue" onclick="goPage('catalogue')"><div class="bni-ic">{{ic:box}}</div><div class="bni-lb">Catalogue</div></div>
+    <div class="bni-sep" aria-hidden="true"></div>
+    <div class="bni" id="bn-partage" onclick="goPage('partage')"><div class="bni-ic">{{ic:users}}</div><div class="bni-lb">Partage</div></div>
     <div class="bni" id="bn-backup" onclick="goPage('backup')"><div class="bni-ic">{{ic:settings}}</div><div class="bni-lb">Réglages</div><div class="bni-bd warn" id="bnd-bk">!</div></div>
   </nav>
 </div>

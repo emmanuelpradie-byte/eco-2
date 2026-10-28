@@ -631,13 +631,14 @@ function themeUnlockUI(){
 }
 function themeCardHTML(){
   if(typeof themeLock==='function'&&themeLock()) return themeLockCardHTML(themeLock());
-  var t=loadTheme(), mode=t.mode||'auto', acc=THEME_PAL[t.accent]?t.accent:'ble';
+  var t=loadTheme(), mode=t.mode||'auto', acc=THEME_PAL[t.accent]?t.accent:'creme';
   var seg=[['auto','Automatique'],['light','Clair'],['dark','Sombre']].map(function(m){ return '<button class="'+(mode===m[0]?'on':'')+'" onclick="setThemeMode(\''+m[0]+'\')">'+m[1]+'</button>'; }).join('');
-  var sw=Object.keys(THEME_PAL).map(function(k){ return '<button type="button" class="th-s'+(k===acc?' on':'')+'" onclick="setThemeAccent(\''+k+'\')"><span class="th-dot" style="background-color:'+themeSwatch(k,false)+'"></span>'+esc(THEME_PAL[k].n)+'</button>'; }).join('');
+  function swb(k){ return '<button type="button" class="th-s'+(k===acc?' on':'')+'" aria-pressed="'+(k===acc)+'" onclick="setThemeAccent(\''+k+'\')"><span class="th-dot" style="background-color:'+themeSwatch(k,false)+'"></span>'+esc(THEME_PAL[k].n)+'</button>'; }
+  var ks=Object.keys(THEME_PAL), sw='<div class="th-sub">Thèmes</div><div class="th-sw">'+ks.filter(function(k){ return THEME_PAL[k].sty; }).map(swb).join('')+'</div><div class="th-sub">Couleurs</div><div class="th-sw">'+ks.filter(function(k){ return !THEME_PAL[k].sty; }).map(swb).join('')+'</div>';
   return '<div class="cw" id="th-card"><div class="cw-t">'+ic('sparkle')+' Apparence</div>'+
     '<div class="th-row"><span class="th-lbl">Mode</span><div class="seg">'+seg+'</div></div>'+
     '<div class="th-row"><span class="th-lbl">Affichage</span><div class="seg">'+[['auto','Automatique'],['desk','Ordinateur'],['mob','Mobile']].map(function(m){ var cur=(typeof getLayout==='function'?getLayout():'auto'); return '<button class="'+(cur===m[0]?'on':'')+'" onclick="setLayout(\''+m[0]+'\')">'+m[1]+'</button>'; }).join('')+'</div></div>'+
-    '<div class="th-lbl" style="margin-bottom:8px">Couleur de l’application</div><div class="th-sw">'+sw+'</div>'+
+    '<div class="th-lbl" style="margin-bottom:4px">Couleur de l’application</div>'+sw+
     '<div style="font-size:11.5px;color:var(--i4);margin-top:10px">« Automatique » suit le réglage clair / sombre du téléphone ou de l’ordinateur, et choisit l’affichage selon la taille de l’écran (le bouton '+ic('mobile')+' en haut passe de l’un à l’autre). Les bons et fiches PDF prennent la version claire de la couleur choisie.</div></div>';
 }
 function saveTheme(t){ LS.setItem('v4_theme',JSON.stringify(t)); if(window.themeAnim) themeAnim(); applyTheme(t); var c=document.getElementById('th-card'); if(c) c.outerHTML=themeCardHTML(); }

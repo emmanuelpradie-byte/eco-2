@@ -31,6 +31,7 @@ with sync_playwright() as p:
     pg.click('#p-edit .re-x'); pg.wait_for_timeout(200)
     ok(pg.evaluate("CUR")=='bons' and pg.is_visible('#sidebar'),'fermer : retour aux bons, menu revenu')
     # ── couleurs du bon ──
+    pg.evaluate("setThemeAccent('ble')")
     ok(pg.evaluate("JSON.stringify(bonPal().beige)")=='[242,220,186]','thème Blé : bon beige')
     pg.evaluate("(()=>{var t=loadTheme();t.accent='sauge';localStorage.setItem('v4_theme',JSON.stringify(t));applyTheme(t);})()")
     c=pg.evaluate("bonPal().beige"); ok(c!=[242,220,186] and c[1]>c[0],'thème Sauge : bon vert (%s)'%c)
