@@ -428,7 +428,7 @@ function renderCat(){
       return '<div class="catcard" style="--ch:'+catHue(cat)+'"><div class="cat-ic">'+icn+'</div><div class="cat-b"><div class="cat-n">'+esc(i.name)+'</div>'+
         '<div class="cat-m"><span class="badge bd-g" style="padding:0 7px;font-size:10.5px">'+esc(i.unit)+'</span>'+(sn?'<span>'+ic('truck')+' '+esc(sn)+'</span>':'')+alg+'</div></div>'+
         '<div class="cat-r"><div class="cat-p">'+(i.price>0?dispPrice(i):'<span class="noprice">'+ic('alert')+' Sans prix</span>')+'<small>'+trendHtml(priceTrend(i))+'</small></div>'+
-        '<div class="cat-btns"><button class="cat-d cat-edit" onclick="openEditIng(\''+i.id+'\')" title="Modifier">'+ic('edit')+'</button><button class="cat-d cat-dup" onclick="dupIngredient(\''+i.id+'\')" title="Dupliquer">'+ic('copy')+'</button><button class="cat-d cat-del" onclick="askDel(\'ing\',\''+i.id+'\',\''+escJS(i.name)+'\')" title="Supprimer">'+ic('trash')+'</button></div></div></div>';
+        '<div class="cat-btns">'+favBtn('ing',i.id,'cat-d')+'<button class="cat-d cat-edit" onclick="openEditIng(\''+i.id+'\')" title="Modifier">'+ic('edit')+'</button><button class="cat-d cat-dup" onclick="dupIngredient(\''+i.id+'\')" title="Dupliquer">'+ic('copy')+'</button><button class="cat-d cat-del" onclick="askDel(\'ing\',\''+i.id+'\',\''+escJS(i.name)+'\')" title="Supprimer">'+ic('trash')+'</button></div></div></div>';
     }).join('');
   }
   el.innerHTML=cats.map(function(cat){
@@ -456,7 +456,7 @@ function recRow(r){
       '<div style="min-width:0"><div class="rc-name">'+esc(r.name)+'</div><div class="rc-cat">'+esc(r.cat||'')+(sl?' · '+esc(sl):'')+(nsub?' · '+ic('sub')+' '+nsub+' sous-recette'+(nsub>1?'s':''):'')+'</div></div></div>'+
       '<div class="rc-stats"><div class="rs"><span class="rs-v">'+fKg(w)+'</span><div class="rs-l">Poids</div></div><div class="rs"><span class="rs-v">'+fEur(cost)+'</span><div class="rs-l">Coût TTC</div></div><div class="rs"><span class="rs-v">'+r.items.length+'</span><div class="rs-l">Compos.</div></div></div>'+
       '<div class="rc-alg">'+algChips(a.keys,'sm')+(a.unknown.length?'<span class="alg sm unk">'+a.unknown.length+' allergène'+(a.unknown.length>1?'s':'')+' ?</span>':'')+'</div></div>'+
-      '<div class="rc-foot"><button class="btn btn-beige btn-sm" style="flex:1" onclick="quickAddRec(\''+r.id+'\')">'+ic('plus')+' Bon</button><button class="btn btn-ghost btn-sm" onclick="ficheFromCard(\''+r.id+'\')" title="Fiche technique">'+ic('file')+'</button><button class="btn btn-ghost btn-sm" onclick="openEditRec(\''+r.id+'\')" title="Modifier">'+ic('edit')+'</button><button class="btn btn-ghost btn-sm" onclick="dupRecette(\''+r.id+'\')" title="Dupliquer">'+ic('copy')+'</button><button class="btn btn-red btn-sm" onclick="askDel(\'recipe\',\''+r.id+'\',\''+escJS(r.name)+'\')" title="Supprimer">'+ic('trash')+'</button></div></div>';
+      '<div class="rc-foot">'+favBtn('rec',r.id,'rc-fav')+'<button class="btn btn-beige btn-sm" style="flex:1" onclick="quickAddRec(\''+r.id+'\')">'+ic('plus')+' Bon</button><button class="btn btn-ghost btn-sm" onclick="ficheFromCard(\''+r.id+'\')" title="Fiche technique">'+ic('file')+'</button><button class="btn btn-ghost btn-sm" onclick="openEditRec(\''+r.id+'\')" title="Modifier">'+ic('edit')+'</button><button class="btn btn-ghost btn-sm" onclick="dupRecette(\''+r.id+'\')" title="Dupliquer">'+ic('copy')+'</button><button class="btn btn-red btn-sm" onclick="askDel(\'recipe\',\''+r.id+'\',\''+escJS(r.name)+'\')" title="Supprimer">'+ic('trash')+'</button></div></div>';
 }
 function calcRecTots(){
   var tmp={id:'__tmp__',name:'',cat:'',image:'',notes:'',items:recItems}, orig=recipes;
@@ -1141,6 +1141,7 @@ function recTile(r){
   return '<div class="rt" onclick="openEditRec(\''+r.id+'\')">'+
     '<div class="rt-ph'+(recHasPhoto(r)?' img':'')+'" style="--ch:'+catHue(r.cat||'')+'">'+ph+
       '<div class="rt-tools" onclick="event.stopPropagation()"><button class="rt-tb" onclick="ficheFromCard(\''+r.id+'\')" title="Fiche technique">'+ic('file')+'</button><button class="rt-tb" onclick="dupRecette(\''+r.id+'\')" title="Dupliquer">'+ic('copy')+'</button><button class="rt-tb rt-del" onclick="askDel(\'recipe\',\''+r.id+'\',\''+escJS(r.name)+'\')" title="Supprimer">'+ic('trash')+'</button></div>'+
+      favBtn('rec',r.id,'rt-fav')+
       '<button class="rt-add" onclick="event.stopPropagation();quickAddRec(\''+r.id+'\')" title="Ajouter au bon">'+ic('plus')+'</button>'+
       (r.shared?'<span class="rt-badge" title="Partagée">'+ic('users')+' Partagée</span>':(r.fromShared?'<span class="rt-badge alt" title="Copiée depuis les recettes partagées">'+ic('copy')+' '+esc(r.fromShared.by||'')+'</span>':''))+'</div>'+
     '<div class="rt-b"><div class="rt-n">'+esc(r.name)+'</div><div class="rt-m">'+fKg(w)+' · '+fEur(cost)+(r.time?' · '+ic('clock')+' '+fDur(r.time):'')+((r.attachments||[]).length?' · '+ic('clip')+r.attachments.length:'')+'</div><div class="rt-c">'+catDot(r.cat||'')+esc(r.cat||'')+'</div></div></div>';

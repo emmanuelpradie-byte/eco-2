@@ -43,7 +43,7 @@
     compagnons:{n:'Compagnons du Devoir',cls:'th-cdd',logo:'__CDD_LOGO__',bg:'#F7FAFD',vars:{
       '--p':'#F7FAFD','--p2':'#EEF3F9','--p3':'#E3ECF5','--card':'#fff','--alt':'#F2F6FB',
       '--beige':'#DCE8F4','--beige2':'#C5D7EA','--am':'#DCE8F4','--am2':'#C46F0E','--g2':'#C46F0E',
-      '--bd':'#E1E9F2','--bd2':'#CAD7E5','--i':'#0F3B66','--i2':'#294A6D','--i3':'#4F6A86','--i4':'#7F93A8',
+      '--bd':'#E1E9F2','--bd2':'#CAD7E5','--i':'#0F3B66','--i2':'#294A6D','--i3':'#4F6A86','--i4':'#586D84',
       '--g':'#0F3B66','--i-h':'#0F5A99','--on-i':'#fff','--ink-rgb':'15,59,102','--on-rgb':'255,255,255','--sh':'rgba(15,59,102,.07)',
       '--bl':'#0F5A99','--bl-bg':'#E4EEF8'}}
   };

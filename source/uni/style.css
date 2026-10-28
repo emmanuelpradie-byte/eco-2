@@ -4,10 +4,10 @@ html{color-scheme:light;}
 --card:#fff;--on-i:#fff;--i-h:#000;--ink-rgb:35,31,32;--on-rgb:255,255,255;
 --gr-bg:#E5F2EA;--gr-bd:#CBE3D3;--gr-bg2:#EEF6F0;--re-bg:#FBEDEB;--re-bd:#F1CFCA;--re-bg2:#F7DEDA;--warn-bg:#FFF6E6;--warn-bd:#F0D5A8;--bl-bg:#E9EFF5;
 --p:#FBF8F3;--p2:#F6F0E6;--p3:#EFE5D5;
---i:#231F20;--i2:#3B3536;--i3:#5E5658;--i4:#8E8587;
+--i:#231F20;--i2:#3B3536;--i3:#5E5658;--i4:#6A6163;
 --g:#231F20;--g2:#8A5A1E;--am:#F2DCBA;--am2:#8A5A1E;
 --beige:#F2DCBA;--beige2:#E9CB9E;--alt:#FAF4EA;
---re:#B4382C;--gr:#2E7D4F;--gr2:#2E7D4F;--bl:#3D6587;--warn:#A86414;
+--re:#B4382C;--gr:#27704A;--gr2:#27704A;--bl:#3D6587;--warn:#A86414;
 --bd:#ECE3D5;--bd2:#DDCFBA;--sh:rgba(35,31,32,.06);
 --font:"PoppinsBon",Poppins,system-ui,-apple-system,"Segoe UI",sans-serif;
 --nav-h:62px;
@@ -1603,3 +1603,64 @@ html.lay-mob .rf-ft b{white-space:normal;line-height:1.25;}
 .re-cr-f .fi{height:40px;}
 .re-cr-f .re-lb{min-height:2.6em;}
 @media(max-width:700px){ .re-cr-f{grid-template-columns:1fr 1fr;} }
+
+/* ══ Confort : favoris, récents, accueil, états vides, bouton + ══ */
+.fav-b{width:30px;height:30px;border-radius:8px;border:0;background:transparent;color:var(--i4);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:none;transition:color .15s,transform .15s,background .15s;}
+.fav-b .ic{width:17px;height:17px;}
+.fav-b:hover{color:#C98A12;background:var(--p2);}
+.fav-b.on{color:#C98A12;}
+.fav-b.on .ic{fill:currentColor;}
+.fav-b:active{transform:scale(.86);}
+.rt-fav{position:absolute;left:8px;bottom:8px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.92);color:#6B6258;box-shadow:0 2px 8px rgba(0,0,0,.16);}
+.rt-fav.on{color:#B97A0A;}
+.rc-fav{width:38px;height:38px;border:1px solid var(--bd2);border-radius:10px;}
+.cl-ro .fav-b{display:none;}
+.ux-strip{margin:0 0 14px;display:flex;flex-direction:column;gap:8px;}
+.ux-row{display:flex;align-items:center;gap:10px;min-width:0;}
+.ux-lb{display:inline-flex;align-items:center;gap:5px;flex:none;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--i3);width:86px;}
+.ux-lb .ic{width:14px;height:14px;}
+.ux-chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 1px;min-width:0;}
+.ux-chips::-webkit-scrollbar{display:none;}
+.ux-chip{flex:none;display:inline-flex;align-items:center;gap:7px;max-width:220px;height:38px;padding:0 13px 0 6px;border-radius:999px;border:1px solid var(--bd);background:var(--card);color:var(--i);font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s;}
+.ux-chip:hover{border-color:var(--bd2);box-shadow:0 3px 10px var(--sh);transform:translateY(-1px);}
+.ux-ci{width:26px;height:26px;border-radius:50%;background:var(--beige);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:14px;flex:none;}
+.ux-ci img{width:100%;height:100%;object-fit:cover;}
+.ux-ci .ic{width:15px;height:15px;}
+.ux-cn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lnk-row{background:none;border:0;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer;}
+.ux-hint{padding:10px 0 4px;}
+/* états vides */
+.empty-i{width:84px;height:84px;margin:0 auto 14px;border-radius:50%;border:1.5px dashed var(--bd2);background:var(--p2);display:flex;align-items:center;justify-content:center;color:var(--i3);font-size:0;}
+.empty-i .ic{width:36px;height:36px;stroke-width:1.4;}
+.empty-b{margin-top:16px;}
+.cn-empty.empty{padding:48px 20px;}
+.cn-empty.empty .empty-t{font-size:17px;}
+.empty .cn-reset{margin-top:12px;}
+/* bouton + flottant */
+.ux-fab{position:fixed;right:16px;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 16px);z-index:60;width:56px;height:56px;border-radius:50%;border:0;background:var(--i);color:var(--on-i);display:none;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.28);transition:transform .15s,box-shadow .15s;animation:fabIn .28s ease both;}
+.ux-fab-i{display:flex;}
+.ux-fab .ic{width:26px;height:26px;stroke-width:2;}
+.ux-fab:active{transform:scale(.92);}
+@keyframes fabIn{from{transform:scale(.6);opacity:0;}to{transform:none;opacity:1;}}
+@media(max-width:820px){ .ux-fab{display:flex;} .ux-fab[style*="display: none"]{display:none;} .ux-lb{width:auto;} .ux-row{flex-direction:column;align-items:flex-start;gap:4px;} .ux-chips{width:100%;} }
+@media(min-width:821px){ .ux-fab{display:none!important;} }
+
+/* ══ Accessibilité ══ */
+:focus{outline:none;}
+:focus-visible{outline:2px solid var(--i);outline-offset:2px;border-radius:6px;}
+.btn:focus-visible,.cn-fb:focus-visible,.fav-b:focus-visible,.ux-chip:focus-visible,.ux-fab:focus-visible{outline-offset:3px;}
+.fi:focus-visible,.gate-in:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--i);outline-offset:1px;}
+html.th-cdd :focus-visible{outline-color:#0F3B66;}
+[role=button][tabindex]{cursor:pointer;}
+.skip-l{position:fixed;left:12px;top:-60px;z-index:3000;background:var(--i);color:var(--on-i);padding:10px 16px;border-radius:10px;font-weight:600;font-size:14px;text-decoration:none;transition:top .15s;}
+.skip-l:focus{top:10px;}
+/* cibles tactiles confortables sur téléphone */
+@media(max-width:820px){
+  .icbtn,.tb-srch,.cn-view,.re-x,.re-ib,.m-x,.cat-d,.fav-b{min-width:44px;min-height:44px;}
+  .btn-sm,.cn-fb,.tbtn,.cn-imp-b,.re-tag-add,.cn-new,.lnk{min-height:40px;}
+  .idel{min-width:40px;min-height:40px;}
+  .cn-l{min-width:32px;min-height:36px;}
+  .rt-fav{min-width:36px;min-height:36px;}
+  .rt-tb{min-width:36px;min-height:36px;}
+}
+@media (prefers-reduced-motion:reduce){ .ux-fab,.ux-chip,.fav-b{animation:none!important;transition:none!important;} }
