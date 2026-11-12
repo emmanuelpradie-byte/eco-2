@@ -187,6 +187,10 @@ rep("function exportBackup(){\n  var d=collectData();", "function exportBackup()
 feat = feat.replace('/*ICONS_JSON*/{}', json.dumps(ICONS, ensure_ascii=False))
 rep("// ── BOOT ", feat + "\n// ── BOOT ")
 
+# Fiches jointes à la suite du bon (option admin)
+rep("doc.save((d.fileName||d.name||'bon').replace(/[^a-z0-9]/gi,'_')+'.pdf');",
+    "try{ if(window.bonAppendFiches) bonAppendFiches(doc,F,d); }catch(e){ console.warn(e); }doc.save((d.fileName||d.name||'bon').replace(/[^a-z0-9]/gi,'_')+'.pdf');")
+
 assert '</script' not in s
 open('app.js', 'w', encoding='utf-8').write(s)
 print('ok', len(s))

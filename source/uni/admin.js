@@ -140,8 +140,8 @@ function admThemeHTML(L){
       (navigator.share?'<button class="btn btn-gold btn-sm" onclick="admThemeShare(\''+L.key+'\','+invite+')">'+ic('share')+' Envoyer</button>':'')+'</div></div>';
   }
   return '<div class="adm-th">'+
-    '<div class="adm-th-h"><img src="'+L.logo+'" alt=""><div><b>'+esc(L.n)+'</b><div class="adm-th-c">'+L.colors.map(function(c){ return '<span style="background:'+c+'"></span>'; }).join('')+'</div>'+
-      '<small>Couleurs et logo dans toute l’appli, sur les bons et les fiches (sans le « C »). Celui qui ouvre ce lien garde ce thème et ne peut pas le changer.</small></div></div>'+
+    '<div class="adm-th-h">'+(L.logo?'<img src="'+L.logo+'" alt="">':'<span class="adm-th-noi">'+ic('sparkle')+'</span>')+'<div><b>'+esc(L.n)+'</b><div class="adm-th-c">'+L.colors.map(function(c){ return '<span style="background:'+c+'"></span>'; }).join('')+'</div>'+
+      '<small>'+(L.nl?'Couleurs neutres, sans blason ni « C » dans toute l’appli, sur les bons et les fiches.':'Couleurs et logo dans toute l’appli, sur les bons et les fiches (sans le « C »).')+' Celui qui ouvre ce lien garde ce thème et ne peut pas le changer.</small></div></div>'+
     row('Lien du thème','Pour quelqu’un qui a déjà un compte, ou qui en créera un',false)+
     row('Invitation avec le thème','Crée le compte, validé d’office, et bloque le thème en même temps',true)+
     '<div class="adm-th-me">'+(here?ic('check-circle')+'<span>Ce thème est actif sur cet appareil.</span><button class="lnk" onclick="themeUnlockUI()">Le retirer</button>'

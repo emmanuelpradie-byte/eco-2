@@ -1693,3 +1693,40 @@ body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
 #bnav{backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px);}
 .bni.on .bni-ic{box-shadow:0 2px 8px -3px rgba(var(--ink-rgb),.35);}
 #topbar{backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+
+/* Thème sans logo : pas de blason, pas de « C » */
+html.th-nologo .sb-crest,html.th-nologo .gate-crest,html.th-nologo .bx-band img.c1,html.th-nologo .bx-band img.c2{display:none!important;}
+html.th-nologo .sb-logo{padding-top:6px;}
+html.th-nologo .sb-name{font-size:16px;}
+.th-lock-i,.adm-th-noi{width:64px;height:64px;flex-shrink:0;border-radius:14px;background:var(--beige);display:flex;align-items:center;justify-content:center;color:var(--i);}
+.th-lock-i .ic,.adm-th-noi .ic{width:28px;height:28px;}
+
+/* ══ Admin : aperçu fiche, recettes à la suite, fiches jointes ══ */
+.rec-vseg{margin:12px 0 8px;display:flex;}
+.rec-vseg button{flex:1;}
+.fk{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px 14px;}
+.fk-t{text-align:center;font-weight:700;font-size:17px;line-height:1.25;margin-bottom:10px;padding-bottom:10px;border-bottom:2px solid var(--i);}
+.fk-tb{margin-bottom:10px;}
+.fk-st{text-align:right;font-weight:700;font-size:12.5px;color:#1E9655;padding:6px 0 2px;}
+.fk-r{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:baseline;padding:2.5px 0;font-size:13px;}
+.fk-tb.two .fk-r{grid-template-columns:1fr 76px 96px;}
+.fk-r .n{text-align:right;color:var(--i2);}
+.fk-r .n.sub{font-style:italic;}
+.fk-r b{font-weight:700;text-align:right;white-space:nowrap;}
+.fk-tb:not(.two) .fk-r b{text-align:left;min-width:60px;}
+.fk-h b{font-size:11.5px;}
+.fk-tb.two .fk-r b:last-child{border-left:1.5px solid var(--i);padding-left:6px;}
+.fk-tot,.fk-tot b,.fk-tot .n{color:#E24848;font-weight:400;}
+.fk-tot b{font-weight:400;}
+.fk-al{font-size:12px;border-top:2px solid var(--i);padding-top:9px;margin-top:4px;color:var(--i2);}
+.fk-st2{margin-top:10px;}
+.fk-s{display:grid;grid-template-columns:38% 1fr;gap:10px;font-size:12.5px;padding:2px 0;}
+.fk-s b{text-align:right;}
+.fk-s .full{grid-column:1/-1;}
+.be-fj{margin-top:14px;padding-top:12px;border-top:1px dashed var(--bd2);}
+.be-fj-ck{display:flex;gap:10px;align-items:flex-start;cursor:pointer;font-size:13px;}
+.be-fj-ck input{margin-top:3px;width:18px;height:18px;accent-color:var(--i);}
+.be-fj-ck small{display:block;color:var(--i3);font-size:11.5px;margin-top:2px;}
+.be-fj .be-recs{margin-top:10px;}
+.be-fj-x{border:0;background:none;color:var(--i4);cursor:pointer;padding:0 0 0 4px;display:inline-flex;vertical-align:middle;}
+.be-fj-x .ic{width:13px;height:13px;}

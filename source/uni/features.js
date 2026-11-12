@@ -618,7 +618,7 @@ if(typeof themeLock==='function'&&themeLock()){
 function themeLockCardHTML(L){
   var lay=(typeof getLayout==='function'?getLayout():'auto');
   return '<div class="cw" id="th-card"><div class="cw-t">'+ic('sparkle')+' Apparence</div>'+
-    '<div class="th-lock"><img src="'+L.logo+'" alt=""><div><b>Thème '+esc(L.n)+'</b><small>'+ic('lock')+' Attribué par ton lien d’accès : les couleurs et le logo ne peuvent pas être changés sur cet appareil.</small></div></div>'+
+    '<div class="th-lock">'+(L.logo?'<img src="'+L.logo+'" alt="">':'<span class="th-lock-i">'+ic('sparkle')+'</span>')+'<div><b>Thème '+esc(L.n)+'</b><small>'+ic('lock')+' Attribué par ton lien d’accès : '+(L.logo?'les couleurs et le logo ne peuvent pas être changés':'le thème ne peut pas être changé')+' sur cet appareil.</small></div></div>'+
     '<div class="th-row"><span class="th-lbl">Affichage</span><div class="seg">'+[['auto','Automatique'],['desk','Ordinateur'],['mob','Mobile']].map(function(m){ return '<button class="'+(lay===m[0]?'on':'')+'" onclick="setLayout(\''+m[0]+'\')">'+m[1]+'</button>'; }).join('')+'</div></div>'+
     (typeof clIsAdmin==='function'&&clIsAdmin()?'<button class="lnk" style="margin-top:10px" onclick="themeUnlockUI()">'+ic('x')+' Administrateur : retirer ce thème de cet appareil</button>':'')+
     '</div>';
@@ -634,11 +634,11 @@ function themeCardHTML(){
   var t=loadTheme(), mode=t.mode||'auto', acc=THEME_PAL[t.accent]?t.accent:'creme';
   var seg=[['auto','Automatique'],['light','Clair'],['dark','Sombre']].map(function(m){ return '<button class="'+(mode===m[0]?'on':'')+'" onclick="setThemeMode(\''+m[0]+'\')">'+m[1]+'</button>'; }).join('');
   function swb(k){ return '<button type="button" class="th-s'+(k===acc?' on':'')+'" aria-pressed="'+(k===acc)+'" onclick="setThemeAccent(\''+k+'\')"><span class="th-dot" style="background-color:'+themeSwatch(k,false)+'"></span>'+esc(THEME_PAL[k].n)+'</button>'; }
-  var ks=Object.keys(THEME_PAL), sw='<div class="th-sub">Thèmes</div><div class="th-sw">'+ks.filter(function(k){ return THEME_PAL[k].sty; }).map(swb).join('')+'</div><div class="th-sub">Couleurs</div><div class="th-sw">'+ks.filter(function(k){ return !THEME_PAL[k].sty; }).map(swb).join('')+'</div>';
+  var sw='<div class="th-sw">'+Object.keys(THEME_PAL).map(swb).join('')+'</div>';
   return '<div class="cw" id="th-card"><div class="cw-t">'+ic('sparkle')+' Apparence</div>'+
     '<div class="th-row"><span class="th-lbl">Mode</span><div class="seg">'+seg+'</div></div>'+
     '<div class="th-row"><span class="th-lbl">Affichage</span><div class="seg">'+[['auto','Automatique'],['desk','Ordinateur'],['mob','Mobile']].map(function(m){ var cur=(typeof getLayout==='function'?getLayout():'auto'); return '<button class="'+(cur===m[0]?'on':'')+'" onclick="setLayout(\''+m[0]+'\')">'+m[1]+'</button>'; }).join('')+'</div></div>'+
-    '<div class="th-lbl" style="margin-bottom:4px">Couleur de l’application</div>'+sw+
+    '<div class="th-lbl" style="margin-bottom:8px">Thème et couleur de l’application</div>'+sw+
     '<div style="font-size:11.5px;color:var(--i4);margin-top:10px">« Automatique » suit le réglage clair / sombre du téléphone ou de l’ordinateur, et choisit l’affichage selon la taille de l’écran (le bouton '+ic('mobile')+' en haut passe de l’un à l’autre). Les bons et fiches PDF prennent la version claire de la couleur choisie.</div></div>';
 }
 function saveTheme(t){ LS.setItem('v4_theme',JSON.stringify(t)); if(window.themeAnim) themeAnim(); applyTheme(t); var c=document.getElementById('th-card'); if(c) c.outerHTML=themeCardHTML(); }

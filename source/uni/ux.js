@@ -159,3 +159,188 @@
   var _g2=goPage;
   goPage=function(p){ var r=_g2.apply(this,arguments); try{ cur(p); }catch(e){} return r; };
 })();
+
+// ══ THÈME « SANS LOGO » : ni blason, ni « C » (menu, connexion, bons, fiches) ══
+(function(){
+  var CREST0=BON_CREST, CMARK0=BON_CMARK;
+  function logoSync(){
+    if(typeof themeLock==='function'&&themeLock()) return;
+    var off=typeof themeNoLogo==='function'&&themeNoLogo();
+    BON_CREST=off?'':CREST0; BON_CMARK=off?'':CMARK0;
+    document.querySelectorAll('[data-crest]').forEach(function(e){ if(off) e.removeAttribute('src'); else e.src=CREST0; });
+  }
+  var _at=window.applyTheme;
+  window.applyTheme=function(){ var r=_at.apply(this,arguments); try{ logoSync(); }catch(e){} return r; };
+  logoSync();
+  var _ia=window.initApp;
+  if(typeof _ia==='function') window.initApp=function(){ var r=_ia.apply(this,arguments); try{ logoSync(); }catch(e){} return r; };
+})();
+
+// ══ ADMIN : RECETTES À LA SUITE, APERÇU « FICHE », FICHES JOINTES AU BON ══
+// Réservé aux administrateurs pour l'instant. L'ancien aperçu (liste avec
+// cases à cocher) reste disponible : bouton « Liste ».
+(function(){
+  function adm(){ try{ return typeof clIsAdmin==='function'&&!!clIsAdmin(); }catch(e){ return false; } }
+  window.uxAdmin=adm;
+  function view(){ try{ return localStorage.getItem('v4_recview')==='list'?'list':'fiche'; }catch(e){ return 'fiche'; } }
+  window.recView=function(v){ try{ localStorage.setItem('v4_recview',v); }catch(e){} refreshRecPrev(); };
+
+  // Sections d'une recette : quantité de la recette et quantité « mise en œuvre »
+  function sections(rec,mult){
+    var out=[];
+    (function sec(r,mb,mm,title,depth,main){
+      var rows=[], subs=[], tb=0, tm=0;
+      (r.items||[]).forEach(function(it){
+        var q=Number(it.qty)||0;
+        if(it.type==='ingredient'){
+          var ing=ingredients.find(function(x){ return x.id===it.refId; }), kg=toKg(q,it.unit,ing);
+          rows.push({name:ing?ing.name:'?', b:ficheQty(q*mb,it.unit,kg*mb), m:ficheQty(q*mm,it.unit,kg*mm)});
+          tb+=kg*mb; tm+=kg*mm;
+        } else {
+          var sr=recipes.find(function(x){ return x.id===it.refId; }); if(!sr) return;
+          var w=recWeight(sr.id);
+          rows.push({name:sr.name, b:w*q*mb>0?fQtyNice(w*q*mb):'Q.S.', m:w*q*mm>0?fQtyNice(w*q*mm):'Q.S.', sub:true});
+          tb+=w*q*mb; tm+=w*q*mm; subs.push({r:sr,b:q*mb,m:q*mm});
+        }
+      });
+      out.push({title:title,main:main,rows:rows,tb:tb,tm:tm});
+      subs.forEach(function(s){ if(depth<5) sec(s.r,s.b,s.m,s.r.name,depth+1,false); });
+    })(rec,1,mult,rec.name,0,true);
+    return out;
+  }
+  function steps(text){
+    return String(text||'').split(/\r?\n/).map(function(l){ return l.trim(); }).filter(Boolean).map(function(l){
+      var m=/^([^:]{2,42}?)\s*:\s*(.+)$/.exec(l); return m?{k:m[1],v:m[2]}:{k:'',v:l};
+    });
+  }
+  function allergTxt(rec){
+    var a=allergensOfFlat(flatten(rec.id));
+    return a.keys.length?a.keys.map(algLabel).join(', '):(a.unknown.length?'non renseignés pour tous les ingrédients':'aucun des 14 allergènes réglementaires');
+  }
+
+  // ── aperçu « fiche » dans la fenêtre « Ajouter une recette » ──
+  function ficheHTMLView(rec,mult){
+    var two=Math.abs(mult-1)>1e-9, secs=sections(rec,mult);
+    var h='<div class="fk"><div class="fk-t">'+esc(rec.name)+'</div>';
+    secs.forEach(function(s,i){
+      h+='<div class="fk-tb'+(two?' two':'')+'">'+(!s.main?'<div class="fk-st">'+esc(s.title)+'</div>':'')+
+        (two?'<div class="fk-r fk-h"><span></span><b>Recette</b><b>Mise en œuvre</b></div>':'')+
+        s.rows.map(function(r){ return '<div class="fk-r"><span class="n'+(r.sub?' sub':'')+'">'+esc(r.name)+'</span><b>'+esc(r.b)+'</b>'+(two?'<b>'+esc(r.m)+'</b>':'')+'</div>'; }).join('')+
+        '<div class="fk-r fk-tot"><span class="n">TOTAL</span><b>'+esc(fQtyNice(s.tb))+'</b>'+(two?'<b>'+esc(fQtyNice(s.tm))+'</b>':'')+'</div></div>';
+    });
+    h+='<div class="fk-al"><b>Allergènes :</b> '+esc(allergTxt(rec))+'</div>';
+    var st=steps(rec.notes);
+    if(st.length) h+='<div class="fk-st2">'+st.map(function(x){ return '<div class="fk-s">'+(x.k?'<b>'+esc(x.k)+'</b><span>'+esc(x.v)+'</span>':'<span class="full">'+esc(x.v)+'</span>')+'</div>'; }).join('')+'</div>';
+    return h+'</div>';
+  }
+  var _rp=refreshRecPrev;
+  refreshRecPrev=function(){
+    var r=_rp.apply(this,arguments);
+    try{
+      var seg=document.getElementById('rec-vseg'), box=document.getElementById('rec-fiche'), pw=document.getElementById('rec-prev-w');
+      var on=adm(); if(seg) seg.style.display=on?'':'none';
+      var f=on&&view()==='fiche'&&selRec;
+      if(seg){ document.getElementById('rec-v-fiche').classList.toggle('on',view()==='fiche'); document.getElementById('rec-v-list').classList.toggle('on',view()==='list'); }
+      if(box){ box.style.display=f?'':'none'; if(f) box.innerHTML=ficheHTMLView(selRec,curMult); }
+      if(pw&&f) pw.style.display='none';
+    }catch(e){ if(window.console) console.error(e); }
+    return r;
+  };
+  var _im=initRecMod;
+  initRecMod=function(){ var r=_im.apply(this,arguments); var b=document.getElementById('rec-more'); if(b) b.style.display=adm()?'':'none'; return r; };
+
+  // ── recettes à la suite : la fenêtre se rouvre après chaque ajout ──
+  var _cr=confirmRec;
+  confirmRec=function(cont){
+    var r=selRec, m=curMult, bon=curBon;
+    var res=_cr.apply(this,arguments);
+    try{
+      if(r&&bon&&!document.getElementById('m-rec').classList.contains('show')){
+        bon.recs=bon.recs||[];
+        var e=bon.recs.find(function(x){ return x.id===r.id; });
+        if(e) e.m=Math.round((e.m+m)*1000)/1000; else bon.recs.push({id:r.id,m:m});
+        if(cont===true){ openMod('m-rec'); try{ document.getElementById('rec-mod-s').focus(); }catch(e2){} }
+        if(typeof beRecap==='function') beRecap();
+      }
+    }catch(e3){ if(window.console) console.error(e3); }
+    return res;
+  };
+
+  // ── option du bon : joindre les fiches à la suite ──
+  window.bonFichesSet=function(v){ if(curBon){ curBon.fiches=!!v; } };
+  window.bonFichesDel=function(id){ if(!curBon) return; curBon.recs=(curBon.recs||[]).filter(function(x){ return x.id!==id; }); beRecap(); };
+  var _br=beRecap;
+  beRecap=function(){
+    var r=_br.apply(this,arguments);
+    try{
+      var box=document.getElementById('be-recap');
+      if(box&&adm()&&curBon&&(curBon.recs||[]).length){
+        box.insertAdjacentHTML('beforeend','<div class="be-fj"><label class="be-fj-ck"><input type="checkbox" id="be-fj-ck"'+(curBon.fiches?' checked':'')+' onchange="bonFichesSet(this.checked)"><span><b>Joindre les fiches à la suite du bon</b><small>Dans le PDF, chaque recette ajoutée a sa fiche (colonne « mise en œuvre »).</small></span></label>'+
+          '<div class="be-recs">'+curBon.recs.map(function(x){ var rec=recipes.find(function(y){ return y.id===x.id; }); if(!rec) return '';
+            return '<span>'+ic('book')+esc(rec.name)+(Math.abs(x.m-1)>1e-9?' ×'+fQ(x.m):'')+'<button type="button" class="be-fj-x" aria-label="Retirer la fiche de '+esc(rec.name)+'" onclick="bonFichesDel(\''+x.id+'\')">'+ic('x')+'</button></span>'; }).join('')+'</div></div>');
+      }
+    }catch(e){ if(window.console) console.error(e); }
+    return r;
+  };
+
+  // ── PDF : les fiches viennent après le bon ──
+  window.bonAppendFiches=function(doc,F,d){
+    var o=(typeof curBon!=='undefined'&&curBon&&curBon.id===d.id)?curBon:orders.find(function(x){ return x.id===d.id; });
+    if(!o||!o.fiches||!(o.recs||[]).length||!adm()) return;
+    var PW=595.28, PH=841.89, BAND=539, L=42, R=505, BOTTOM=786, P=bonPal(), INK=P.ink, BEIGE=P.beige;
+    var GREY=[110,110,110], RED=[226,72,72], GREEN=[30,150,85];
+    function rgb(fn,c){ doc[fn](c[0],c[1],c[2]); }
+    var y=0, label='', pageNo=doc.getNumberOfPages();
+    function chrome(){
+      rgb('setFillColor',BEIGE); doc.rect(BAND,0,PW-BAND,PH,'F');
+      if(BON_CREST) try{ doc.addImage(BON_CREST,'PNG',BAND+(PW-BAND-44)/2,18,44,44*219/260,'bonCrest','FAST'); }catch(e){}
+      if(BON_CMARK) try{ doc.addImage(BON_CMARK,'PNG',BAND+(PW-BAND-36)/2,63,36,36,'bonCmark','FAST'); }catch(e){}
+      doc.setFont(F,'bold'); doc.setFontSize(24); rgb('setTextColor',INK);
+      var w=doc.getTextWidth(label); doc.text(label,BAND+(PW-BAND)/2+8,PH/2+w/2,{angle:90});
+      doc.setFont(F,'normal'); doc.setFontSize(9); rgb('setTextColor',GREY); doc.text(String(pageNo),R,PH-30,{align:'right'});
+    }
+    function newPage(){ doc.addPage(); pageNo++; chrome(); y=56; }
+    function ensure(h){ if(y+h>BOTTOM) newPage(); }
+    function rule(w){ rgb('setDrawColor',INK); doc.setLineWidth(w||1.6); doc.line(L,y,R,y); }
+    function two(rec,mult){
+      var tw=Math.abs(mult-1)>1e-9, xN=tw?208:230, xB=tw?286:244, xS=tw?300:0, xM=tw?418:0;
+      sections(rec,mult).forEach(function(s,si){
+        ensure(60); y+=4;
+        if(si>0||tw){ doc.setFont(F,'bold'); doc.setFontSize(9.5);
+          if(!s.main){ rgb('setTextColor',GREEN); doc.text(s.title,xN,y+10,{align:'right'}); }
+          if(tw){ rgb('setTextColor',INK); doc.text('Recette',xB,y+10,{align:'right'}); doc.text('Mise en œuvre',xM,y+10,{align:'right'}); }
+          y+=17; }
+        var y0=y;
+        s.rows.forEach(function(r){
+          ensure(16); y+=13; doc.setFontSize(9.5);
+          doc.setFont(F,'normal'); rgb('setTextColor',INK); doc.text(r.name,xN,y,{align:'right',maxWidth:xN-L});
+          doc.setFont(F,'bold'); if(tw){ doc.text(r.b,xB,y,{align:'right'}); doc.text(r.m,xM,y,{align:'right'}); } else doc.text(r.b,xB+12,y);
+        });
+        ensure(18); y+=15; doc.setFont(F,'normal'); rgb('setTextColor',RED); doc.text('TOTAL',xN,y,{align:'right'});
+        if(tw){ doc.text(fQtyNice(s.tb),xB,y,{align:'right'}); doc.text(fQtyNice(s.tm),xM,y,{align:'right'}); } else doc.text(fQtyNice(s.tb),xB+12,y);
+        if(tw){ rgb('setDrawColor',INK); doc.setLineWidth(1); doc.line(xS,y0-2,xS,y+4); }
+        y+=12;
+      });
+    }
+    o.recs.forEach(function(x){
+      var rec=recipes.find(function(r){ return r.id===x.id; }); if(!rec) return;
+      label=(rec.cat||'Fiche').toUpperCase(); newPage();
+      doc.setFont(F,'bold'); doc.setFontSize(18); rgb('setTextColor',INK);
+      var tl=doc.splitTextToSize(rec.name,(R-L)-10); tl.forEach(function(t){ doc.text(t,(L+R)/2,y+8,{align:'center'}); y+=22; });
+      y+=6; rule(1.8); two(rec,x.m); rule(1.8); y+=16;
+      doc.setFont(F,'bold'); doc.setFontSize(8.5); rgb('setTextColor',INK); doc.text('Allergènes :',L,y);
+      doc.setFont(F,'normal'); doc.text(allergTxt(rec),L+48,y,{maxWidth:R-L-48}); y+=20;
+      var process=[]; try{ process=ficheData(rec).process; }catch(e){}
+      process.forEach(function(pr){
+        if(pr.title!==rec.name){ ensure(24); y+=6; doc.setFont(F,'bold'); doc.setFontSize(10); rgb('setTextColor',GREEN); doc.text(pr.title,L,y+10); y+=16; }
+        steps(pr.text).forEach(function(s){
+          var xl=206, xt=216, lines=doc.splitTextToSize(s.v,s.k?R-xt:R-L);
+          ensure(14*lines.length+4); doc.setFontSize(9.5);
+          if(s.k){ doc.setFont(F,'bold'); rgb('setTextColor',INK); doc.text(s.k,xl,y+10,{align:'right',maxWidth:xl-L}); }
+          doc.setFont(F,'normal'); rgb('setTextColor',INK);
+          lines.forEach(function(t,i){ doc.text(t,s.k?xt:L,y+10+i*13); }); y+=13*lines.length+4;
+        });
+      });
+    });
+  };
+})();
