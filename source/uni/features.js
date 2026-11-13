@@ -618,10 +618,16 @@ if(typeof themeLock==='function'&&themeLock()){
 function themeLockCardHTML(L){
   var lay=(typeof getLayout==='function'?getLayout():'auto');
   return '<div class="cw" id="th-card"><div class="cw-t">'+ic('sparkle')+' Apparence</div>'+
-    '<div class="th-lock">'+(L.logo?'<img src="'+L.logo+'" alt="">':'<span class="th-lock-i">'+ic('sparkle')+'</span>')+'<div><b>Thème '+esc(L.n)+'</b><small>'+ic('lock')+' Attribué par ton lien d’accès : '+(L.logo?'les couleurs et le logo ne peuvent pas être changés':'le thème ne peut pas être changé')+' sur cet appareil.</small></div></div>'+
+    '<div class="th-lock">'+(L.logo?'<img src="'+L.logo+'" alt="">':'<span class="th-lock-i">'+ic('sparkle')+'</span>')+'<div><b>Thème '+esc(L.n)+'</b><small>'+ic('lock')+' Attribué par ton lien d’accès : '+(L.logo?'les couleurs et le logo ne peuvent pas être changés':(L.pals?'tu peux seulement choisir le jeu de couleurs ci-dessous':'le thème ne peut pas être changé'))+(L.pals?'.':' sur cet appareil.')+'</small></div></div>'+
+    (L.pals?'<div class="th-row"><span class="th-lbl">Couleurs</span><div class="th-sw">'+L.pals.map(function(p){ return '<button type="button" class="th-s'+(p.on?' on':'')+'" aria-pressed="'+p.on+'" onclick="setEpurePal(\''+p.k+'\')"><span class="th-dot" style="background-color:'+p.sw+';box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)"></span>'+esc(p.n)+'</button>'; }).join('')+'</div></div>':'')+
     '<div class="th-row"><span class="th-lbl">Affichage</span><div class="seg">'+[['auto','Automatique'],['desk','Ordinateur'],['mob','Mobile']].map(function(m){ return '<button class="'+(lay===m[0]?'on':'')+'" onclick="setLayout(\''+m[0]+'\')">'+m[1]+'</button>'; }).join('')+'</div></div>'+
     (typeof clIsAdmin==='function'&&clIsAdmin()?'<button class="lnk" style="margin-top:10px" onclick="themeUnlockUI()">'+ic('x')+' Administrateur : retirer ce thème de cet appareil</button>':'')+
     '</div>';
+}
+function setEpurePal(k){
+  if(!themeEpurePal(k)) return;
+  var c=document.getElementById('th-card'); if(c&&typeof themeCardHTML==='function'){ var t=document.createElement('div'); t.innerHTML=themeCardHTML(); c.replaceWith(t.firstChild); }
+  if(typeof renderAdmin==='function'&&document.getElementById('adm-th-epure')) try{ renderAdmin(); }catch(e){}
 }
 function themeUnlockUI(){
   var L=themeLock(); if(!L) return;
@@ -714,7 +720,7 @@ function ficheQty(qty,unit,kg){
   if(/^(l|ml|cl|dl)$/i.test(u)){ var L=kg; return (L>0&&L<1)?fNum(L*1000,1)+' ml':fNum(L,3)+' L'; }
   return fQtyNice(kg);
 }
-function ficheData(rec){
+function ficheData(rec,mult0,sep){
   var p=loadProfile(), sections=[], process=[], seenProc={};
   function addProc(r,title){ if(r.notes&&String(r.notes).trim()&&!seenProc[r.id]){ seenProc[r.id]=1; process.push({title:title,text:String(r.notes).trim()}); } }
   function section(r,mult,title,depth,main){
@@ -733,11 +739,11 @@ function ficheData(rec){
       }
     });
     sections.push({title:title, main:!!main, weight:w, cost:c, rows:rows});
-    subs.forEach(function(s){ if(depth<5) section(s.r,s.m,s.r.name,depth+1,false); });
+    subs.forEach(function(s){ if(depth<5&&!sep) section(s.r,s.m,s.r.name,depth+1,false); });
   }
-  section(rec,1,rec.name,0,true);
+  section(rec,mult0>0?mult0:1,rec.name,0,true);
   addProc(rec,rec.name);
-  (function walk(r,depth){ r.items.forEach(function(it){ if(it.type!=='ingredient'&&depth<5){ var sr=recipes.find(function(x){return x.id===it.refId;}); if(sr){ addProc(sr,sr.name); walk(sr,depth+1); } } }); })(rec,0);
+  if(!sep) (function walk(r,depth){ r.items.forEach(function(it){ if(it.type!=='ingredient'&&depth<5){ var sr=recipes.find(function(x){return x.id===it.refId;}); if(sr){ addProc(sr,sr.name); walk(sr,depth+1); } } }); })(rec,0);
   var a=allergensOfFlat(flatten(rec.id));
   return {id:rec.id, name:rec.name||'Recette', cat:rec.cat||'', sub:rec.sub?subLabel('rec',rec.sub):'', image:recHasPhoto(rec)?rec.image:'', shop:p.shop||'',
     date:new Date().toLocaleDateString('fr-FR'), weight:sections[0].weight, cost:sections[0].cost, sections:sections, process:process, allergens:a, pcs:rec.pcs||0, time:rec.time||0};
@@ -782,11 +788,19 @@ function ficheFromEditor(mode){
 function ficheDoPDF(f){
   try{
     var doc=new window.jspdf.jsPDF({orientation:'portrait',unit:'pt',format:'a4'});
-    var F=bonPdfFonts(doc);
+    ficheDrawPDF(doc,bonPdfFonts(doc),f,true);
+    doc.save(('fiche_'+(f.name||'recette')).replace(/[^a-z0-9]/gi,'_')+'.pdf');
+    toast('Fiche technique téléchargée','ok');
+  }catch(e){ console.error(e); toast('Erreur PDF','err'); }
+}
+// dessine une fiche technique (ancien format) à la suite de `doc` ; first=true : sur la page courante
+function ficheDrawPDF(doc,F,f,first){
+  {
     var PW=595.28, PH=841.89, L=40, R=513, BAND=539, BOTTOM=792;
     var X={name:44, qtyR:318, price:330, costR:507, sep1:325, sep2:418};
     var INK=bonPal().ink, GREY=[140,140,140], LGREY=[150,150,150], BEIGE=bonPal().beige, ALT=bonPal().alt, SEP=bonPal().sep;
-    var page=1, y=0;
+    if(!first) doc.addPage();
+    var page=doc.getNumberOfPages(), y=0;
     function rgb(fn,c){ doc[fn](c[0],c[1],c[2]); }
     function chrome(){
       rgb('setFillColor',BEIGE); doc.rect(BAND,0,PW-BAND,PH,'F');
@@ -805,7 +819,7 @@ function ficheDoPDF(f){
       doc.text('Prix unit. TTC',X.price,y+12.5); doc.text('Coût TTC',X.costR,y+12.5,{align:'right'});
       y+=19;
     }
-    function newPage(){ doc.addPage(); page++; chrome(); y=46; }
+    function newPage(){ doc.addPage(); page=doc.getNumberOfPages(); chrome(); y=46; }
     function ensure(h,tbl){ if(y+h<=BOTTOM) return false; newPage(); if(tbl) header(); return true; }
     function band(label,right){
       rgb('setFillColor',BEIGE); doc.rect(L,y,R-L,20,'F');
@@ -884,9 +898,7 @@ function ficheDoPDF(f){
         String(pr.text).split(/\n+/).forEach(function(par){ if(par.trim()) para(par.trim(),'normal',[59,53,54],9); });
       });
     }
-    doc.save(('fiche_'+(f.name||'recette')).replace(/[^a-z0-9]/gi,'_')+'.pdf');
-    toast('Fiche technique téléchargée','ok');
-  }catch(e){ console.error(e); toast('Erreur PDF','err'); }
+  }
 }
 
 

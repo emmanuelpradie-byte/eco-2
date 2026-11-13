@@ -15,7 +15,9 @@
     <div class="sbi" id="nav-bons" title="Bons d’économat" onclick="goPage('bons')"><span class="sb-ic">{{ic:bon}}</span><span class="sb-lb">Bons d’économat</span><span class="sb-bd" id="nd-bons">0</span></div>
     <div class="sbi" id="nav-recettes" title="Recettes" onclick="goPage('recettes')"><span class="sb-ic">{{ic:book}}</span><span class="sb-lb">Recettes</span><span class="sb-bd" id="nd-rec">0</span></div>
     <div class="sbi" id="nav-catalogue" title="Catalogue" onclick="goPage('catalogue')"><span class="sb-ic">{{ic:box}}</span><span class="sb-lb">Catalogue</span></div>
+    <div class="sbi" id="nav-livre" title="Livre de recettes" style="display:none" onclick="goPage('livre')"><span class="sb-ic">{{ic:list}}</span><span class="sb-lb">Livre</span><span class="sb-bd" id="bk-hd-n" style="display:none"></span></div>
     <div class="sb-grp" role="presentation">Autres</div>
+    <div class="sbi" id="nav-chat" title="Messages" style="display:none" onclick="goPage('chat')"><span class="sb-ic">{{ic:chat}}</span><span class="sb-lb">Messages</span><span class="sb-bd" id="chat-bd" style="display:none">0</span></div>
     <div class="sbi" id="nav-partage" title="Partage" onclick="goPage('partage')"><span class="sb-ic">{{ic:users}}</span><span class="sb-lb">Partage</span></div>
     <div class="sbi" id="nav-fournisseurs" title="Fournisseurs" onclick="goPage('fournisseurs')"><span class="sb-ic">{{ic:truck}}</span><span class="sb-lb">Fournisseurs</span></div>
     <div class="sb-div"></div>
@@ -45,6 +47,8 @@
     <div id="p-home" class="pg">
       <div class="h-hello">
         <div style="flex:1;min-width:0"><div class="h-hi" id="h-hi">Bonjour</div><div class="h-date" id="h-date"></div></div>
+        <button class="icbtn mob-only" id="chat-m-btn" style="display:none;position:relative" onclick="goPage('chat')" title="Messages" aria-label="Messages">{{ic:chat}}<span class="sb-bd" id="chat-bd-m" style="display:none;position:absolute;top:-2px;right:-2px">0</span></button>
+        <button class="icbtn mob-only" id="bk-m-btn" style="display:none" onclick="goPage('livre')" title="Livre de recettes" aria-label="Livre de recettes">{{ic:list}}</button>
         <button class="icbtn mob-only" onclick="goPage('backup')" title="Réglages">{{ic:settings}}</button>
       </div>
       <div id="h-backup"></div>
@@ -299,6 +303,12 @@
 
     <!-- PARTAGE -->
     <div id="p-partage" class="pg" style="display:none;"><div class="narrow wide" id="part-wrap"></div></div>
+
+    <!-- LIVRE -->
+    <div id="p-livre" class="pg" style="display:none;"><div class="narrow" id="bk-wrap"></div></div>
+
+    <!-- MESSAGES -->
+    <div id="p-chat" class="pg" style="display:none;"><div class="narrow wide" id="chat-wrap"></div></div>
 
     <!-- ADMINISTRATION -->
     <div id="p-admin" class="pg" style="display:none;"><div class="narrow" id="adm-wrap"></div></div>

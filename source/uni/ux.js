@@ -182,7 +182,7 @@
 (function(){
   function adm(){ try{ return typeof clIsAdmin==='function'&&!!clIsAdmin(); }catch(e){ return false; } }
   window.uxAdmin=adm;
-  function view(){ try{ return localStorage.getItem('v4_recview')==='list'?'list':'fiche'; }catch(e){ return 'fiche'; } }
+  function view(){ try{ return localStorage.getItem('v4_recview')==='fiche'?'fiche':'list'; }catch(e){ return 'list'; } }
   window.recView=function(v){ try{ localStorage.setItem('v4_recview',v); }catch(e){} refreshRecPrev(); };
 
   // Sections d'une recette : quantité de la recette et quantité « mise en œuvre »
@@ -267,6 +267,12 @@
   };
 
   // ── option du bon : joindre les fiches à la suite ──
+  window.bonRecsToBook=function(){
+    if(!curBon||!(curBon.recs||[]).length) return;
+    var n=curBon.recs.length; bkAdd(curBon.recs.map(function(x){ return {id:x.id,m:x.m}; }));
+    toast(n+' recette'+(n>1?'s':'')+' ajoutée'+(n>1?'s':'')+' au livre','ok'); try{ saveBon(); }catch(e){}
+    goPage('livre');
+  };
   window.bonFichesSet=function(v){ if(curBon){ curBon.fiches=!!v; } };
   window.bonFichesDel=function(id){ if(!curBon) return; curBon.recs=(curBon.recs||[]).filter(function(x){ return x.id!==id; }); beRecap(); };
   var _br=beRecap;
@@ -277,16 +283,23 @@
       if(box&&adm()&&curBon&&(curBon.recs||[]).length){
         box.insertAdjacentHTML('beforeend','<div class="be-fj"><label class="be-fj-ck"><input type="checkbox" id="be-fj-ck"'+(curBon.fiches?' checked':'')+' onchange="bonFichesSet(this.checked)"><span><b>Joindre les fiches à la suite du bon</b><small>Dans le PDF, chaque recette ajoutée a sa fiche (colonne « mise en œuvre »).</small></span></label>'+
           '<div class="be-recs">'+curBon.recs.map(function(x){ var rec=recipes.find(function(y){ return y.id===x.id; }); if(!rec) return '';
-            return '<span>'+ic('book')+esc(rec.name)+(Math.abs(x.m-1)>1e-9?' ×'+fQ(x.m):'')+'<button type="button" class="be-fj-x" aria-label="Retirer la fiche de '+esc(rec.name)+'" onclick="bonFichesDel(\''+x.id+'\')">'+ic('x')+'</button></span>'; }).join('')+'</div></div>');
+            return '<span>'+ic('book')+esc(rec.name)+(Math.abs(x.m-1)>1e-9?' ×'+fQ(x.m):'')+'<button type="button" class="be-fj-x" aria-label="Retirer la fiche de '+esc(rec.name)+'" onclick="bonFichesDel(\''+x.id+'\')">'+ic('x')+'</button></span>'; }).join('')+'</div><button type="button" class="btn btn-ghost btn-sm be-bk" onclick="bonRecsToBook()">'+ic('list')+' Mettre ces recettes dans le livre</button></div>');
       }
     }catch(e){ if(window.console) console.error(e); }
     return r;
   };
 
   // ── PDF : les fiches viennent après le bon ──
-  window.bonAppendFiches=function(doc,F,d){
-    var o=(typeof curBon!=='undefined'&&curBon&&curBon.id===d.id)?curBon:orders.find(function(x){ return x.id===d.id; });
-    if(!o||!o.fiches||!(o.recs||[]).length||!adm()) return;
+  // dessine les fiches de `recs` ([{id,m}]) à la suite de `doc` ; cb(rec,page) est appelé au début de chaque fiche
+  // ancien format : fiche technique (ingrédients, quantités, prix, coût)
+  window.fichePagesDraw=function(doc,F,recs,cb,sep){
+    recs.forEach(function(x){
+      var rec=recipes.find(function(r){ return r.id===x.id; }); if(!rec) return;
+      if(cb) cb(rec,doc.getNumberOfPages()+1);
+      ficheDrawPDF(doc,F,ficheData(rec,x.m,!!sep),false);
+    });
+  };
+  window.fichePagesDrawNew=function(doc,F,recs,cb){
     var PW=595.28, PH=841.89, BAND=539, L=42, R=505, BOTTOM=786, P=bonPal(), INK=P.ink, BEIGE=P.beige;
     var GREY=[110,110,110], RED=[226,72,72], GREEN=[30,150,85];
     function rgb(fn,c){ doc[fn](c[0],c[1],c[2]); }
@@ -322,9 +335,9 @@
         y+=12;
       });
     }
-    o.recs.forEach(function(x){
+    recs.forEach(function(x){
       var rec=recipes.find(function(r){ return r.id===x.id; }); if(!rec) return;
-      label=(rec.cat||'Fiche').toUpperCase(); newPage();
+      label=(rec.cat||'Fiche').toUpperCase(); newPage(); if(cb) cb(rec,pageNo);
       doc.setFont(F,'bold'); doc.setFontSize(18); rgb('setTextColor',INK);
       var tl=doc.splitTextToSize(rec.name,(R-L)-10); tl.forEach(function(t){ doc.text(t,(L+R)/2,y+8,{align:'center'}); y+=22; });
       y+=6; rule(1.8); two(rec,x.m); rule(1.8); y+=16;
@@ -342,5 +355,10 @@
         });
       });
     });
+  };
+  window.bonAppendFiches=function(doc,F,d){
+    var o=(typeof curBon!=='undefined'&&curBon&&curBon.id===d.id)?curBon:orders.find(function(x){ return x.id===d.id; });
+    if(!o||!o.fiches||!(o.recs||[]).length||!adm()) return;
+    fichePagesDraw(doc,F,o.recs);
   };
 })();

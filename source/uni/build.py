@@ -111,5 +111,11 @@ for folder,prefix in [('economat-pro','icons/'),('economat-pwa','icons/'),('pwa-
     open(d+'sw.js','w',encoding='utf-8').write(sw.replace('__ASSETS__',json.dumps(assets)).replace("const CACHE_NAME = 'economat-v3';","const CACHE_NAME = 'economat-"+BUILD+"';"))
     shutil.copy('INSTALLATION.md',d+'INSTALLATION.md')
     shutil.copy('PARTAGE.md',d+'PARTAGE.md'); shutil.copy('../cloud/supabase-setup.sql',d+'supabase-setup.sql')
-    if os.path.exists('../cloud/supabase-update-v5.sql'): shutil.copy('../cloud/supabase-update-v5.sql',d+'supabase-update-v5.sql')
+    import glob
+    for f in glob.glob('../cloud/supabase-update-v*.sql'): shutil.copy(f,d+os.path.basename(f))
 print('pwa ok', BUILD)
+
+# Pages fixes par thème verrouillé (nécessite playwright)
+try:
+    os.system('python3 lockpages.py')
+except Exception as e: print('lockpages ignoré',e)

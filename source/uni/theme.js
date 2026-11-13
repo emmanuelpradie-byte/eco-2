@@ -54,19 +54,33 @@
       '--bl':'#0F5A99','--bl-bg':'#E4EEF8'}}
   };
   LOCKS.epure={n:'Épuré · blanc',cls:'th-epure',logo:'',nl:1,bg:'#FFFFFF',acc:'#111111',bon:{beige:[241,241,239],alt:[247,247,246],sep:[228,228,226],ink:[17,17,17]},vars:STY.epure};
+  // Épuré : un seul thème verrouillé, avec plusieurs jeux de couleur au choix
+  var EPALS={}, EORDER=[], EPAL='blanc';
   (function(){
     function hx(h){ return [1,3,5].map(function(k){ return parseInt(h.substr(k,2),16); }); }
-    [['epure-sable','Épuré · sable','creme'],['epure-sauge','Épuré · sauge','sauge2'],['epure-ocean','Épuré · océan','ocean'],['epure-rose','Épuré · rose','poudre'],['epure-nuit','Épuré · nuit','minuit']].forEach(function(x){
+    EPALS.blanc={n:'Blanc',sw:'#FFFFFF',bg:'#FFFFFF',acc:'#111111',dk:false,vars:STY.epure,bon:LOCKS.epure.bon}; EORDER.push('blanc');
+    [['sable','Sable','creme'],['sauge','Sauge','sauge2'],['ocean','Océan','ocean'],['rose','Rose','poudre'],['terra','Terracotta','terra'],['graphite','Graphite','graphite'],['nuit','Nuit','minuit']].forEach(function(x){
       var v=STY[x[2]], dk=x[2]==='minuit';
-      LOCKS[x[0]]={n:x[1],cls:'th-'+x[0],logo:'',nl:1,dk:dk,bg:v['--p'],acc:dk?v['--am2']:v['--i-h'],
-        bon:{beige:hx(dk?'#E4E4E2':v['--beige']),alt:hx(dk?'#F7F7F6':v['--alt']),sep:hx(dk?'#E4E4E2':v['--bd']),ink:hx(dk?'#111111':v['--i'])},vars:v};
+      EPALS[x[0]]={n:x[1],sw:v['--p'],bg:v['--p'],acc:dk?v['--am2']:v['--i-h'],dk:dk,vars:v,
+        bon:{beige:hx(dk?'#E4E4E2':v['--beige']),alt:hx(dk?'#F7F7F6':v['--alt']),sep:hx(dk?'#E4E4E2':v['--bd']),ink:hx(dk?'#111111':v['--i'])}}; EORDER.push(x[0]);
     });
   })();
+  function epureSync(){
+    var P=EPALS[EPAL]||EPALS.blanc, L=LOCKS.epure;
+    L.n='Épuré'; L.vars=P.vars; L.bg=P.bg; L.acc=P.acc; L.dk=P.dk; L.bon=P.bon;
+  }
+  function epureSet(k,save){ if(!EPALS[k]) return false; EPAL=k; if(save){ try{ localStorage.setItem('v4_epure_pal',k); }catch(e){} } epureSync(); return true; }
+  try{ var _ep=window.__EPURE_PAL||localStorage.getItem('v4_epure_pal'); if(_ep) epureSet(_ep,false); }catch(e){ epureSync(); }
+  epureSync();
   function lockKey(){
     try{
+      var fx=window.__THEME_LOCK; if(fx&&/^epure-/.test(fx)&&EPALS[fx.slice(6)]){ epureSet(fx.slice(6),false); fx='epure'; }
+      if(fx&&LOCKS[fx]){ try{ localStorage.setItem('v4_theme_lock',fx); }catch(e){} return fx; }
       var m=/[?&#]theme=([a-z0-9-]+)/i.exec(location.search+location.hash), k=m&&m[1].toLowerCase();
+      var mp=/[?&#]pal=([a-z0-9]+)/i.exec(location.search+location.hash); if(mp&&EPALS[mp[1].toLowerCase()]) epureSet(mp[1].toLowerCase(),true);
+      var al=k&&/^epure-([a-z0-9]+)$/.exec(k); if(al&&EPALS[al[1]]){ epureSet(al[1],true); k='epure'; }
       if(k&&LOCKS[k]){ localStorage.setItem('v4_theme_lock',k); return k; }
-      k=localStorage.getItem('v4_theme_lock'); return LOCKS[k]?k:null;
+      k=localStorage.getItem('v4_theme_lock'); var a2=k&&/^epure-([a-z0-9]+)$/.exec(k); if(a2&&EPALS[a2[1]]){ epureSet(a2[1],true); k='epure'; localStorage.setItem('v4_theme_lock',k); } return LOCKS[k]?k:null;
     }catch(e){ return null; }
   }
   var LOCK=lockKey();
@@ -85,8 +99,9 @@
   window.themeNoLogo=function(){ var p=PAL[get().accent]; return !LOCK&&!!(p&&p.nl); };
   window.loadTheme=get;
   window.applyTheme=apply;
-  window.themeLock=function(){ return LOCK?{key:LOCK,n:LOCKS[LOCK].n,logo:LOCKS[LOCK].logo,nl:!!LOCKS[LOCK].nl,bon:LOCKS[LOCK].bon}:null; };
-  window.themeLocks=function(){ return Object.keys(LOCKS).map(function(k){ var L=LOCKS[k]; return {key:k,n:L.n,logo:L.logo,nl:!!L.nl,colors:[L.vars['--i'],L.vars['--i-h'],L.acc,L.vars['--beige']]}; }); };
+  window.themeLock=function(){ return LOCK?{key:LOCK,n:LOCKS[LOCK].n,logo:LOCKS[LOCK].logo,nl:!!LOCKS[LOCK].nl,bon:LOCKS[LOCK].bon,pals:LOCK==='epure'?EORDER.map(function(k){ return {k:k,n:EPALS[k].n,sw:EPALS[k].sw,on:k===EPAL}; }):null}:null; };
+  window.themeEpurePal=function(k){ if(LOCK!=='epure'||!epureSet(k,true)) return false; themeAnim(); window.applyTheme(); return true; };
+  window.themeLocks=function(){ return Object.keys(LOCKS).map(function(k){ var L=LOCKS[k]; return {key:k,n:L.n,logo:L.logo,nl:!!L.nl,bg:L.bg,colors:[L.vars['--i'],L.vars['--i-h'],L.acc,L.vars['--beige']]}; }); };
   window.themeUnlock=function(){ try{ localStorage.removeItem('v4_theme_lock'); }catch(e){} LOCK=null; themeAnim(); window.applyTheme(); };
   window.themeSetLock=function(k){ if(!LOCKS[k]) return false; try{ localStorage.setItem('v4_theme_lock',k); }catch(e){} LOCK=k; themeAnim(); window.applyTheme(); return true; };
   // Changement de thème en fondu (couleurs qui glissent de l'une à l'autre)
@@ -96,7 +111,7 @@
   }
   window.themeAnim=themeAnim;
   // Appli installée sur l'écran d'accueil : elle rouvre avec le même lien et le logo
-  if(LOCK) document.addEventListener('DOMContentLoaded',function(){
+  if(LOCK&&!window.__THEME_LOCK) document.addEventListener('DOMContentLoaded',function(){
     try{
       var L=LOCKS[LOCK], base=location.origin+location.pathname.replace(/[^\/]*$/,''), url=base+'index.html?theme='+LOCK;
       if(!/[?&]theme=/.test(location.search)&&history.replaceState) history.replaceState(null,'',location.pathname+(location.search?location.search+'&':'?')+'theme='+LOCK+location.hash);

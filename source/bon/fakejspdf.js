@@ -21,5 +21,9 @@
     lines.forEach(function(l,i){ c.save(); var yy=y+i*lh; c.translate(x*S,yy*S); if(o.angle) c.rotate(-o.angle*Math.PI/180); var w=c.measureText(l).width; c.fillText(l, o.align==='right'?-w:(o.align==='center'?-w/2:0), 0); c.restore(); }); };
   Doc.prototype.addImage=function(src,fmt,x,y,w,h){ var im=new Image(); im.src=src; var c=this.ctx; if(im.complete&&im.naturalWidth) c.drawImage(im,x*S,y*S,w*S,h*S); else window.__imgWarn=(window.__imgWarn||0)+1; };
   Doc.prototype.save=function(){ window.__pdfPages=this.pages.map(function(p){ return p.toDataURL('image/png'); }); };
+  Doc.prototype.getNumberOfPages=function(){ return this.pages.length; };
+  Doc.prototype.setPage=function(n){ this.ctx=this.pages[n-1].getContext('2d'); return this; };
+  Doc.prototype.link=function(){ this.links=(this.links||0)+1; };
+  Doc.prototype.setLineDashPattern=function(a){ this.ctx.setLineDash((a||[]).map(function(v){ return v*S; })); return this; };
   window.jspdf={jsPDF:Doc};
 })();
