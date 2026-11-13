@@ -43,44 +43,77 @@ function bkClear(){ if(!confirm('Vider la sélection du livre ?')) return; var b
 function bkQ(v){ BK.q=v; renderLivre(true,true); }
 function bkAutoSubs(v){ var b=bkGet(); b.autoSubs=!!v; bkSave(b); }
 
-function renderLivre(keep,noFocus){
+function renderLivre(keep){
   var w=document.getElementById('bk-wrap'); if(!w) return;
-  var b=bkGet(), sorted=bkSorted(b), q=normTxt(BK.q||'');
-  var sc=document.getElementById('scroll'), top=keep&&sc?sc.scrollTop:0, fo=document.activeElement&&document.activeElement.id;
-  var sel='', cats={};
+  var b=bkGet(), sorted=bkSorted(b);
+  var sc=document.getElementById('scroll'), top=keep&&sc?sc.scrollTop:0, cats={}, sel='';
   sorted.forEach(function(it){ var r=recipes.find(function(x){ return x.id===it.id; }), c=bkCatOf(r); (cats[c]=cats[c]||[]).push({r:r,m:it.m}); });
   Object.keys(cats).forEach(function(c){
-    sel+='<div class="bk-cat">'+esc(c)+'</div>'+cats[c].map(function(o){
-      return '<div class="bk-sel"><span class="bk-n">'+esc(o.r.name)+'</span>'+
+    sel+='<div class="bk-cat">'+esc(c)+' <small>'+cats[c].length+'</small></div>'+cats[c].map(function(o){
+      return '<div class="bk-sel"><div class="bk-th">'+(typeof recThumb==='function'?recThumb(o.r):'')+'</div><span class="bk-n">'+esc(o.r.name)+'</span>'+
         '<label class="bk-m" title="Multiplicateur de la recette">×<input type="text" inputmode="decimal" value="'+esc(String(o.m).replace('.',','))+'" aria-label="Multiplicateur de '+esc(o.r.name)+'" onchange="bkMult(\''+o.r.id+'\',this.value)"></label>'+
         '<button type="button" class="bk-x" aria-label="Retirer '+esc(o.r.name)+'" onclick="bkToggle(\''+o.r.id+'\')">'+ic('x')+'</button></div>';
     }).join('');
   });
-  var all=recipes.filter(function(r){ return (!q||normTxt(r.name+' '+bkCatOf(r)).indexOf(q)>=0); });
-  var groups={}; all.forEach(function(r){ (groups[bkCatOf(r)]=groups[bkCatOf(r)]||[]).push(r); });
-  var pick=Object.keys(groups).sort(bkCmpCat).map(function(c){
-    var ids=groups[c], n=ids.filter(function(r){ return bkHas(b,r.id); }).length, allOn=n===ids.length;
-    return '<div class="bk-cat bk-cat-h"><span>'+esc(c)+' <small>'+ids.length+'</small></span><button type="button" class="lnk" onclick="bkToggleCat(\''+esc(c).replace(/'/g,"\\'")+'\','+(allOn?'false':'true')+')">'+(allOn?'Tout décocher':'Tout cocher')+'</button></div>'+
-      ids.sort(function(a,c2){ return a.name.localeCompare(c2.name,'fr'); }).map(function(r){
-        var on=bkHas(b,r.id);
-        return '<label class="bk-pk'+(on?' on':'')+'"><input type="checkbox"'+(on?' checked':'')+' onchange="bkToggle(\''+r.id+'\')"><span>'+esc(r.name)+'</span></label>';
-      }).join('');
-  }).join('')||'<div class="bk-empty">Aucune recette trouvée.</div>';
   w.innerHTML=
     '<div class="cw"><div class="cw-t">'+ic('book')+' Mon livre</div>'+
       '<div class="field"><div class="fl">Titre du livre</div><input class="fi" id="bk-title" value="'+esc(b.title)+'" placeholder="Ex. Viennoiseries et pâtisseries" oninput="bkField(\'title\',this.value)"></div>'+
       '<div class="field"><div class="fl">Sous-titre (facultatif)</div><input class="fi" id="bk-sub" value="'+esc(b.sub)+'" placeholder="Ex. Recueil de l’atelier — 2026" oninput="bkField(\'sub\',this.value)"></div>'+
       '<label class="bk-ck bk-auto"><input type="checkbox"'+(b.autoSubs!==false?' checked':'')+' onchange="bkAutoSubs(this.checked)"> Ajouter automatiquement les sous-recettes utilisées, sur leurs propres pages</label>'+
       '<div class="bk-sum">'+ic('list')+' <b>'+sorted.length+'</b> recette'+(sorted.length>1?'s':'')+' · sommaire et numéros de page automatiques</div>'+
-      '<div class="bk-act"><button class="btn btn-gold" onclick="bookBuild()"'+(sorted.length?'':' disabled')+'>'+ic('download')+' Créer le livre (PDF)</button>'+(sorted.length?'<button class="btn btn-ghost" onclick="bkClear()">Vider</button>':'')+'</div>'+
+      '<div class="bk-act"><button class="btn btn-gold" onclick="bkStartPick()">'+ic('plus')+' '+(sorted.length?'Ajouter des recettes':'Choisir mes recettes')+'</button>'+
+      '<button class="btn btn-beige" onclick="bookBuild()"'+(sorted.length?'':' disabled')+'>'+ic('download')+' Créer le livre (PDF)</button>'+(sorted.length?'<button class="btn btn-ghost" onclick="bkClear()">Vider</button>':'')+'</div>'+
     '</div>'+
-    (sorted.length?'<div class="cw"><div class="cw-t">'+ic('list')+' Dans le livre</div>'+sel+'</div>':'')+
-    '<div class="cw"><div class="cw-t">'+ic('plus')+' Ajouter des recettes</div>'+
-      '<div class="bk-bar"><input class="fi" id="bk-q" type="search" placeholder="Chercher une recette…" value="'+esc(BK.q)+'" oninput="bkQ(this.value)" aria-label="Chercher une recette"></div>'+
-      pick+'</div>';
+    (sorted.length?'<div class="cw"><div class="cw-t">'+ic('list')+' Dans le livre</div>'+sel+'</div>':
+      '<div class="cw bk-hint">'+ic('book')+'<p>Choisis tes recettes dans ton carnet : même recherche, mêmes filtres et mêmes vignettes que la page Recettes.</p></div>');
   if(sc) sc.scrollTop=top;
-  if(noFocus&&fo==='bk-q'){ var i=document.getElementById('bk-q'); if(i){ i.focus(); try{ i.setSelectionRange(i.value.length,i.value.length); }catch(e){} } }
 }
+
+// ── choisir les recettes dans la page Recettes (même recherche, filtres et vignettes) ──
+var BKP={on:false};
+function bkStartPick(){ BKP.on=true; goPage('recettes'); }
+function bkPickDone(){ BKP.on=false; document.body.classList.remove('bk-pick'); try{ renderRec(); }catch(e){} goPage('livre'); }
+function bkPick(id){
+  var b=bkGet(), on=!bkHas(b,id);
+  if(on) b.items.push({id:id,m:1}); else b.items=b.items.filter(function(x){ return x.id!==id; });
+  bkSave(b); bkPickSync(id);
+}
+function bkPickSync(id){
+  var b=bkGet();
+  document.querySelectorAll('[data-bk]').forEach(function(e){ if(!id||e.getAttribute('data-bk')===id) e.classList.toggle('bk-s',bkHas(b,e.getAttribute('data-bk'))); });
+  var n=document.getElementById('bkp-n'); if(n) n.textContent=b.items.length+' recette'+(b.items.length>1?'s':'')+' dans le livre';
+  var all=document.getElementById('bkp-all'); if(all){ var l=recFiltered(true); var allOn=l.length&&l.every(function(r){ return bkHas(b,r.id); }); all.textContent=allOn?'Tout désélectionner ('+l.length+')':'Tout sélectionner ('+l.length+')'; }
+}
+function bkPickAll(){
+  var l=recFiltered(true), b=bkGet(), allOn=l.length&&l.every(function(r){ return bkHas(b,r.id); });
+  l.forEach(function(r){ var has=bkHas(b,r.id); if(!allOn&&!has) b.items.push({id:r.id,m:1}); if(allOn&&has) b.items=b.items.filter(function(x){ return x.id!==r.id; }); });
+  bkSave(b); bkPickSync();
+}
+function bkPickBar(){
+  var bar=document.getElementById('bkp-bar');
+  if(!BKP.on){ if(bar) bar.remove(); document.body.classList.remove('bk-pick'); return; }
+  document.body.classList.add('bk-pick');
+  if(!bar){
+    bar=document.createElement('div'); bar.id='bkp-bar'; bar.className='bkp-bar';
+    bar.innerHTML='<div class="bkp-t">'+ic('book')+'<span id="bkp-n"></span></div><button type="button" class="btn btn-ghost btn-sm" id="bkp-all" onclick="bkPickAll()"></button><button type="button" class="btn btn-gold btn-sm" onclick="bkPickDone()">'+ic('check')+' Terminer</button>';
+    document.body.appendChild(bar);
+  }
+  bkPickSync();
+}
+// vignettes et lignes de la page Recettes : en mode livre, toucher = cocher
+['recTile','recRow'].forEach(function(fn){
+  var orig=window[fn]; if(typeof orig!=='function') return;
+  window[fn]=function(r){
+    var h=orig.apply(this,arguments); if(!BKP.on) return h;
+    h=h.replace(/openEditRec\('/g,"bkPick('").replace(/quickAddRec\('/g,"bkPick('");
+    h=h.replace(/^<div class="(rt|rc)"/,function(m,c){ return '<div class="'+c+(bkHas(bkGet(),r.id)?' bk-s':'')+'" data-bk="'+r.id+'" onclick="bkPick(\''+r.id+'\')"'; });
+    return h.replace('>','><span class="bk-ckm" aria-hidden="true">'+ic('check')+'</span>');
+  };
+});
+(function(){
+  var _r=renderRec;
+  renderRec=function(){ var r=_r.apply(this,arguments); try{ bkPickBar(); }catch(e){} return r; };
+})();
 
 // ── PDF ──
 // ajoute (sur leurs propres pages) les sous-recettes utilisées par les recettes choisies
@@ -171,21 +204,24 @@ function bkPdf(b,items){
 // ── navigation (administrateurs) ──
 function bkNav(){
   var on=bkAdm();
-  ['nav-livre','bk-m-btn'].forEach(function(id){ var e=document.getElementById(id); if(e) e.style.display=on?'':'none'; });
+  ['nav-livre','bk-m-btn','bn-livre'].forEach(function(id){ var e=document.getElementById(id); if(e) e.style.display=on?'':'none'; });
   var n=document.getElementById('bk-hd-n'); if(n){ var c=bkGet().items.length; n.textContent=c?String(c):''; n.style.display=c?'flex':'none'; }
 }
 (function(){
   var _g=goPage;
   goPage=function(p){
     if(p==='livre'&&!bkAdm()){ toast('Réservé aux administrateurs','err'); p='home'; }
+    if(BKP.on&&p!=='recettes'&&p!=='livre'){ BKP.on=false; bkPickBar(); try{ renderRec(); }catch(e){} }
+    if(BKP.on&&p==='livre'){ BKP.on=false; bkPickBar(); }
     var r=_g.apply(this,arguments);
-    var e=document.getElementById('nav-livre'); if(e) e.classList.toggle('on',p==='livre');
+    ['nav-livre','bn-livre'].forEach(function(id){ var e=document.getElementById(id); if(e) e.classList.toggle('on',p==='livre'); });
     var pg=document.getElementById('p-livre'); if(pg) pg.style.display=p==='livre'?'block':'none';
     if(p==='livre'){
       var bc=document.getElementById('tb-bc'); if(bc) bc.textContent='Livre';
       var act=document.getElementById('tb-act'); if(act) act.innerHTML='<button class="tbtn gold" onclick="bookBuild()">'+ic('download')+' Créer le livre</button>';
       renderLivre();
     }
+    if(p==='recettes'&&BKP.on){ try{ renderRec(); }catch(e){} }
     bkNav();
     return r;
   };
