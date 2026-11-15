@@ -610,7 +610,7 @@ function renderBackup(){
 }
 // Thème verrouillé par le lien d'accès : son logo remplace l'emblème
 // (menu, écran de connexion, bons et fiches)
-if(typeof themeLock==='function'&&themeLock()){
+if(typeof themeLock==='function'&&themeLock()&&themeLock().logo){
   BON_CREST=themeLock().logo;
   // pas de « C » sur les bons et les fiches
   BON_CMARK='';
@@ -618,8 +618,8 @@ if(typeof themeLock==='function'&&themeLock()){
 function themeLockCardHTML(L){
   var lay=(typeof getLayout==='function'?getLayout():'auto');
   return '<div class="cw" id="th-card"><div class="cw-t">'+ic('sparkle')+' Apparence</div>'+
-    '<div class="th-lock">'+(L.logo?'<img src="'+L.logo+'" alt="">':'<span class="th-lock-i">'+ic('sparkle')+'</span>')+'<div><b>Thème '+esc(L.n)+'</b><small>'+ic('lock')+' Attribué par ton lien d’accès : '+(L.logo?'les couleurs et le logo ne peuvent pas être changés':(L.pals?'tu peux seulement choisir le jeu de couleurs ci-dessous':'le thème ne peut pas être changé'))+(L.pals?'.':' sur cet appareil.')+'</small></div></div>'+
-    (L.pals?'<div class="th-row"><span class="th-lbl">Couleurs</span><div class="th-sw">'+L.pals.map(function(p){ return '<button type="button" class="th-s'+(p.on?' on':'')+'" aria-pressed="'+p.on+'" onclick="setEpurePal(\''+p.k+'\')"><span class="th-dot" style="background-color:'+p.sw+';box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)"></span>'+esc(p.n)+'</button>'; }).join('')+'</div></div>':'')+
+    '<div class="th-lock">'+(L.logo?'<img src="'+L.logo+'" alt="">':'<span class="th-lock-i">'+ic('sparkle')+'</span>')+'<div><b>Thème '+esc(L.n)+'</b><small>'+ic('lock')+' Attribué par ton lien d’accès : '+(L.logo?'les couleurs et le logo ne peuvent pas être changés':(L.pals?'tu choisis la couleur, le mode clair / sombre et le blason ci-dessous':'le thème ne peut pas être changé'))+(L.pals?'.':' sur cet appareil.')+'</small></div></div>'+
+    (L.pals?themeModeRows()+'<div class="th-lbl" style="margin:4px 0 8px">Couleur</div><div class="th-sw">'+L.pals.map(function(p){ return '<button type="button" class="th-s'+(p.on?' on':'')+'" aria-pressed="'+p.on+'" onclick="setEpurePal(\''+p.k+'\')"><span class="th-dot" style="background-color:'+p.sw+';box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)"></span>'+esc(p.n)+'</button>'; }).join('')+'</div><div style="height:14px"></div>':'')+
     '<div class="th-row"><span class="th-lbl">Affichage</span><div class="seg">'+[['auto','Automatique'],['desk','Ordinateur'],['mob','Mobile']].map(function(m){ return '<button class="'+(lay===m[0]?'on':'')+'" onclick="setLayout(\''+m[0]+'\')">'+m[1]+'</button>'; }).join('')+'</div></div>'+
     (typeof clIsAdmin==='function'&&clIsAdmin()?'<button class="lnk" style="margin-top:10px" onclick="themeUnlockUI()">'+ic('x')+' Administrateur : retirer ce thème de cet appareil</button>':'')+
     '</div>';
@@ -642,13 +642,20 @@ function themeCardHTML(){
   function swb(k){ return '<button type="button" class="th-s'+(k===acc?' on':'')+'" aria-pressed="'+(k===acc)+'" onclick="setThemeAccent(\''+k+'\')"><span class="th-dot" style="background-color:'+themeSwatch(k,false)+'"></span>'+esc(THEME_PAL[k].n)+'</button>'; }
   var sw='<div class="th-sw">'+Object.keys(THEME_PAL).map(swb).join('')+'</div>';
   return '<div class="cw" id="th-card"><div class="cw-t">'+ic('sparkle')+' Apparence</div>'+
-    '<div class="th-row"><span class="th-lbl">Mode</span><div class="seg">'+seg+'</div></div>'+
+    themeModeRows()+
     '<div class="th-row"><span class="th-lbl">Affichage</span><div class="seg">'+[['auto','Automatique'],['desk','Ordinateur'],['mob','Mobile']].map(function(m){ var cur=(typeof getLayout==='function'?getLayout():'auto'); return '<button class="'+(cur===m[0]?'on':'')+'" onclick="setLayout(\''+m[0]+'\')">'+m[1]+'</button>'; }).join('')+'</div></div>'+
     '<div class="th-lbl" style="margin-bottom:8px">Thème et couleur de l’application</div>'+sw+
     '<div style="font-size:11.5px;color:var(--i4);margin-top:10px">« Automatique » suit le réglage clair / sombre du téléphone ou de l’ordinateur, et choisit l’affichage selon la taille de l’écran (le bouton '+ic('mobile')+' en haut passe de l’un à l’autre). Les bons et fiches PDF prennent la version claire de la couleur choisie.</div></div>';
 }
+function themeModeRows(){
+  var t=loadTheme(), mode=t.mode||'auto', cr=typeof themeCrest==='function'?themeCrest():true;
+  var seg=[['auto','Automatique'],['light','Clair'],['dark','Sombre']].map(function(m){ return '<button class="'+(mode===m[0]?'on':'')+'" onclick="setThemeMode(\''+m[0]+'\')">'+m[1]+'</button>'; }).join('');
+  return '<div class="th-row"><span class="th-lbl">Mode</span><div class="seg">'+seg+'</div></div>'+
+    '<div class="th-row"><span class="th-lbl">Blason</span><div class="seg"><button class="'+(cr?'on':'')+'" aria-pressed="'+cr+'" onclick="setThemeCrest(true)">Avec</button><button class="'+(cr?'':'on')+'" aria-pressed="'+(!cr)+'" onclick="setThemeCrest(false)">Sans</button></div></div>';
+}
+function setThemeCrest(on){ var L=typeof themeLock==='function'&&themeLock(); if(L&&L.logo) return; var t=loadTheme(); t[typeof themeCrestKey==='function'?themeCrestKey():'crest']=!!on; saveTheme(t); }
 function saveTheme(t){ LS.setItem('v4_theme',JSON.stringify(t)); if(window.themeAnim) themeAnim(); applyTheme(t); var c=document.getElementById('th-card'); if(c) c.outerHTML=themeCardHTML(); }
-function setThemeMode(m){ if(typeof themeLock==='function'&&themeLock()) return; var t=loadTheme(); t.mode=m; saveTheme(t); }
+function setThemeMode(m){ var L=typeof themeLock==='function'&&themeLock(); if(L&&!L.pals) return; var t=loadTheme(); t.mode=m; saveTheme(t); }
 function setThemeAccent(a){ if(typeof themeLock==='function'&&themeLock()) return; var t=loadTheme(); t.accent=a; saveTheme(t); }
 function fillStorageInfo(){
   var e=document.getElementById('bk-store'); if(!e) return;
@@ -722,7 +729,7 @@ function ficheQty(qty,unit,kg){
 }
 function ficheData(rec,mult0,sep){
   var p=loadProfile(), sections=[], process=[], seenProc={};
-  function addProc(r,title){ if(r.notes&&String(r.notes).trim()&&!seenProc[r.id]){ seenProc[r.id]=1; process.push({title:title,text:String(r.notes).trim()}); } }
+  function addProc(r,title){ if(((r.notes&&String(r.notes).trim())||r.notesHtml)&&!seenProc[r.id]){ seenProc[r.id]=1; var hh=r.notesHtml&&typeof rteClean==='function'?rteClean(r.notesHtml):''; process.push({title:title,text:String(r.notes||'').trim()||(hh&&typeof rteToText==='function'?rteToText(hh):''),html:hh}); } }
   function section(r,mult,title,depth,main){
     var rows=[], subs=[], w=0, c=0;
     r.items.forEach(function(it){
@@ -771,7 +778,7 @@ function ficheHTML(f){
     '<div class="bx-h3">Allergènes</div><div class="bx-p" style="color:#231F20">'+(a.keys.length?'<b>'+esc(a.keys.map(algLabel).join(', '))+'</b>':(a.unknown.length?'—':'Aucun des 14 allergènes réglementaires.'))+'</div>'+
     (a.unknown.length?'<div class="bx-p" style="font-style:italic">Non renseignés pour : '+esc(a.unknown.join(', '))+'.</div>':'')+
     (a.auto.length?'<div class="bx-p" style="font-style:italic">Déduits automatiquement, à vérifier : '+esc(a.auto.join(', '))+'.</div>':'')+
-    (f.process.length?'<div class="bx-h3">Procédé</div>'+f.process.map(function(pr){ return (f.process.length>1?'<div style="font-weight:700;font-size:10px;margin:7px 0 2px">'+esc(pr.title)+'</div>':'')+'<div class="bx-p" style="color:#3B3536;white-space:pre-line">'+esc(pr.text)+'</div>'; }).join(''):'')+
+    (f.process.length?'<div class="bx-h3">Procédé</div>'+f.process.map(function(pr){ return (f.process.length>1?'<div style="font-weight:700;font-size:10px;margin:7px 0 2px">'+esc(pr.title)+'</div>':'')+(pr.html?'<div class="bx-p bx-rt" style="color:#3B3536">'+pr.html+'</div>':'<div class="bx-p" style="color:#3B3536;white-space:pre-line">'+esc(pr.text)+'</div>'); }).join(''):'')+
   '</div>';
 }
 function ficheShow(f){ FICHE_CUR=f; document.getElementById('fiche-body').innerHTML=ficheHTML(f); document.getElementById('m-fiche').classList.add('show'); }
@@ -780,7 +787,7 @@ function ficheFromCard(id){ var r=recipes.find(function(x){return x.id===id;}); 
 function ficheFromEditor(mode){
   if(!recItems.length){ toast('Ajoutez au moins un ingrédient','err'); return; }
   var tmp={id:editRecId||'__fiche__', name:document.getElementById('r-name').value.trim()||'Recette', cat:document.getElementById('r-cat').value, sub:(document.getElementById('r-sub')||{}).value||'',
-    image:curRecImg||document.getElementById('r-img').value.trim(), notes:document.getElementById('r-notes').value.trim(), items:recItems, pcs:(typeof REC_ED!=='undefined'&&REC_ED.pcs)||0, time:(typeof REC_ED!=='undefined'&&REC_ED.time)||0};
+    image:curRecImg||document.getElementById('r-img').value.trim(), notes:document.getElementById('r-notes').value.trim(), notesHtml:(typeof rteGet==='function'?rteGet('r-notes-rte'):''), items:recItems, pcs:(typeof REC_ED!=='undefined'&&REC_ED.pcs)||0, time:(typeof REC_ED!=='undefined'&&REC_ED.time)||0};
   var orig=recipes; recipes=orig.filter(function(x){return x.id!==tmp.id;}).concat([tmp]);
   var f; try{ f=ficheData(tmp); } finally { recipes=orig; }
   if(mode==='pdf'){ FICHE_CUR=f; ficheDownload(); } else ficheShow(f);
@@ -895,7 +902,8 @@ function ficheDrawPDF(doc,F,f,first){
       heading('Procédé');
       f.process.forEach(function(pr){
         if(f.process.length>1){ ensure(22); y+=6; para(pr.title,'bold',INK,9.5); }
-        String(pr.text).split(/\n+/).forEach(function(par){ if(par.trim()) para(par.trim(),'normal',[59,53,54],9); });
+        if(pr.html&&typeof rtePdf==='function'){ y+=4; y=rtePdf(doc,F,pr.html,{L:L,R:R,y:y,ink:INK,size:9,brk:function(h,yy){ y=yy; ensure(h); return y; }}); }
+        else String(pr.text).split(/\n+/).forEach(function(par){ if(par.trim()) para(par.trim(),'normal',[59,53,54],9); });
       });
     }
   }

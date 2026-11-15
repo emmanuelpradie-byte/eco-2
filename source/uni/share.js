@@ -138,7 +138,7 @@ function shareSnapshot(r,depth,seen){
   var flat=flatten(r.id), a=allergensOfFlat(flat);
   var o={name:r.name,cat:r.cat||'',image:r.image||'',notes:r.notes||'',items:items,weight:recWeight(r.id),cost:recCost(r.id),allergens:a.keys||[]};
   if(depth===0) o.folder=(r.shared&&r.shareFolder)||'';
-  if(r.tags&&r.tags.length) o.tags=r.tags.slice(); if(r.time) o.time=r.time; if(r.pcs) o.pcs=r.pcs;
+  if(r.tags&&r.tags.length) o.tags=r.tags.slice(); if(r.time) o.time=r.time; if(r.pcs) o.pcs=r.pcs; if(r.notesHtml) o.notesHtml=r.notesHtml;
   if(depth===0) o.attachments=(r.attachments||[]).map(function(x){ return {id:x.id,name:x.name,mime:x.mime,size:x.size}; });
   return o;
 }
@@ -250,7 +250,7 @@ function openShared(id){
     '<div class="shr-by">'+ic('user')+' Partagée par <b>'+esc(x.owner_name||'—')+(mine?' (toi)':'')+'</b> · mise à jour le '+new Date(x.updated_at).toLocaleDateString('fr-FR')+'</div>'+
     '<div class="rc-stats" style="margin:10px 0"><div class="rs"><span class="rs-v">'+fKg(d.weight||0)+'</span><div class="rs-l">Poids</div></div><div class="rs"><span class="rs-v">'+fEur(d.cost||0)+'</span><div class="rs-l">Coût (prix de l’auteur)</div></div><div class="rs"><span class="rs-v">'+(d.items||[]).length+'</span><div class="rs-l">Compos.</div></div></div>'+
     algs+'<div class="shr-h">Composition</div><div class="shr-items">'+shrItemsHTML(d.items,0)+'</div>'+
-    (d.notes?'<div class="shr-h">Procédé</div><div class="shr-notes">'+esc(d.notes)+'</div>':'')+docs+
+    (d.notesHtml&&typeof rteView==='function'?'<div class="shr-h">Procédé</div><div class="shr-notes">'+rteView(d)+'</div>':(d.notes?'<div class="shr-h">Procédé</div><div class="shr-notes">'+esc(d.notes)+'</div>':''))+docs+
     (copy&&!mine?'<div class="shr-info" style="margin-top:12px">'+ic('check-circle')+'<span>Tu as déjà une copie de cette recette dans ton espace : « '+esc(copy.name)+' ».</span></div>':'');
   var loc=mine&&recipes.find(function(r){ return CLOUD.sess&&(CLOUD.sess.user.id.slice(0,8)+'_'+r.id)===x.id; });
   document.getElementById('shr-foot').innerHTML=mine
@@ -283,7 +283,7 @@ function shrCopy(){
       var sid=ex?ex.id:recFrom(it.sub,false).id;
       return {id:uid(),type:'recipe',refId:sid,qty:it.qty,unit:it.unit||'x'};
     });
-    var r={id:uid(),name:s.name,cat:s.cat||'',image:s.image||'📖',notes:s.notes||'',items:items,createdAt:now(),updatedAt:now()};
+    var r={id:uid(),name:s.name,cat:s.cat||'',image:s.image||'📖',notes:s.notes||'',items:items,createdAt:now(),updatedAt:now()}; if(s.notesHtml&&typeof rteClean==='function') r.notesHtml=rteClean(s.notesHtml);
     if(s.tags&&s.tags.length) r.tags=s.tags.slice(); if(s.time) r.time=s.time; if(s.pcs) r.pcs=s.pcs;
     if(top) r.fromShared={id:x.id,by:x.owner_name||'',at:x.updated_at}; else created.sub++;
     recipes.unshift(r); return r;

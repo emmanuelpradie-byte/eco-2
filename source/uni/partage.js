@@ -297,7 +297,7 @@ function partPick(folder,isNew){
   document.getElementById('pk-title').textContent='Dossier « '+folder+' »';
   document.getElementById('pk-body').innerHTML='<div class="pk-hint">Choisis ce qui va dans ce dossier. Chaque type a son onglet ; ils seront rangés séparément mais visibles dans le même dossier.</div>'+
     '<div class="pk-tabs" id="pk-tabs"></div>'+
-    '<div class="srch">'+ic('search')+'<input class="sinp" id="pk-q" placeholder="Rechercher…" oninput="PICK.q=this.value;partPickList()"></div><div class="cn-filters pk-filters" id="pk-filters"></div><div class="cn-active" id="pk-active" style="display:none"></div><div id="pk-list"></div>';
+    '<div class="srch" id="pk-srch">'+ic('search')+'<input class="sinp" id="pk-q" placeholder="Rechercher…" oninput="PICK.q=this.value;partPickList()"></div><div class="cn-filters pk-filters" id="pk-filters"></div><div class="cn-active" id="pk-active" style="display:none"></div><div id="pk-list"></div>';
   var S=fbS('pick'); S.v={}; S.open='';
   partPickList(); openMod('m-pick');
 }
@@ -362,20 +362,17 @@ function partPickList(){
   var tb=document.getElementById('pk-tabs'); if(tb) tb.innerHTML=pkTabsHTML();
   var q=normTxt(PICK.q), tab=PICK.tab||'rec', h='', fon=fbCount('pick')>0;
   fbRender('pick'); var pf=document.getElementById('pk-filters'); if(pf) pf.style.display=tab==='rec'?'':'none';
+  var sr=document.getElementById('pk-srch'); if(sr) sr.style.display=tab==='rec'?'none':'';
   if(tab==='rec'){
-    var by={};
-    recipes.filter(pkRecOk).forEach(function(r){ var c=r.cat||'Sans catégorie'; (by[c]=by[c]||[]).push(r); });
-    var cats=Object.keys(by).sort(function(a,b){ return a.localeCompare(b,'fr'); });
-    h=cats.length?cats.map(function(c){
-      var rs=by[c].sort(function(a,b){ return a.name.localeCompare(b.name,'fr'); }), on=rs.filter(function(r){ return PICK.sel[r.id]; }).length, all=on===rs.length, shut=PICK.closed[c]&&!q&&!fon;
-      return '<div class="pk-grp'+(shut?' shut':'')+'"><div class="pk-gh"><button class="pk-gt" onclick="pkFold(\''+escJS(c)+'\')">'+ic('chev-down')+catDot(c)+'<b>'+esc(c)+'</b><span class="pk-gc">'+on+'/'+rs.length+'</span></button>'+
-        '<button class="pk-all" data-v="'+(all?0:1)+'" onclick="partPickCat(\''+escJS(c)+'\',+this.getAttribute(\'data-v\'))">'+(all?'Tout décocher':'Tout cocher')+'</button></div>'+
-        (shut?'':'<div class="pk-gb">'+rs.map(function(r){
-          var other=r.shared&&r.shareFolder&&r.shareFolder!==PICK.folder?' · dans « '+esc(r.shareFolder)+' »':'', w=0, co=0;
-          try{ w=recWeight(r.id); co=recCostOf(r); }catch(e){}
-          return pkRow(r.id,'<i class="pk-ph" style="--ch:'+catHue(r.cat||'')+'">'+recThumb(r)+'</i>',r.name,fKg(w)+' · '+fEur(co)+other);
-        }).join('')+'</div>')+'</div>';
-    }).join(''):'<div class="pk-none">Aucune recette</div>';
+    // recettes : on les choisit dans la page Recettes (même recherche, filtres et vignettes)
+    if(pf) pf.style.display='none';
+    var chosen=recipes.filter(function(r){ return PICK.sel[r.id]; }).sort(function(a,b){ return (a.cat||'').localeCompare(b.cat||'','fr')||a.name.localeCompare(b.name,'fr'); });
+    h='<div class="pk-recgo"><button class="btn btn-gold" onclick="partPickRecs()">'+ic('book')+' '+(chosen.length?'Modifier la sélection':'Choisir mes recettes')+'</button><small>Dans la page Recettes : même recherche, mêmes filtres et mêmes vignettes. Touche une recette pour la cocher, puis « Terminer ».</small></div>'+
+      (chosen.length?'<div class="pk-gb flat">'+chosen.map(function(r){
+        var other=r.shared&&r.shareFolder&&r.shareFolder!==PICK.folder?' · dans « '+esc(r.shareFolder)+' »':'', w=0, co=0;
+        try{ w=recWeight(r.id); co=recCostOf(r); }catch(e){}
+        return pkRow(r.id,'<i class="pk-ph" style="--ch:'+catHue(r.cat||'')+'">'+recThumb(r)+'</i>',r.name,esc(r.cat||'')+' · '+fKg(w)+' · '+fEur(co)+other);
+      }).join('')+'</div>':'<div class="pk-none">Aucune recette choisie pour ce dossier.</div>');
   } else if(tab==='bon'){
     var bons=orders.filter(function(o){ return !q||normTxt(o.name).indexOf(q)>=0; }).sort(function(a,b){ return String(b.date||'').localeCompare(String(a.date||'')); });
     h=bons.length?'<div class="pk-gb flat">'+bons.map(function(o){
@@ -393,6 +390,8 @@ function partPickList(){
   box.innerHTML=h;
   partPickCount();
 }
+function partPickRecs(){ closeMod('m-pick'); BKP.on=true; BKP.kind='share'; goPage('recettes'); }
+function partPickBack(){ PICK.tab='rec'; openMod('m-pick'); partPickList(); }
 function partPickCat(c,v){
   recipes.filter(pkRecOk).forEach(function(r){ if((r.cat||'Sans catégorie')===c) PICK.sel[r.id]=v; });
   partPickList();
@@ -649,7 +648,7 @@ function shrCopyRow(x,cat){
       var sid=ex?ex.id:recFrom(it.sub,false).id;
       return {id:uid(),type:'recipe',refId:sid,qty:it.qty,unit:it.unit||'x'};
     });
-    var r={id:uid(),name:s.name,cat:(top&&cat)||s.cat||'',image:s.image||'📖',notes:s.notes||'',items:items,createdAt:now(),updatedAt:now()};
+    var r={id:uid(),name:s.name,cat:(top&&cat)||s.cat||'',image:s.image||'📖',notes:s.notes||'',items:items,createdAt:now(),updatedAt:now()}; if(s.notesHtml&&typeof rteClean==='function') r.notesHtml=rteClean(s.notesHtml);
     if(top&&s.tags&&s.tags.length) r.tags=s.tags.slice(); if(top&&s.time) r.time=s.time; if(top&&s.pcs) r.pcs=s.pcs;
     if(top) r.fromShared={id:x.id,by:x.owner_name||'',at:x.updated_at};
     recipes.unshift(r); return r;

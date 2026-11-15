@@ -54,54 +54,65 @@
       '--bl':'#0F5A99','--bl-bg':'#E4EEF8'}}
   };
   LOCKS.epure={n:'Épuré · blanc',cls:'th-epure',logo:'',nl:1,bg:'#FFFFFF',acc:'#111111',bon:{beige:[241,241,239],alt:[247,247,246],sep:[228,228,226],ink:[17,17,17]},vars:STY.epure};
-  // Épuré : un seul thème verrouillé, avec plusieurs jeux de couleur au choix
-  var EPALS={}, EORDER=[], EPAL='blanc';
+  // Épuré : thème verrouillé qui propose TOUTES les couleurs du thème de base
+  // (+ « Blanc », sa couleur d’origine), avec le mode clair / sombre.
+  var EPALS={}, EORDER=[], EPAL='blanc', EALIAS={sable:'creme',sauge:'sauge2',rose:'poudre',nuit:'minuit'};
   (function(){
-    function hx(h){ return [1,3,5].map(function(k){ return parseInt(h.substr(k,2),16); }); }
-    EPALS.blanc={n:'Blanc',sw:'#FFFFFF',bg:'#FFFFFF',acc:'#111111',dk:false,vars:STY.epure,bon:LOCKS.epure.bon}; EORDER.push('blanc');
-    [['sable','Sable','creme'],['sauge','Sauge','sauge2'],['ocean','Océan','ocean'],['rose','Rose','poudre'],['terra','Terracotta','terra'],['graphite','Graphite','graphite'],['nuit','Nuit','minuit']].forEach(function(x){
-      var v=STY[x[2]], dk=x[2]==='minuit';
-      EPALS[x[0]]={n:x[1],sw:v['--p'],bg:v['--p'],acc:dk?v['--am2']:v['--i-h'],dk:dk,vars:v,
-        bon:{beige:hx(dk?'#E4E4E2':v['--beige']),alt:hx(dk?'#F7F7F6':v['--alt']),sep:hx(dk?'#E4E4E2':v['--bd']),ink:hx(dk?'#111111':v['--i'])}}; EORDER.push(x[0]);
-    });
+    EPALS.blanc={n:'Blanc',sw:'#FFFFFF'}; EORDER.push('blanc');
+    Object.keys(PAL).forEach(function(k){ EPALS[k]={n:PAL[k].n,sw:null,pal:k}; EORDER.push(k); });
   })();
   function epureSync(){
-    var P=EPALS[EPAL]||EPALS.blanc, L=LOCKS.epure;
-    L.n='Épuré'; L.vars=P.vars; L.bg=P.bg; L.acc=P.acc; L.dk=P.dk; L.bon=P.bon;
+    var k=EPALS[EPAL]?EPAL:'blanc', L=LOCKS.epure, t=get(), P=PAL[k];
+    L.n='Épuré'; L.palKey=k==='blanc'?null:k;
+    if(k==='blanc'){
+      var dk=isDark(t.mode);
+      L.vars=dk?vars('graphite',PAL.graphite,true):STY.epure; L.dk=dk; L.bg=L.vars['--p']||'#FFFFFF'; L.acc='#111111';
+      L.bon={beige:[241,241,239],alt:[247,247,246],sep:[228,228,226],ink:[17,17,17]};
+    } else {
+      var d2=P.dk?true:isDark(t.mode);
+      L.vars=vars(k,P,d2); L.dk=d2; L.bg=L.vars['--p']||'#FBF8F3'; L.acc=L.vars['--i-h']||'#231F20'; L.bon=null;
+    }
   }
-  function epureSet(k,save){ if(!EPALS[k]) return false; EPAL=k; if(save){ try{ localStorage.setItem('v4_epure_pal',k); }catch(e){} } epureSync(); return true; }
-  try{ var _ep=window.__EPURE_PAL||localStorage.getItem('v4_epure_pal'); if(_ep) epureSet(_ep,false); }catch(e){ epureSync(); }
+  function epureSet(k,save){ k=EALIAS[k]||k; if(!EPALS[k]) return false; EPAL=k; if(save){ try{ localStorage.setItem('v4_epure_pal',k); }catch(e){} } epureSync(); return true; }
+  try{ var _ep=window.__EPURE_PAL||localStorage.getItem('v4_epure_pal'); if(_ep) epureSet(_ep,false); }catch(e){}
   epureSync();
+  function epOk(k){ k=EALIAS[k]||k; return !!EPALS[k]; }
   function lockKey(){
     try{
-      var fx=window.__THEME_LOCK; if(fx&&/^epure-/.test(fx)&&EPALS[fx.slice(6)]){ epureSet(fx.slice(6),false); fx='epure'; }
+      var fx=window.__THEME_LOCK; if(fx&&/^epure-/.test(fx)&&epOk(fx.slice(6))){ epureSet(fx.slice(6),false); fx='epure'; }
       if(fx&&LOCKS[fx]){ try{ localStorage.setItem('v4_theme_lock',fx); }catch(e){} return fx; }
       var m=/[?&#]theme=([a-z0-9-]+)/i.exec(location.search+location.hash), k=m&&m[1].toLowerCase();
-      var mp=/[?&#]pal=([a-z0-9]+)/i.exec(location.search+location.hash); if(mp&&EPALS[mp[1].toLowerCase()]) epureSet(mp[1].toLowerCase(),true);
-      var al=k&&/^epure-([a-z0-9]+)$/.exec(k); if(al&&EPALS[al[1]]){ epureSet(al[1],true); k='epure'; }
+      var mp=/[?&#]pal=([a-z0-9]+)/i.exec(location.search+location.hash); if(mp&&epOk(mp[1].toLowerCase())) epureSet(mp[1].toLowerCase(),true);
+      var al=k&&/^epure-([a-z0-9]+)$/.exec(k); if(al&&epOk(al[1])){ epureSet(al[1],true); k='epure'; }
       if(k&&LOCKS[k]){ localStorage.setItem('v4_theme_lock',k); return k; }
-      k=localStorage.getItem('v4_theme_lock'); var a2=k&&/^epure-([a-z0-9]+)$/.exec(k); if(a2&&EPALS[a2[1]]){ epureSet(a2[1],true); k='epure'; localStorage.setItem('v4_theme_lock',k); } return LOCKS[k]?k:null;
+      k=localStorage.getItem('v4_theme_lock'); var a2=k&&/^epure-([a-z0-9]+)$/.exec(k); if(a2&&epOk(a2[1])){ epureSet(a2[1],true); k='epure'; localStorage.setItem('v4_theme_lock',k); } return LOCKS[k]?k:null;
     }catch(e){ return null; }
   }
   var LOCK=lockKey();
   function apply(t){
     t=t||get(); var key=PAL[t.accent]?t.accent:'creme', p=PAL[key], dark=p.dk?true:isDark(t.mode);
     var root=document.documentElement, v=vars(key,p,dark);
+    if(LOCK==='epure') epureSync();
     if(LOCK){ dark=!!LOCKS[LOCK].dk; v=LOCKS[LOCK].vars; }
     Object.keys(LOCKS).forEach(function(k){ root.classList.toggle(LOCKS[k].cls,k===LOCK); });
-    root.classList.toggle('th-nologo',LOCK?!!LOCKS[LOCK].nl:!!p.nl);
+    root.classList.toggle('th-nologo',!crestOn(t));
     root.setAttribute('data-theme',dark?'dark':'light');
     KEYS.forEach(function(k){ if(v[k]) root.style.setProperty(k,v[k]); else root.style.removeProperty(k); });
     var bg=v['--p']||'#FBF8F3';
     var m=document.querySelector('meta[name=theme-color]'); if(m) m.setAttribute('content',bg);
   }
+  // Blason : option à cocher (comme clair / sombre). Par défaut affiché sur le
+  // thème de base, masqué sur Épuré ; le thème Compagnons garde son logo.
+  function crestOn(t){ t=t||get(); if(LOCK==='compagnons') return true; var ck=LOCK?'crest_'+LOCK:'crest'; if(typeof t[ck]==='boolean') return t[ck]; return LOCK?!LOCKS[LOCK].nl:!(PAL[t.accent]&&PAL[t.accent].nl); }
+  window.themeCrest=function(){ return crestOn(); };
+  window.themeCrestKey=function(){ return LOCK?'crest_'+LOCK:'crest'; };
   window.THEME_PAL=PAL;
-  window.themeNoLogo=function(){ var p=PAL[get().accent]; return !LOCK&&!!(p&&p.nl); };
+  window.themeNoLogo=function(){ return LOCK!=='compagnons'&&!crestOn(); };
   window.loadTheme=get;
   window.applyTheme=apply;
-  window.themeLock=function(){ return LOCK?{key:LOCK,n:LOCKS[LOCK].n,logo:LOCKS[LOCK].logo,nl:!!LOCKS[LOCK].nl,bon:LOCKS[LOCK].bon,pals:LOCK==='epure'?EORDER.map(function(k){ return {k:k,n:EPALS[k].n,sw:EPALS[k].sw,on:k===EPAL}; }):null}:null; };
+  window.themeLock=function(){ return LOCK?{key:LOCK,n:LOCKS[LOCK].n,logo:LOCKS[LOCK].logo,nl:!!LOCKS[LOCK].nl,bon:LOCKS[LOCK].bon,palKey:LOCKS[LOCK].palKey||null,pals:LOCK==='epure'?EORDER.map(function(k){ return {k:k,n:EPALS[k].n,sw:EPALS[k].sw||window.themeSwatch(k,false),on:k===EPAL}; }):null}:null; };
   window.themeEpurePal=function(k){ if(LOCK!=='epure'||!epureSet(k,true)) return false; themeAnim(); window.applyTheme(); return true; };
-  window.themeLocks=function(){ return Object.keys(LOCKS).map(function(k){ var L=LOCKS[k]; return {key:k,n:L.n,logo:L.logo,nl:!!L.nl,bg:L.bg,colors:[L.vars['--i'],L.vars['--i-h'],L.acc,L.vars['--beige']]}; }); };
+  window.themeLocks=function(){ return Object.keys(LOCKS).map(function(k){ var L=LOCKS[k]; return {key:k,n:L.n,logo:L.logo,nl:!!L.nl,bg:L.bg,colors:[L.vars['--i']||'#231F20',L.vars['--i-h']||L.acc||'#231F20',L.acc,L.vars['--beige']||'#EFE6D6']}; }); };
   window.themeUnlock=function(){ try{ localStorage.removeItem('v4_theme_lock'); }catch(e){} LOCK=null; themeAnim(); window.applyTheme(); };
   window.themeSetLock=function(k){ if(!LOCKS[k]) return false; try{ localStorage.setItem('v4_theme_lock',k); }catch(e){} LOCK=k; themeAnim(); window.applyTheme(); return true; };
   // Changement de thème en fondu (couleurs qui glissent de l'une à l'autre)

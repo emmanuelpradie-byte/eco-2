@@ -163,7 +163,7 @@ function admThemeShare(key,invite){
 }
 function admThemeTry(key){
   if(!themeSetLock(key)) return;
-  var L=themeLock(); BON_CREST=L.logo; BON_CMARK='';
+  var L=themeLock(); if(L.logo){ BON_CREST=L.logo; BON_CMARK=''; } else try{ applyTheme(); }catch(e){}
   toast('Thème « '+L.n+' » mis sur cet appareil','ok');
   renderAdmin();
   // rechargement avec le lien : logo partout et appli installable avec ce thème

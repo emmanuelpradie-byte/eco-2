@@ -164,7 +164,7 @@
 (function(){
   var CREST0=BON_CREST, CMARK0=BON_CMARK;
   function logoSync(){
-    if(typeof themeLock==='function'&&themeLock()) return;
+    if(typeof themeLock==='function'&&themeLock()&&themeLock().logo) return;
     var off=typeof themeNoLogo==='function'&&themeNoLogo();
     BON_CREST=off?'':CREST0; BON_CMARK=off?'':CMARK0;
     document.querySelectorAll('[data-crest]').forEach(function(e){ if(off) e.removeAttribute('src'); else e.src=CREST0; });

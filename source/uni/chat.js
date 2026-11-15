@@ -108,12 +108,19 @@ function chRenderList(){
       '<span class="ch-rt"><span class="ch-rl"><b>'+esc(name)+'</b><time>'+(t?chShort(t.last_at):'')+'</time></span>'+
       '<span class="ch-rl"><small>'+(t?chPreview(t,me):(general?'Tous les comptes':'Nouvelle discussion'))+'</small>'+(u?'<i class="ch-dot" aria-label="Nouveau message"></i>':'')+'</span></span></button>';
   }
-  var dms=CHAT.users.map(function(u){ var ch=chDm(u.id); return {u:u,ch:ch,t:tmap[ch]}; })
+  var all=CHAT.users.map(function(u){ var ch=chDm(u.id); return {u:u,ch:ch,t:tmap[ch]}; });
+  // Discussions : seulement les personnes à qui on a déjà parlé (ou la conversation ouverte)
+  var dms=all.filter(function(d){ return d.t||(CHAT.open&&CHAT.ch===d.ch); })
     .filter(function(d){ return !q||normTxt(d.u.name).indexOf(q)>=0; })
     .sort(function(a,b){ return (b.t?b.t.last_id:0)-(a.t?a.t.last_id:0)||a.u.name.localeCompare(b.u.name,'fr'); });
+  // Recherche : les autres comptes pour démarrer une nouvelle discussion
+  var others=q?all.filter(function(d){ return !d.t&&!(CHAT.open&&CHAT.ch===d.ch)&&normTxt(d.u.name).indexOf(q)>=0; }).sort(function(a,b){ return a.u.name.localeCompare(b.u.name,'fr'); }):[];
   var showGen=!q||normTxt('salon général').indexOf(q)>=0;
   el.innerHTML=(showGen?row('general','Salon général',true):'')+
-    (dms.length?'<div class="ch-sec">Discussions</div>'+dms.map(function(d){ return row(d.ch,d.u.name,false); }).join(''):(q?'<div class="ch-none">Personne ne correspond.</div>':'<div class="ch-none">Aucun autre compte actif pour l’instant.</div>'));
+    (dms.length?'<div class="ch-sec">Discussions</div>'+dms.map(function(d){ return row(d.ch,d.u.name,false); }).join(''):'')+
+    (others.length?'<div class="ch-sec">Nouvelle discussion</div>'+others.map(function(d){ return row(d.ch,d.u.name,false); }).join(''):'')+
+    (q&&!dms.length&&!others.length&&!showGen?'<div class="ch-none">Personne ne correspond à « '+esc(CHAT.lq)+' ».</div>':'')+
+    (!q&&!dms.length?'<div class="ch-none ch-tip">'+ic('search')+' Cherche une personne avec la barre ci-dessus pour lui écrire.</div>':'');
 }
 function chRenderThread(scrollEnd,fresh){
   var el=document.getElementById('ch-msgs'); if(!el) return;
@@ -166,7 +173,7 @@ function chRender(){
   var gen=CHAT.ch==='general';
   w.innerHTML='<div class="ch'+(CHAT.open?' open':'')+'">'+
     '<div class="ch-l"><div class="ch-lh"><span>Discussions</span></div>'+
-    '<label class="ch-ls-q">'+ic('search')+'<input type="search" placeholder="Rechercher une personne…" value="'+esc(CHAT.lq)+'" oninput="chLq(this.value)" aria-label="Rechercher une personne"></label>'+
+    '<label class="ch-ls-q">'+ic('search')+'<input type="search" placeholder="Rechercher ou démarrer une discussion…" value="'+esc(CHAT.lq)+'" oninput="chLq(this.value)" aria-label="Rechercher une personne"></label>'+
     '<div id="ch-list" class="ch-ls"></div></div>'+
     '<div class="ch-r"><div class="ch-rh"><button type="button" class="icbtn ch-back" aria-label="Retour aux discussions" onclick="chBack()">'+ic('chev-left')+'</button>'+chAv(chTitle(CHAT.ch),'sm',gen)+'<div class="ch-rt2"><b>'+esc(chTitle(CHAT.ch))+'</b><small>'+(gen?'Visible par tous les comptes':'Conversation privée')+'</small></div></div>'+
     '<div class="ch-wall"><div id="ch-msgs" class="ch-ms" aria-live="polite" onscroll="chDownBtn()"></div><button type="button" id="ch-down" class="ch-down" aria-label="Aller aux derniers messages" onclick="chToEnd()" style="display:none"></button></div>'+
