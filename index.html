@@ -2025,6 +2025,7 @@ html.lay-mob.re-full #p-livre{height:auto;min-height:100%;padding-bottom:calc(84
 #p-livre .bk-auto{display:flex;gap:8px;align-items:flex-start;white-space:normal;font-size:13px;line-height:1.4;padding-bottom:4px}
 #p-livre .bk-auto input{margin-top:3px;flex:none}
 .bk-nm b{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.bx-band img[src=""],.bx-band img:not([src]){display:none}
 
 /* mode mobile forcé */
 html.lay-mob .esplit{grid-template-columns:minmax(0,1fr) minmax(0,440px);}
@@ -2057,11 +2058,12 @@ html.lay-mob body.ch-thread #p-chat{position:fixed;inset:0;z-index:60;background
 html.lay-mob .rte-hint{display:none}html.lay-mob .rte-bar{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}html.lay-mob .rte-pop{position:fixed;top:auto;left:12px;right:12px;bottom:90px;grid-template-columns:repeat(6,36px);justify-content:center}html.lay-mob .rte-pop button{width:34px;height:34px}
 html.lay-mob.re-full #p-livre{height:auto;min-height:100%;padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}html.lay-mob #p-livre .re-top .re-save{width:auto;padding:0 12px;font-size:12.5px}
 </style>
-<script>window.ECO_SERVER={"url": "https://fbwuhejcphsjhhkfkjku.supabase.co", "key": "sb_publishable_QRPVGvql3M2eSfvwkBDTfw_9Pc8fuo0"};window.ECO_BUILD="9244e40e95";</script>
+<script>window.ECO_SERVER={"url": "https://fbwuhejcphsjhhkfkjku.supabase.co", "key": "sb_publishable_QRPVGvql3M2eSfvwkBDTfw_9Pc8fuo0"};window.ECO_BUILD="1d92454f6d";</script>
 <script>/* Apparence : mode clair / sombre et couleur de l'application.
    Lu de façon synchrone au chargement pour éviter un flash de couleur. */
 (function(){
   var PAL={
+    blanc:{n:'Épuré blanc',h:0,s:0,sty:1,sw:'#FFFFFF'},
     creme:{n:'Crème & Encre',h:40,s:14,sty:1,sw:'#C2603A'}, sauge2:{n:'Sauge moderne',h:135,s:14,sty:1,sw:'#2F6B4F'},
     ocean:{n:'Océan',h:222,s:48,sty:1,sw:'#3B5BDB'}, terra:{n:'Terracotta lin',h:20,s:50,sty:1,sw:'#C2603A'},
     graphite:{n:'Graphite',h:0,s:0,sty:1,sw:'#1A1A1A'}, poudre:{n:'Rose poudré',h:350,s:45,sty:1,sw:'#B84A62'},
@@ -2073,10 +2075,14 @@ html.lay-mob.re-full #p-livre{height:auto;min-height:100%;padding-bottom:calc(84
     canard:{n:'Bleu canard',h:186,s:42}, bleuet:{n:'Bleuet',h:222,s:52}, prune:{n:'Prune',h:292,s:28}, cerise:{n:'Cerise',h:354,s:58}
   };
   var STY={"epure": {"--p":"#FFFFFF","--p2":"#F7F7F6","--p3":"#EDEDEC","--card":"#FFFFFF","--alt":"#F7F7F6","--beige":"#F1F1EF","--beige2":"#E4E4E2","--am":"#F1F1EF","--am2":"#444444","--g2":"#444444","--bd":"#E8E8E6","--bd2":"#D6D6D3","--i":"#111111","--i2":"#2A2A2A","--i3":"#555555","--i4":"#666666","--g":"#111111","--i-h":"#000000","--on-i":"#FFFFFF","--ink-rgb":"17,17,17","--on-rgb":"255,255,255","--sh":"rgba(20,20,30,.06)"}, "creme": {"--p": "#FAFAF7", "--p2": "#F3F2EC", "--p3": "#E4DECB", "--card": "#FFFFFF", "--alt": "#F3F2EC", "--beige": "#EFEBDD", "--beige2": "#E4DECB", "--am": "#EFEBDD", "--am2": "#B4532E", "--g2": "#B4532E", "--bd": "#E7E5DC", "--bd2": "#E7E5DC", "--i": "#1A1A1A", "--i2": "#333333", "--i3": "#5C5A55", "--i4": "#6B6862", "--g": "#1A1A1A", "--i-h": "#C2603A", "--on-i": "#fff", "--ink-rgb": "26,26,26", "--on-rgb": "255,255,255", "--sh": "rgba(20,20,30,.07)"}, "sauge2": {"--p": "#F5F7F3", "--p2": "#ECF0E8", "--p3": "#D2DDC9", "--card": "#FFFFFF", "--alt": "#ECF0E8", "--beige": "#E2EADC", "--beige2": "#D2DDC9", "--am": "#E2EADC", "--am2": "#2F6B4F", "--g2": "#2F6B4F", "--bd": "#DDE4D7", "--bd2": "#DDE4D7", "--i": "#1D2B24", "--i2": "#2F4036", "--i3": "#55665B", "--i4": "#64756A", "--g": "#1D2B24", "--i-h": "#2F6B4F", "--on-i": "#fff", "--ink-rgb": "29,43,36", "--on-rgb": "255,255,255", "--sh": "rgba(20,20,30,.07)"}, "ocean": {"--p": "#F3F6FA", "--p2": "#E9EFF7", "--p3": "#CFDBF0", "--card": "#FFFFFF", "--alt": "#E9EFF7", "--beige": "#E1E9F6", "--beige2": "#CFDBF0", "--am": "#E1E9F6", "--am2": "#3B5BDB", "--g2": "#3B5BDB", "--bd": "#DCE4EF", "--bd2": "#DCE4EF", "--i": "#14213D", "--i2": "#27395E", "--i3": "#4A5B7B", "--i4": "#5A6B8A", "--g": "#14213D", "--i-h": "#3B5BDB", "--on-i": "#fff", "--ink-rgb": "20,33,61", "--on-rgb": "255,255,255", "--sh": "rgba(20,20,30,.07)"}, "terra": {"--p": "#F8F2EB", "--p2": "#F0E7DC", "--p3": "#E7CDB0", "--card": "#FFFDFA", "--alt": "#F0E7DC", "--beige": "#F1DFCB", "--beige2": "#E7CDB0", "--am": "#F1DFCB", "--am2": "#B5522E", "--g2": "#B5522E", "--bd": "#E8DCCB", "--bd2": "#E8DCCB", "--i": "#2B1F1A", "--i2": "#432F27", "--i3": "#6A564C", "--i4": "#76624F", "--g": "#2B1F1A", "--i-h": "#C2603A", "--on-i": "#fff", "--ink-rgb": "43,31,26", "--on-rgb": "255,255,255", "--sh": "rgba(20,20,30,.07)"}, "graphite": {"--p": "#F4F4F3", "--p2": "#EBEBEA", "--p3": "#D8D8D5", "--card": "#FFFFFF", "--alt": "#EBEBEA", "--beige": "#E6E6E4", "--beige2": "#D8D8D5", "--am": "#E6E6E4", "--am2": "#444444", "--g2": "#444444", "--bd": "#DEDEDC", "--bd2": "#DEDEDC", "--i": "#111111", "--i2": "#2A2A2A", "--i3": "#555555", "--i4": "#666666", "--g": "#111111", "--i-h": "#111111", "--on-i": "#fff", "--ink-rgb": "17,17,17", "--on-rgb": "255,255,255", "--sh": "rgba(20,20,30,.07)"}, "poudre": {"--p": "#FBF5F3", "--p2": "#F5EAE7", "--p3": "#EBCFCF", "--card": "#FFFFFF", "--alt": "#F5EAE7", "--beige": "#F4E0E0", "--beige2": "#EBCFCF", "--am": "#F4E0E0", "--am2": "#A83F57", "--g2": "#A83F57", "--bd": "#EBDAD5", "--bd2": "#EBDAD5", "--i": "#2E1F24", "--i2": "#47303A", "--i3": "#6E5560", "--i4": "#7A606B", "--g": "#2E1F24", "--i-h": "#B84A62", "--on-i": "#fff", "--ink-rgb": "46,31,36", "--on-rgb": "255,255,255", "--sh": "rgba(20,20,30,.07)"}, "minuit": {"--p": "#0F1320", "--p2": "#151A2B", "--p3": "#1B2136", "--card": "#161B2D", "--alt": "#1B2136", "--beige": "#242B45", "--beige2": "#2E3757", "--am": "#242B45", "--am2": "#F2B35E", "--g2": "#F2B35E", "--bd": "#252C45", "--bd2": "#323A5C", "--i": "#ECEFF8", "--i2": "#CDD3E6", "--i3": "#9AA3C0", "--i4": "#8089A8", "--g": "#ECEFF8", "--on-i": "#0F1320", "--i-h": "#FFFFFF", "--ink-rgb": "236,239,248", "--on-rgb": "15,19,32", "--sh": "rgba(0,0,0,.4)", "--re": "#EF7D6E", "--gr": "#6CC592", "--gr2": "#6CC592", "--bl": "#8DB4DA", "--warn": "#E2A55E", "--gr-bg": "rgba(108,197,146,.14)", "--gr-bd": "rgba(108,197,146,.32)", "--gr-bg2": "rgba(108,197,146,.09)", "--re-bg": "rgba(239,125,110,.14)", "--re-bd": "rgba(239,125,110,.34)", "--re-bg2": "rgba(239,125,110,.22)", "--warn-bg": "rgba(226,165,94,.12)", "--warn-bd": "rgba(226,165,94,.32)", "--bl-bg": "rgba(141,180,218,.15)"}};
+  STY.blanc=STY.epure;
   var KEYS=['--p','--p2','--p3','--card','--alt','--beige','--beige2','--am','--am2','--g2','--bd','--bd2','--i','--i2','--i3','--i4','--g','--on-i','--i-h','--ink-rgb','--on-rgb','--sh',
     '--re','--gr','--gr2','--bl','--warn','--gr-bg','--gr-bd','--gr-bg2','--re-bg','--re-bd','--re-bg2','--warn-bg','--warn-bd','--bl-bg'];
   function hsl(h,s,l){ return 'hsl('+h+','+(Math.round(s*10)/10)+'%,'+l+'%)'; }
   function get(){ try{ return JSON.parse(localStorage.getItem('v4_theme'))||{}; }catch(e){ return {}; } }
+  // Épuré devient le thème général : passage unique de tout le monde en « Épuré blanc »
+  // (les autres couleurs restent au choix dans les Réglages).
+  try{ if(!localStorage.getItem('v4_theme_epure1')){ var _t=get(); _t.accent='blanc'; localStorage.setItem('v4_theme',JSON.stringify(_t)); localStorage.setItem('v4_theme_epure1','1'); } }catch(e){}
   function mq(){ try{ return window.matchMedia('(prefers-color-scheme: dark)'); }catch(e){ return null; } }
   function isDark(m){ if(m==='dark') return true; if(m==='light') return false; var q=mq(); return !!(q&&q.matches); }
   function vars(key,p,dark){
@@ -2150,7 +2156,7 @@ html.lay-mob.re-full #p-livre{height:auto;min-height:100%;padding-bottom:calc(84
   }
   var LOCK=lockKey();
   function apply(t){
-    t=t||get(); var key=PAL[t.accent]?t.accent:'creme', p=PAL[key], dark=p.dk?true:isDark(t.mode);
+    t=t||get(); var key=PAL[t.accent]?t.accent:'blanc', p=PAL[key], dark=p.dk?true:isDark(t.mode);
     var root=document.documentElement, v=vars(key,p,dark);
     if(LOCK==='epure') epureSync();
     if(LOCK){ dark=!!LOCKS[LOCK].dk; v=LOCKS[LOCK].vars; }
@@ -2163,7 +2169,9 @@ html.lay-mob.re-full #p-livre{height:auto;min-height:100%;padding-bottom:calc(84
   }
   // Blason : option à cocher (comme clair / sombre). Par défaut affiché sur le
   // thème de base, masqué sur Épuré ; le thème Compagnons garde son logo.
-  function crestOn(t){ t=t||get(); if(LOCK==='compagnons') return true; var ck=LOCK?'crest_'+LOCK:'crest'; if(typeof t[ck]==='boolean') return t[ck]; return LOCK?!LOCKS[LOCK].nl:!(PAL[t.accent]&&PAL[t.accent].nl); }
+  // Blason et « C » : options à cocher (comme clair / sombre), masqués par défaut.
+  function crestOn(t){ t=t||get(); return LOCK==='compagnons'||t.crest===true; }
+  window.themeCmark=function(){ return get().cmark===true; };
   window.themeCrest=function(){ return crestOn(); };
   window.themeCrestKey=function(){ return LOCK?'crest_'+LOCK:'crest'; };
   window.THEME_PAL=PAL;
@@ -4696,7 +4704,7 @@ if(typeof themeLock==='function'&&themeLock()&&themeLock().logo){
 function themeLockCardHTML(L){
   var lay=(typeof getLayout==='function'?getLayout():'auto');
   return '<div class="cw" id="th-card"><div class="cw-t">'+ic('sparkle')+' Apparence</div>'+
-    '<div class="th-lock">'+(L.logo?'<img src="'+L.logo+'" alt="">':'<span class="th-lock-i">'+ic('sparkle')+'</span>')+'<div><b>Thème '+esc(L.n)+'</b><small>'+ic('lock')+' Attribué par ton lien d’accès : '+(L.logo?'les couleurs et le logo ne peuvent pas être changés':(L.pals?'tu choisis la couleur, le mode clair / sombre et le blason ci-dessous':'le thème ne peut pas être changé'))+(L.pals?'.':' sur cet appareil.')+'</small></div></div>'+
+    '<div class="th-lock">'+(L.logo?'<img src="'+L.logo+'" alt="">':'<span class="th-lock-i">'+ic('sparkle')+'</span>')+'<div><b>Thème '+esc(L.n)+'</b><small>'+ic('lock')+' Attribué par ton lien d’accès : '+(L.logo?'les couleurs et le logo ne peuvent pas être changés':(L.pals?'tu choisis la couleur et le mode clair / sombre ci-dessous':'le thème ne peut pas être changé'))+(L.pals?'.':' sur cet appareil.')+'</small></div></div>'+
     (L.pals?themeModeRows()+'<div class="th-lbl" style="margin:4px 0 8px">Couleur</div><div class="th-sw">'+L.pals.map(function(p){ return '<button type="button" class="th-s'+(p.on?' on':'')+'" aria-pressed="'+p.on+'" onclick="setEpurePal(\''+p.k+'\')"><span class="th-dot" style="background-color:'+p.sw+';box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)"></span>'+esc(p.n)+'</button>'; }).join('')+'</div><div style="height:14px"></div>':'')+
     '<div class="th-row"><span class="th-lbl">Affichage</span><div class="seg">'+[['auto','Automatique'],['desk','Ordinateur'],['mob','Mobile']].map(function(m){ return '<button class="'+(lay===m[0]?'on':'')+'" onclick="setLayout(\''+m[0]+'\')">'+m[1]+'</button>'; }).join('')+'</div></div>'+
     (typeof clIsAdmin==='function'&&clIsAdmin()?'<button class="lnk" style="margin-top:10px" onclick="themeUnlockUI()">'+ic('x')+' Administrateur : retirer ce thème de cet appareil</button>':'')+
@@ -4715,7 +4723,7 @@ function themeUnlockUI(){
 }
 function themeCardHTML(){
   if(typeof themeLock==='function'&&themeLock()) return themeLockCardHTML(themeLock());
-  var t=loadTheme(), mode=t.mode||'auto', acc=THEME_PAL[t.accent]?t.accent:'creme';
+  var t=loadTheme(), mode=t.mode||'auto', acc=THEME_PAL[t.accent]?t.accent:'blanc';
   var seg=[['auto','Automatique'],['light','Clair'],['dark','Sombre']].map(function(m){ return '<button class="'+(mode===m[0]?'on':'')+'" onclick="setThemeMode(\''+m[0]+'\')">'+m[1]+'</button>'; }).join('');
   function swb(k){ return '<button type="button" class="th-s'+(k===acc?' on':'')+'" aria-pressed="'+(k===acc)+'" onclick="setThemeAccent(\''+k+'\')"><span class="th-dot" style="background-color:'+themeSwatch(k,false)+'"></span>'+esc(THEME_PAL[k].n)+'</button>'; }
   var sw='<div class="th-sw">'+Object.keys(THEME_PAL).map(swb).join('')+'</div>';
@@ -4728,9 +4736,12 @@ function themeCardHTML(){
 function themeModeRows(){
   var t=loadTheme(), mode=t.mode||'auto', cr=typeof themeCrest==='function'?themeCrest():true;
   var seg=[['auto','Automatique'],['light','Clair'],['dark','Sombre']].map(function(m){ return '<button class="'+(mode===m[0]?'on':'')+'" onclick="setThemeMode(\''+m[0]+'\')">'+m[1]+'</button>'; }).join('');
+  var cm=typeof themeCmark==='function'&&themeCmark(), L=typeof themeLock==='function'&&themeLock();
+  function yn(k,on){ return '<div class="seg"><button class="'+(on?'on':'')+'" aria-pressed="'+on+'" onclick="setThemeOpt(\''+k+'\',true)">Avec</button><button class="'+(on?'':'on')+'" aria-pressed="'+(!on)+'" onclick="setThemeOpt(\''+k+'\',false)">Sans</button></div>'; }
   return '<div class="th-row"><span class="th-lbl">Mode</span><div class="seg">'+seg+'</div></div>'+
-    '<div class="th-row"><span class="th-lbl">Blason</span><div class="seg"><button class="'+(cr?'on':'')+'" aria-pressed="'+cr+'" onclick="setThemeCrest(true)">Avec</button><button class="'+(cr?'':'on')+'" aria-pressed="'+(!cr)+'" onclick="setThemeCrest(false)">Sans</button></div></div>';
+    (L&&L.logo?'':'<div class="th-row"><span class="th-lbl">Blason</span>'+yn('crest',cr)+'</div><div class="th-row"><span class="th-lbl">« C »</span>'+yn('cmark',cm)+'</div>');
 }
+function setThemeOpt(k,on){ var L=typeof themeLock==='function'&&themeLock(); if(L&&L.logo) return; var t=loadTheme(); t[k]=!!on; saveTheme(t); }
 function setThemeCrest(on){ var L=typeof themeLock==='function'&&themeLock(); if(L&&L.logo) return; var t=loadTheme(); t[typeof themeCrestKey==='function'?themeCrestKey():'crest']=!!on; saveTheme(t); }
 function saveTheme(t){ LS.setItem('v4_theme',JSON.stringify(t)); if(window.themeAnim) themeAnim(); applyTheme(t); var c=document.getElementById('th-card'); if(c) c.outerHTML=themeCardHTML(); }
 function setThemeMode(m){ var L=typeof themeLock==='function'&&themeLock(); if(L&&!L.pals) return; var t=loadTheme(); t.mode=m; saveTheme(t); }
@@ -8501,7 +8512,8 @@ function bonPal(){
   var t={}; try{ t=(window.loadTheme&&loadTheme())||{}; }catch(e){}
   // Thème verrouillé (lien d'accès) : bleu clair et encre bleu marine
   var TL=window.themeLock&&themeLock(); if(TL&&TL.bon) return TL.bon;
-  var key=TL&&TL.palKey&&THEME_PAL[TL.palKey]?TL.palKey:((window.THEME_PAL&&THEME_PAL[t.accent])?t.accent:'creme'), INK0=[35,31,32];
+  if(!(TL&&TL.palKey)&&!(window.THEME_PAL&&THEME_PAL[t.accent]&&t.accent!=='blanc')) return {beige:[241,241,239],alt:[247,247,246],sep:[228,228,226],ink:[17,17,17]};
+  var key=TL&&TL.palKey&&THEME_PAL[TL.palKey]?TL.palKey:((window.THEME_PAL&&THEME_PAL[t.accent]&&t.accent!=='blanc')?t.accent:'graphite'), INK0=[35,31,32];
   if(key==='ble') return {beige:[242,220,186],alt:[250,244,234],sep:[228,220,207],ink:INK0};
   var p=THEME_PAL[key];
   return {beige:bonHslRgb(p.h,p.s,84),alt:bonHslRgb(p.h,p.s*.89,95),sep:bonHslRgb(p.h,p.s*.5,86),ink:INK0};
@@ -9317,7 +9329,8 @@ function catFoldBox(){
   function logoSync(){
     if(typeof themeLock==='function'&&themeLock()&&themeLock().logo) return;
     var off=typeof themeNoLogo==='function'&&themeNoLogo();
-    BON_CREST=off?'':CREST0; BON_CMARK=off?'':CMARK0;
+    var cm=typeof themeCmark==='function'&&themeCmark();
+    BON_CREST=off?'':CREST0; BON_CMARK=cm?CMARK0:'';
     document.querySelectorAll('[data-crest]').forEach(function(e){ if(off) e.removeAttribute('src'); else e.src=CREST0; });
   }
   var _at=window.applyTheme;
@@ -9420,9 +9433,9 @@ function catFoldBox(){
   // ── option du bon : joindre les fiches à la suite ──
   window.bonRecsToBook=function(){
     if(!curBon||!(curBon.recs||[]).length) return;
-    var n=curBon.recs.length; bkAdd(curBon.recs.map(function(x){ return {id:x.id,m:x.m}; }));
-    toast(n+' recette'+(n>1?'s':'')+' ajoutée'+(n>1?'s':'')+' au livre','ok'); try{ saveBon(); }catch(e){}
-    goPage('livre');
+    var n=curBon.recs.length; bkAdd(curBon.recs.map(function(x){ return {id:x.id,m:x.m}; }),{title:curBon.name||'Livre'});
+    toast(n+' recette'+(n>1?'s':'')+' dans un nouveau livre','ok'); try{ saveBon(); }catch(e){}
+    bkOpen(BK.cur);
   };
   window.bonFichesSet=function(v){ if(curBon){ curBon.fiches=!!v; } };
   window.bonFichesDel=function(id){ if(!curBon) return; curBon.recs=(curBon.recs||[]).filter(function(x){ return x.id!==id; }); beRecap(); };
@@ -9830,14 +9843,84 @@ function rteView(r){ var h=rteHtmlOf(r); return h?'<div class="rt-view">'+h+'</d
 var BK_KEY='v4_book';
 if(window.ALLP&&ALLP.indexOf('livre')<0) ALLP.push('livre');
 function bkAdm(){ try{ return typeof clIsAdmin==='function'&&!!clIsAdmin(); }catch(e){ return false; } }
-function bkGet(){
-  var b=null; try{ b=JSON.parse(LS.getItem(BK_KEY)||'null'); }catch(e){}
+// Plusieurs livres, comme les bons : liste → éditeur
+var BKS_KEY='v4_books';
+function bkAll(){
+  var l=null; try{ l=JSON.parse(LS.getItem(BKS_KEY)||'null'); }catch(e){}
+  if(!Array.isArray(l)){
+    l=[]; var old=null; try{ old=JSON.parse(LS.getItem(BK_KEY)||'null'); }catch(e){}
+    if(old&&Array.isArray(old.items)&&old.items.length){ old.id=old.id||uid(); old.createdAt=old.createdAt||now(); old.updatedAt=old.updatedAt||now(); l.push(old); }
+    try{ LS.setItem(BKS_KEY,JSON.stringify(l)); }catch(e){}
+  }
+  return l.filter(function(b){ return b&&b.id; });
+}
+function bkPutAll(l){ try{ LS.setItem(BKS_KEY,JSON.stringify(l)); }catch(e){} }
+function bkNorm(b){
   b=b||{}; b.title=b.title||''; b.sub=b.sub||''; b.items=Array.isArray(b.items)?b.items:[];
   b.items=b.items.filter(function(x){ return x&&recipes.some(function(r){ return r.id===x.id; }); });
   return b;
 }
-function bkSave(b){ try{ LS.setItem(BK_KEY,JSON.stringify(b)); }catch(e){} }
-var BK={tab:'items'};
+function bkGet(){
+  var l=bkAll(), b=BK.cur&&l.find(function(x){ return x.id===BK.cur; });
+  return bkNorm(b?b:{id:null});
+}
+function bkSave(b){
+  if(!b||!b.id) return; var l=bkAll(), i=l.findIndex(function(x){ return x.id===b.id; });
+  b.updatedAt=now(); if(i>=0) l[i]=b; else l.unshift(b); bkPutAll(l);
+}
+function bkNew(title,open){
+  var b={id:uid(),title:title||'',sub:'',items:[],autoSubs:true,createdAt:now(),updatedAt:now()};
+  var l=bkAll(); l.unshift(b); bkPutAll(l);
+  if(open!==false) bkOpen(b.id);
+  return b;
+}
+function bkOpen(id){
+  BK.cur=id; BK.tab='items';
+  if(CUR!=='livre'){ BK.keep=1; goPage('livre'); BK.keep=0; return; }
+  document.documentElement.classList.add('re-full'); bkTop(); renderLivre();
+}
+function bkClose(){ BK.cur=null; document.documentElement.classList.remove('re-full'); bkTop(); renderLivre(); }
+function bkDup(id){
+  var l=bkAll(), b=l.find(function(x){ return x.id===id; }); if(!b) return;
+  var c=JSON.parse(JSON.stringify(b)); c.id=uid(); c.title=(b.title||'Livre sans titre')+' (copie)'; c.createdAt=c.updatedAt=now();
+  l.unshift(c); bkPutAll(l); renderLivre(); toast('Livre dupliqué','ok');
+}
+function bkDel(id){
+  var l=bkAll(), b=l.find(function(x){ return x.id===id; }); if(!b) return;
+  if(!confirm('Supprimer le livre « '+(b.title||'Livre sans titre')+' » ? Les recettes restent dans ton carnet.')) return;
+  bkPutAll(l.filter(function(x){ return x.id!==id; })); if(BK.cur===id) BK.cur=null; renderLivre(); bkNav(); toast('Livre supprimé','ok');
+}
+// barre du haut + bouton + flottant (comme la page des bons)
+function bkTop(){
+  if(CUR!=='livre') return;
+  var bc=document.getElementById('tb-bc'); if(bc) bc.textContent='Livres de recettes';
+  var act=document.getElementById('tb-act'); if(act) act.innerHTML=BK.cur?'':'<button class="tbtn gold" onclick="bkNew()">'+ic('plus')+' Nouveau</button>';
+  var f=document.getElementById('ux-fab'); if(f){ f.style.display=BK.cur?'none':''; if(!BK.cur){ f.title='Nouveau livre'; f.setAttribute('aria-label','Nouveau livre'); f.onclick=function(){ bkNew(); }; } }
+}
+var BKL={q:''};
+function bkCard(b){
+  var n=b.items.length, cats={}, nov=0;
+  b.items.forEach(function(x){ cats[bkCatOf(recipes.find(function(r){ return r.id===x.id; }))]=1; if(x.ov) nov++; });
+  var nc=Object.keys(cats).length, d=b.updatedAt||b.createdAt;
+  return '<div class="bc" onclick="bkOpen(\''+b.id+'\')"><div class="bc-img"><div class="bc-ico">'+ic('list')+'</div><div style="flex:1;min-width:0"><div class="bc-name">'+esc(b.title||'Livre sans titre')+'</div>'+
+    '<div class="bc-meta" style="margin-bottom:0">'+ic('calendar')+' '+(d?fDate(String(d).slice(0,10)):'—')+' · '+n+' recette'+(n>1?'s':'')+(nc?' · '+ic('folder')+' '+nc:'')+'</div></div></div>'+
+    '<div class="bc-body"><div class="bc-row"><span class="badge '+(n?'bd-ok':'bd-d')+'">'+(n?(nov?nov+' adaptée'+(nov>1?'s':''):(b.sub?esc(b.sub.slice(0,22)):'Prêt')):'Vide')+'</span>'+
+    '<div class="bc-btns" onclick="event.stopPropagation()"><button class="btn btn-ghost btn-xs" onclick="bkOpen(\''+b.id+'\')" title="Modifier" aria-label="Modifier">'+ic('edit')+'</button><button class="btn btn-ghost btn-xs" onclick="bkDup(\''+b.id+'\')" title="Dupliquer" aria-label="Dupliquer">'+ic('copy')+'</button><button class="btn btn-red btn-xs" onclick="bkDel(\''+b.id+'\')" title="Supprimer" aria-label="Supprimer">'+ic('trash')+'</button></div>'+
+    '<span class="bc-cost">'+(n?'≈ '+bkPagesEst(b)+' p.':'—')+'</span></div></div></div>';
+}
+function renderLivres(){
+  var w=document.getElementById('bk-wrap'); if(!w) return;
+  var l=bkAll().map(bkNorm).sort(function(a,b){ return String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')); });
+  var q=normTxt(BKL.q||''), list=l.filter(function(b){ return !q||normTxt((b.title||'Livre sans titre')+' '+(b.sub||'')).indexOf(q)>=0; });
+  var nr=l.reduce(function(s,b){ return s+b.items.length; },0), nov=l.reduce(function(s,b){ return s+b.items.filter(function(x){ return x.ov; }).length; },0), np=l.reduce(function(s,b){ return s+bkPagesEst(b); },0);
+  var inp=document.getElementById('bkl-q'), focus=inp&&document.activeElement===inp;
+  w.innerHTML='<div class="sbar"><div class="sb2"><span class="sb2-v">'+l.length+'</span><div class="sb2-l">Livres</div></div><div class="sb2"><span class="sb2-v" style="color:var(--i3)">'+nr+'</span><div class="sb2-l">Recettes</div></div><div class="sb2"><span class="sb2-v" style="color:var(--gr)">'+nov+'</span><div class="sb2-l">Adaptées</div></div><div class="sb2"><span class="sb2-v" style="font-size:16px">≈ '+np+'</span><div class="sb2-l">Pages</div></div></div>'+
+    '<div class="srch">'+ic('search')+'<input class="sinp" id="bkl-q" placeholder="Rechercher un livre…" value="'+esc(BKL.q)+'" oninput="BKL.q=this.value;renderLivres()"></div>'+
+    (list.length?'<div class="bgrid">'+list.map(bkCard).join('')+'</div>':
+      '<div class="empty"><span class="empty-i">'+ic('list')+'</span><div class="empty-t">'+(l.length?'Aucun livre trouvé':'Aucun livre')+'</div><div class="empty-s">'+(l.length?'Essaie un autre mot.':'Crée ton premier livre de recettes')+'</div>'+(l.length?'':'<button class="btn btn-gold btn-sm empty-b" onclick="bkNew()">'+ic('plus')+' Créer un livre</button>')+'</div>');
+  if(focus){ var i=document.getElementById('bkl-q'); if(i){ i.focus(); try{ i.setSelectionRange(i.value.length,i.value.length); }catch(e){} } }
+}
+var BK={tab:'items',cur:null,keep:0};
 function bkIsSub(r){ return !!r&&(r.image==='⊛'||!!(window.BK_AUTO&&BK_AUTO[r.id])); }
 var BK_SUB='Sous-recettes';
 function bkCatOf(r){ return bkIsSub(r)?BK_SUB:((r&&r.cat)||'Sans catégorie'); }
@@ -9851,7 +9934,10 @@ function bkSortList(list){
 }
 function bkHas(b,id){ return b.items.some(function(x){ return x.id===id; }); }
 function bkItem(b,id){ return b.items.find(function(x){ return x.id===id; }); }
-window.bkAdd=function(ids){
+// ajoute des recettes : dans un nouveau livre (titre donné) ou dans le livre ouvert
+window.bkAdd=function(ids,opt){
+  opt=opt||{};
+  if(opt.title||!BK.cur){ var l=bkAll(); if(!opt.title&&l.length) BK.cur=l.slice().sort(function(a,b){ return String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')); })[0].id; else BK.cur=bkNew(opt.title||'',false).id; }
   var b=bkGet(); (ids||[]).forEach(function(x){ var id=x.id||x, m=x.m||1; if(!bkHas(b,id)) b.items.push({id:id,m:m}); });
   bkSave(b); bkNav();
 };
@@ -9877,11 +9963,13 @@ function bkMetaHTML(b){
 function bkPagesEst(b){ var n=b.items.length; return n?1+Math.ceil((n+Object.keys(b.items.reduce(function(o,x){ o[bkCatOf(recipes.find(function(r){ return r.id===x.id; }))]=1; return o; },{})).length)/34)+n:0; }
 function renderLivre(keep){
   var w=document.getElementById('bk-wrap'); if(!w) return;
+  if(!BK.cur||!bkAll().some(function(x){ return x.id===BK.cur; })){ BK.cur=null; document.documentElement.classList.remove('re-full'); w.className='bk-list'; renderLivres(); return; }
+  w.className='';
   var b=bkGet(), sc=document.getElementById('bk-mid'), top=keep&&sc?sc.scrollTop:0;
   var fold={}; try{ fold=JSON.parse(LS.getItem('v4_bkfold')||'{}'); }catch(e){}
   w.innerHTML=
     '<div class="re-top">'+
-      '<button class="re-x" onclick="goPage(\'home\')" title="Fermer" aria-label="Fermer">'+ic('x')+'</button>'+
+      '<button class="re-x" onclick="bkClose()" title="Retour à mes livres" aria-label="Retour à mes livres">'+ic('x')+'</button>'+
       '<div class="re-tabs" role="tablist"><button id="bk-t-items" class="'+(BK.tab==='items'?'on':'')+'" onclick="bkTab(\'items\')">Recettes</button><button id="bk-t-prev" class="'+(BK.tab==='prev'?'on':'')+'" onclick="bkTab(\'prev\')">Aperçu</button></div>'+
       '<div class="re-top-r">'+
         '<button class="re-ib dsk" onclick="bookBuild()" title="PDF du livre" aria-label="PDF du livre">'+ic('pdf')+'</button>'+
@@ -10106,7 +10194,7 @@ function bkStartPick(){ BKP.on=true; BKP.kind='book'; var m=document.getElementB
 function bkPickDone(){
   var k=BKP.kind; BKP.on=false; document.body.classList.remove('bk-pick'); bkPickBar();
   if(k==='share'){ goPage('partage'); if(typeof partPickBack==='function') partPickBack(); return; }
-  try{ renderRec(); }catch(e){} goPage('livre');
+  try{ renderRec(); }catch(e){} BK.keep=1; goPage('livre'); BK.keep=0;
 }
 function bkPick(id){ bkpSet(id,!bkpHas(id)); bkPickSync(id); }
 function bkPickSync(id){
@@ -10235,23 +10323,22 @@ function bkPdf(b,items){
 function bkNav(){
   var on=bkAdm();
   ['nav-livre','bk-m-btn','bn-livre'].forEach(function(id){ var e=document.getElementById(id); if(e) e.style.display=on?'':'none'; });
-  var n=document.getElementById('bk-hd-n'); if(n){ var c=bkGet().items.length; n.textContent=c?String(c):''; n.style.display=c?'flex':'none'; }
+  var n=document.getElementById('bk-hd-n'); if(n){ var c=bkAll().length; n.textContent=c?String(c):''; n.style.display=c?'flex':'none'; }
 }
 (function(){
   var _g=goPage;
   goPage=function(p){
     if(p==='livre'&&!bkAdm()){ toast('Réservé aux administrateurs','err'); p='home'; }
+    if(p==='livre'&&CUR!=='livre'&&!BK.keep) BK.cur=null;
     var home=BKP.kind==='share'?'partage':'livre';
     if(BKP.on&&p!=='recettes'&&p!==home){ BKP.on=false; bkPickBar(); try{ renderRec(); }catch(e){} }
     if(BKP.on&&p===home){ BKP.on=false; bkPickBar(); }
     var r=_g.apply(this,arguments);
-    if(p==='livre') document.documentElement.classList.add('re-full');
+    if(p==='livre'&&BK.cur) document.documentElement.classList.add('re-full');
     ['nav-livre','bn-livre'].forEach(function(id){ var e=document.getElementById(id); if(e) e.classList.toggle('on',p==='livre'); });
     var pg=document.getElementById('p-livre'); if(pg) pg.style.display=p==='livre'?'block':'none';
     if(p==='livre'){
-      var bc=document.getElementById('tb-bc'); if(bc) bc.textContent='Livre';
-      var act=document.getElementById('tb-act'); if(act) act.innerHTML='';
-      renderLivre();
+      renderLivre(); bkTop();
     }
     if(p==='recettes'&&BKP.on){ try{ renderRec(); }catch(e){} }
     bkNav();
