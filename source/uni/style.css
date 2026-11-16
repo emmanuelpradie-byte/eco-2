@@ -2012,3 +2012,4 @@ html.lay-mob.re-full #p-livre{height:auto;min-height:100%;padding-bottom:calc(84
 #p-livre .bk-auto{display:flex;gap:8px;align-items:flex-start;white-space:normal;font-size:13px;line-height:1.4;padding-bottom:4px}
 #p-livre .bk-auto input{margin-top:3px;flex:none}
 .bk-nm b{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.bx-band img[src=""],.bx-band img:not([src]){display:none}

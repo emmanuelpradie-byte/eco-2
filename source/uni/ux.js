@@ -166,7 +166,8 @@
   function logoSync(){
     if(typeof themeLock==='function'&&themeLock()&&themeLock().logo) return;
     var off=typeof themeNoLogo==='function'&&themeNoLogo();
-    BON_CREST=off?'':CREST0; BON_CMARK=off?'':CMARK0;
+    var cm=typeof themeCmark==='function'&&themeCmark();
+    BON_CREST=off?'':CREST0; BON_CMARK=cm?CMARK0:'';
     document.querySelectorAll('[data-crest]').forEach(function(e){ if(off) e.removeAttribute('src'); else e.src=CREST0; });
   }
   var _at=window.applyTheme;
@@ -269,9 +270,9 @@
   // ── option du bon : joindre les fiches à la suite ──
   window.bonRecsToBook=function(){
     if(!curBon||!(curBon.recs||[]).length) return;
-    var n=curBon.recs.length; bkAdd(curBon.recs.map(function(x){ return {id:x.id,m:x.m}; }));
-    toast(n+' recette'+(n>1?'s':'')+' ajoutée'+(n>1?'s':'')+' au livre','ok'); try{ saveBon(); }catch(e){}
-    goPage('livre');
+    var n=curBon.recs.length; bkAdd(curBon.recs.map(function(x){ return {id:x.id,m:x.m}; }),{title:curBon.name||'Livre'});
+    toast(n+' recette'+(n>1?'s':'')+' dans un nouveau livre','ok'); try{ saveBon(); }catch(e){}
+    bkOpen(BK.cur);
   };
   window.bonFichesSet=function(v){ if(curBon){ curBon.fiches=!!v; } };
   window.bonFichesDel=function(id){ if(!curBon) return; curBon.recs=(curBon.recs||[]).filter(function(x){ return x.id!==id; }); beRecap(); };

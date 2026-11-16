@@ -618,7 +618,7 @@ if(typeof themeLock==='function'&&themeLock()&&themeLock().logo){
 function themeLockCardHTML(L){
   var lay=(typeof getLayout==='function'?getLayout():'auto');
   return '<div class="cw" id="th-card"><div class="cw-t">'+ic('sparkle')+' Apparence</div>'+
-    '<div class="th-lock">'+(L.logo?'<img src="'+L.logo+'" alt="">':'<span class="th-lock-i">'+ic('sparkle')+'</span>')+'<div><b>Thème '+esc(L.n)+'</b><small>'+ic('lock')+' Attribué par ton lien d’accès : '+(L.logo?'les couleurs et le logo ne peuvent pas être changés':(L.pals?'tu choisis la couleur, le mode clair / sombre et le blason ci-dessous':'le thème ne peut pas être changé'))+(L.pals?'.':' sur cet appareil.')+'</small></div></div>'+
+    '<div class="th-lock">'+(L.logo?'<img src="'+L.logo+'" alt="">':'<span class="th-lock-i">'+ic('sparkle')+'</span>')+'<div><b>Thème '+esc(L.n)+'</b><small>'+ic('lock')+' Attribué par ton lien d’accès : '+(L.logo?'les couleurs et le logo ne peuvent pas être changés':(L.pals?'tu choisis la couleur et le mode clair / sombre ci-dessous':'le thème ne peut pas être changé'))+(L.pals?'.':' sur cet appareil.')+'</small></div></div>'+
     (L.pals?themeModeRows()+'<div class="th-lbl" style="margin:4px 0 8px">Couleur</div><div class="th-sw">'+L.pals.map(function(p){ return '<button type="button" class="th-s'+(p.on?' on':'')+'" aria-pressed="'+p.on+'" onclick="setEpurePal(\''+p.k+'\')"><span class="th-dot" style="background-color:'+p.sw+';box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)"></span>'+esc(p.n)+'</button>'; }).join('')+'</div><div style="height:14px"></div>':'')+
     '<div class="th-row"><span class="th-lbl">Affichage</span><div class="seg">'+[['auto','Automatique'],['desk','Ordinateur'],['mob','Mobile']].map(function(m){ return '<button class="'+(lay===m[0]?'on':'')+'" onclick="setLayout(\''+m[0]+'\')">'+m[1]+'</button>'; }).join('')+'</div></div>'+
     (typeof clIsAdmin==='function'&&clIsAdmin()?'<button class="lnk" style="margin-top:10px" onclick="themeUnlockUI()">'+ic('x')+' Administrateur : retirer ce thème de cet appareil</button>':'')+
@@ -637,7 +637,7 @@ function themeUnlockUI(){
 }
 function themeCardHTML(){
   if(typeof themeLock==='function'&&themeLock()) return themeLockCardHTML(themeLock());
-  var t=loadTheme(), mode=t.mode||'auto', acc=THEME_PAL[t.accent]?t.accent:'creme';
+  var t=loadTheme(), mode=t.mode||'auto', acc=THEME_PAL[t.accent]?t.accent:'blanc';
   var seg=[['auto','Automatique'],['light','Clair'],['dark','Sombre']].map(function(m){ return '<button class="'+(mode===m[0]?'on':'')+'" onclick="setThemeMode(\''+m[0]+'\')">'+m[1]+'</button>'; }).join('');
   function swb(k){ return '<button type="button" class="th-s'+(k===acc?' on':'')+'" aria-pressed="'+(k===acc)+'" onclick="setThemeAccent(\''+k+'\')"><span class="th-dot" style="background-color:'+themeSwatch(k,false)+'"></span>'+esc(THEME_PAL[k].n)+'</button>'; }
   var sw='<div class="th-sw">'+Object.keys(THEME_PAL).map(swb).join('')+'</div>';
@@ -650,9 +650,12 @@ function themeCardHTML(){
 function themeModeRows(){
   var t=loadTheme(), mode=t.mode||'auto', cr=typeof themeCrest==='function'?themeCrest():true;
   var seg=[['auto','Automatique'],['light','Clair'],['dark','Sombre']].map(function(m){ return '<button class="'+(mode===m[0]?'on':'')+'" onclick="setThemeMode(\''+m[0]+'\')">'+m[1]+'</button>'; }).join('');
+  var cm=typeof themeCmark==='function'&&themeCmark(), L=typeof themeLock==='function'&&themeLock();
+  function yn(k,on){ return '<div class="seg"><button class="'+(on?'on':'')+'" aria-pressed="'+on+'" onclick="setThemeOpt(\''+k+'\',true)">Avec</button><button class="'+(on?'':'on')+'" aria-pressed="'+(!on)+'" onclick="setThemeOpt(\''+k+'\',false)">Sans</button></div>'; }
   return '<div class="th-row"><span class="th-lbl">Mode</span><div class="seg">'+seg+'</div></div>'+
-    '<div class="th-row"><span class="th-lbl">Blason</span><div class="seg"><button class="'+(cr?'on':'')+'" aria-pressed="'+cr+'" onclick="setThemeCrest(true)">Avec</button><button class="'+(cr?'':'on')+'" aria-pressed="'+(!cr)+'" onclick="setThemeCrest(false)">Sans</button></div></div>';
+    (L&&L.logo?'':'<div class="th-row"><span class="th-lbl">Blason</span>'+yn('crest',cr)+'</div><div class="th-row"><span class="th-lbl">« C »</span>'+yn('cmark',cm)+'</div>');
 }
+function setThemeOpt(k,on){ var L=typeof themeLock==='function'&&themeLock(); if(L&&L.logo) return; var t=loadTheme(); t[k]=!!on; saveTheme(t); }
 function setThemeCrest(on){ var L=typeof themeLock==='function'&&themeLock(); if(L&&L.logo) return; var t=loadTheme(); t[typeof themeCrestKey==='function'?themeCrestKey():'crest']=!!on; saveTheme(t); }
 function saveTheme(t){ LS.setItem('v4_theme',JSON.stringify(t)); if(window.themeAnim) themeAnim(); applyTheme(t); var c=document.getElementById('th-card'); if(c) c.outerHTML=themeCardHTML(); }
 function setThemeMode(m){ var L=typeof themeLock==='function'&&themeLock(); if(L&&!L.pals) return; var t=loadTheme(); t.mode=m; saveTheme(t); }

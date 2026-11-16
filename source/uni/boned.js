@@ -50,7 +50,8 @@ function bonPal(){
   var t={}; try{ t=(window.loadTheme&&loadTheme())||{}; }catch(e){}
   // Thème verrouillé (lien d'accès) : bleu clair et encre bleu marine
   var TL=window.themeLock&&themeLock(); if(TL&&TL.bon) return TL.bon;
-  var key=TL&&TL.palKey&&THEME_PAL[TL.palKey]?TL.palKey:((window.THEME_PAL&&THEME_PAL[t.accent])?t.accent:'creme'), INK0=[35,31,32];
+  if(!(TL&&TL.palKey)&&!(window.THEME_PAL&&THEME_PAL[t.accent]&&t.accent!=='blanc')) return {beige:[241,241,239],alt:[247,247,246],sep:[228,228,226],ink:[17,17,17]};
+  var key=TL&&TL.palKey&&THEME_PAL[TL.palKey]?TL.palKey:((window.THEME_PAL&&THEME_PAL[t.accent]&&t.accent!=='blanc')?t.accent:'graphite'), INK0=[35,31,32];
   if(key==='ble') return {beige:[242,220,186],alt:[250,244,234],sep:[228,220,207],ink:INK0};
   var p=THEME_PAL[key];
   return {beige:bonHslRgb(p.h,p.s,84),alt:bonHslRgb(p.h,p.s*.89,95),sep:bonHslRgb(p.h,p.s*.5,86),ink:INK0};
