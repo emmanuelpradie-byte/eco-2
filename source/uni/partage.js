@@ -64,7 +64,7 @@ function clLocksTick(){
 }
 // relit tous les partages visibles (après un mot de passe saisi, ajouté ou retiré)
 function clSharedRefresh(){
-  return clPullTable('shared_recipes','id,owner,owner_name,data,deleted,updated_at','deleted=eq.false',null).then(function(rows){
+  return clPullTable('shared_recipes','id,owner,owner_name,data,deleted,updated_at,base','deleted=eq.false',null).then(function(rows){
     var m={}; rows.forEach(function(r){ m[r.id]=r; });
     CLOUD.shared=m; clSave('v4_shared_cache',m);
     var mx=clMaxTs(rows,null); if(mx&&(!CLOUD.st.since.shared||mx>CLOUD.st.since.shared)) CLOUD.st.since.shared=mx;
@@ -632,14 +632,21 @@ function shrCopyBonUI(){
 }
 
 // ── copie (une recette ou un dossier entier) ──
-function shrCopyRow(x,cat){
-  var created={ing:0};
+function shrCopyRow(x,cat,opt){
+  opt=opt||(window.SHCHK_OPT&&SHCHK_OPT[x.id])||null;
+  var created={ing:0}, MAP=(opt&&opt.map)||null, D=(opt&&opt.data)||x.data;
   function ingFor(it){
-    var n=normTxt(it.n), g=ingredients.find(function(i){ return normTxt(i.name)===n; });
+    var n=normTxt(it.n), mp=MAP&&MAP[n];
+    // choix fait à la vérification : ingrédient du catalogue, ou nouveau (nom / prix revus)
+    if(mp&&mp.id&&ingredients.some(function(i){ return i.id===mp.id; })) return mp.id;
+    if(mp&&mp.made) return mp.made;
+    var nm=mp&&mp.name?mp.name:it.n, g=mp&&mp.isNew?null:ingredients.find(function(i){ return normTxt(i.name)===n; });
+    if(!g&&mp&&mp.isNew) g=ingredients.find(function(i){ return normTxt(i.name)===normTxt(nm); });
     if(g) return g.id;
-    g={id:uid(),name:it.n,cat:it.cat||'Autre',unit:it.u||'kg',price:it.price||0,buyPrice:it.buyPrice!=null?it.buyPrice:(it.price||0),unitWeight:it.unitWeight||null,
+    var pr=mp&&mp.price!=null?mp.price:(it.price||0);
+    g={id:uid(),name:nm,cat:it.cat||'Autre',unit:it.u||'kg',price:pr,buyPrice:mp&&mp.price!=null?mp.price:(it.buyPrice!=null?it.buyPrice:(it.price||0)),unitWeight:it.unitWeight||null,
        allergens:(it.allergens||[]).slice(),allergensSet:!!it.allergensSet,priceHistory:[]};
-    ingredients.push(g); created.ing++; return g.id;
+    ingredients.push(g); created.ing++; if(mp) mp.made=g.id; return g.id;
   }
   function recFrom(s,top){
     var items=(s.items||[]).map(function(it){
@@ -657,7 +664,7 @@ function shrCopyRow(x,cat){
   return Promise.all(atts.map(function(a){
     return attGet(a.id).then(function(d){ var id='a'+uid()+uid(); attPut(id,d); return {id:id,name:a.name,mime:a.mime,size:a.size}; },function(){ return null; });
   })).then(function(newAtt){
-    var r=recFrom(x.data,true); newAtt=newAtt.filter(Boolean); if(newAtt.length) r.attachments=newAtt;
+    var r=recFrom(D,true); newAtt=newAtt.filter(Boolean); if(newAtt.length) r.attachments=newAtt;
     if(typeof clQueueAttUp==='function') newAtt.forEach(function(a){ clQueueAttUp(a.id); });
     return {rec:r,ing:created.ing};
   });
@@ -743,4 +750,28 @@ function partEdFolder(sel){
   };
   // l'ancien onglet « Partagées » de la page Recettes mène désormais ici
   setRecTab=function(t){ if(t==='shared'){ PART.tab='others'; goPage('partage'); return; } REC_TAB='mine'; renderRec(); };
+})();
+
+// ── partages « de base » : libellé + boutons administrateur ──
+function shrBase(id,on){
+  if(!on&&!confirm('Retirer cet élément de la base ? Il disparaîtra du partage pour tout le monde.')) return;
+  clRpc('admin_share_base',{p_id:id,p_on:!!on}).then(function(){
+    toast(on?'Ajouté à la base de l’application':'Retiré de la base','ok'); closeMod('m-shr'); return clSharedRefresh();
+  }).then(function(){ try{ if(CUR==='partage') renderPartage(); }catch(e){} }).catch(function(e){ toast((e&&e.message)||String(e),'err'); });
+}
+(function(){
+  function deco(id){
+    var x=(CLOUD.shared||{})[id]; if(!x) return;
+    var by=document.querySelector('#shr-body .shr-by');
+    if(by&&x.base) by.innerHTML=ic('check-circle')+' Recette de base d’<b>Économat Pro</b> · mise à jour le '+new Date(x.updated_at).toLocaleDateString('fr-FR');
+    if(typeof clIsAdmin==='function'&&clIsAdmin()){
+      var f=document.getElementById('shr-foot');
+      if(f&&x.base) f.insertAdjacentHTML('afterbegin','<button class="btn btn-ghost shr-base-x" onclick="shrBase(\''+id+'\',false)">'+ic('trash')+' Retirer de la base</button>');
+      else if(f&&shrOwn(x)) f.insertAdjacentHTML('afterbegin','<button class="btn btn-ghost" onclick="shrBase(\''+id+'\',true)">'+ic('star')+' Mettre dans la base</button>');
+    }
+  }
+  ['openShared','openSharedBon'].forEach(function(fn){
+    var o=window[fn]; if(typeof o!=='function') return;
+    window[fn]=function(id){ var r=o.apply(this,arguments); try{ deco(id); }catch(e){} return r; };
+  });
 })();

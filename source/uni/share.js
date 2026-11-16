@@ -155,7 +155,11 @@ function sharedList(){
   return Object.keys(m).map(function(k){ return m[k]; }).filter(function(x){ return x&&!x.deleted&&x.data; })
     .sort(function(a,b){ return a.updated_at<b.updated_at?1:-1; });
 }
-function shrIsMine(row){ return typeof CLOUD!=='undefined'&&CLOUD.sess&&row.owner===CLOUD.sess.user.id; }
+// Partages « de base » (recettes d’Économat Pro) : visibles par tous, même par
+// leur auteur, et indépendants de son compte (le serveur refuse leur retrait,
+// sauf par un administrateur).
+function shrOwn(row){ return typeof CLOUD!=='undefined'&&CLOUD.sess&&row.owner===CLOUD.sess.user.id; }
+function shrIsMine(row){ return !row.base&&shrOwn(row); }
 function updSharedCount(){ var n=document.getElementById('rt-shared-n'); if(n){ var c=sharedList().length; n.textContent=c?' '+c:''; } }
 // filtres communs aux éléments partagés (onglet « Partagées » et page Partage)
 var SH_SORTS=[['new','Plus récentes'],['old','Plus anciennes'],['az','Nom : A → Z'],['za','Nom : Z → A'],['cheap','Coût croissant'],['dear','Coût décroissant']];
@@ -221,7 +225,7 @@ function renderSharedGrid(){
     var d=x.data, ph=(d.image&&d.image.length>4)?'<img src="'+esc(d.image)+'" alt="" loading="lazy">':'<span class="rt-em">'+(d.image||ic('book'))+'</span>';
     var natt=(d.attachments||[]).length;
     return '<div class="rt" onclick="openShared(\''+escJS(x.id)+'\')"><div class="rt-ph'+((d.image&&d.image.length>4)?' img':'')+'" style="--ch:'+catHue(d.cat||'')+'">'+ph+
-      (shrIsMine(x)?'<span class="rt-badge me">Toi</span>':'')+'</div>'+
+      (shrIsMine(x)?'<span class="rt-badge me">Toi</span>':'')+(x.base?'<span class="rt-badge base">Base</span>':'')+'</div>'+
       '<div class="rt-b"><div class="rt-n">'+esc(d.name)+'</div><div class="rt-m">'+fKg(d.weight||0)+' · '+fEur(d.cost||0)+(natt?' · '+ic('clip')+natt:'')+'</div><div class="rt-c">'+ic('user')+' '+esc(x.owner_name||'—')+'</div></div></div>';
   }).join('');
 }

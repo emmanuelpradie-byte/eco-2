@@ -284,7 +284,7 @@ function clPull(opts){
   opts=opts||{}; var st=CLOUD.st, full=!st.since.user;
   return Promise.all([
     clPullTable('user_docs','kind,id,data,deleted,updated_at','user_id=eq.'+clUid(),clIsoMinus(st.since.user,3000)),
-    clPullTable('shared_recipes','id,owner,owner_name,data,deleted,updated_at','',clIsoMinus(st.since.shared,3000))
+    clPullTable('shared_recipes','id,owner,owner_name,data,deleted,updated_at,base','',clIsoMinus(st.since.shared,3000))
   ]).then(function(res){
     var n=clApply(res[0],(full&&opts.replace!==false)?CL_KINDS:null);
     st.since.user=clMaxTs(res[0],st.since.user)||st.since.user||'1970-01-01T00:00:00Z';

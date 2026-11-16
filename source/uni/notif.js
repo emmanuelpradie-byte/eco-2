@@ -60,7 +60,7 @@ function ntfList(){
   function copies(arr,kind){
     arr.forEach(function(r){
       var f=r.fromShared; if(!f||!f.id) return;
-      var x=sh[f.id]; if(!x||!x.data||shrIsMine(x)) return;
+      var x=sh[f.id]; if(!x||!x.data||shrOwn(x)) return;
       var sg=ntfSig(x.data);
       if(!f.sig){ f.sig=sg; if(!f.at) f.at=x.updated_at; changed=true; return; }   // repère de départ, sans alerte
       if(sg!==f.sig&&ntfTs(x.updated_at)>ntfTs(f.at)) out.push({k:'upd', kind:kind, x:x, copy:r, ts:ntfTs(x.updated_at)});
@@ -70,7 +70,7 @@ function ntfList(){
   if(changed) persist();
   var limit=Date.now()-21*864e5;
   Object.keys(sh).forEach(function(id){
-    var x=sh[id]; if(!x||!x.data||shrIsMine(x)) return;
+    var x=sh[id]; if(!x||!x.data||shrOwn(x)) return;
     var t=ntfTs(x.created_at||x.updated_at); if(t<limit) return;
     var copied=recipes.some(function(r){ return r.fromShared&&r.fromShared.id===id; })||orders.some(function(o){ return o.fromShared&&o.fromShared.id===id; });
     if(copied) return;
