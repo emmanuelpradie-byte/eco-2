@@ -57,7 +57,7 @@ function bkDel(id){
 // barre du haut + bouton + flottant (comme la page des bons)
 function bkTop(){
   if(CUR!=='livre') return;
-  var bc=document.getElementById('tb-bc'); if(bc) bc.textContent='Livres de recettes';
+  var bc=document.getElementById('tb-bc'); if(bc) bc.textContent='Livres';
   var act=document.getElementById('tb-act'); if(act) act.innerHTML=BK.cur?'':'<button class="tbtn gold" onclick="bkNew()">'+ic('plus')+' Nouveau</button>';
   var f=document.getElementById('ux-fab'); if(f){ f.style.display=BK.cur?'none':''; if(!BK.cur){ f.title='Nouveau livre'; f.setAttribute('aria-label','Nouveau livre'); f.onclick=function(){ bkNew(); }; } }
 }
@@ -139,7 +139,7 @@ function renderLivre(keep){
         '<button class="re-ib dsk" onclick="bookBuild()" title="PDF du livre" aria-label="PDF du livre">'+ic('pdf')+'</button>'+
         '<button class="btn btn-gold btn-full re-save" onclick="bookBuild()">'+ic('download')+' Créer le livre</button>'+
       '</div></div>'+
-    '<div class="re-body'+(fold.l?' l-off':'')+(fold.r?' r-off':'')+'" id="bk-body">'+
+    '<div class="re-body'+(fold.l?' l-off':'')+(fold.r?' r-off':'')+'" id="bkx-body">'+
       '<aside class="re-side re-l" id="bk-l">'+
         '<details class="re-sec" open><summary>Informations '+ic('chev-down')+'</summary><div class="re-box">'+
           '<div class="re-lb">Sous-titre</div><input class="fi" id="bk-sub" value="'+esc(b.sub)+'" placeholder="Ex. Recueil de l’atelier — 2026" oninput="bkField(\'sub\',this.value)">'+
@@ -148,7 +148,7 @@ function renderLivre(keep){
           '<label class="bk-ck bk-auto"><input type="checkbox" id="bk-auto"'+(b.autoSubs!==false?' checked':'')+' onchange="bkAutoSubs(this.checked)"> Ajouter automatiquement les sous-recettes utilisées, sur leurs propres pages</label></details>'+
         '<details class="re-sec" open><summary>Ajouter '+ic('chev-down')+'</summary><div class="re-adds">'+
           '<button class="re-add pri" onclick="bkAddOpen()"><span>Recette</span>'+ic('plus-circle')+'</button>'+
-          '<button class="re-add" onclick="bkStartPick()"><span>Depuis la page Recettes</span>'+ic('book')+'</button>'+
+          '<button class="re-add" onclick="bkStartPick()"><span>Page Recettes</span>'+ic('book')+'</button>'+
         '</div></details>'+
       '</aside>'+
       '<button class="re-fold l" onclick="bkFold(\'l\')" title="Masquer le panneau" aria-label="Masquer le panneau de gauche">'+ic('chev-left')+'</button>'+
@@ -174,7 +174,7 @@ function renderLivre(keep){
   var m=document.getElementById('bk-mid'); if(m) m.scrollTop=top;
 }
 function bkFold(side){
-  var b=document.getElementById('bk-body'); if(!b) return; b.classList.toggle(side+'-off');
+  var b=document.getElementById('bkx-body'); if(!b) return; b.classList.toggle(side+'-off');
   try{ LS.setItem('v4_bkfold',JSON.stringify({l:b.classList.contains('l-off'),r:b.classList.contains('r-off')})); }catch(e){}
 }
 function bkTab(t){

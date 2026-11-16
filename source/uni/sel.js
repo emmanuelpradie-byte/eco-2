@@ -187,3 +187,19 @@ function selDel(){
   selEnd(); refreshAllViews();
   toastUndo(n+' '+(rec?'recette':'ingrédient')+(n>1?'s':'')+' supprimé'+(rec?'e':'')+(n>1?'s':''),function(){ if(rec) recipes=snap; else ingredients=snap; refreshAllViews(); });
 }
+
+// ── titres courts dans la barre du haut sur téléphone (évite « Bons d’… ») ──
+(function(){
+  var SHORT={'Bons d’économat':'Bons','Bons d\'économat':'Bons','Réglages & sauvegarde':'Réglages','Livres de recettes':'Livres','Administration':'Admin','Fournisseurs':'Fournisseurs'};
+  var LONG={};
+  function mob(){ try{ return typeof layIsMob==='function'?layIsMob():innerWidth<=820; }catch(e){ return innerWidth<=820; } }
+  function fix(){
+    var bc=document.getElementById('tb-bc'); if(!bc) return;
+    var t=bc.textContent;
+    if(mob()&&SHORT[t]&&SHORT[t]!==t){ LONG[SHORT[t]]=t; bc.textContent=SHORT[t]; bc.title=t; }
+    else if(!mob()&&LONG[t]){ bc.textContent=LONG[t]; }
+  }
+  var _g=goPage; goPage=function(){ var r=_g.apply(this,arguments); try{ fix(); }catch(e){} return r; };
+  window.addEventListener('resize',fix);
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',fix); else setTimeout(fix,0);
+})();

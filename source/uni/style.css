@@ -2125,3 +2125,19 @@ html.lay-mob .sel-bar{bottom:calc(76px + env(safe-area-inset-bottom,0px))}
 .sel-q{margin:0 0 6px}
 body.sel-mode #p-recettes,body.sel-mode #p-catalogue{padding-bottom:260px!important}
 body.sel-mode #p-recettes .rt button,body.sel-mode #p-recettes .rc button,body.sel-mode #p-catalogue .catcard button{visibility:hidden}
+
+/* ══ Check-up mobile : barre du bas qui tient sur l'écran, titres sur une ligne ══ */
+#bnav{padding-left:2px;padding-right:2px}
+#bnav .bni{flex:1 1 0;min-width:0;padding-left:1px;padding-right:1px}
+#bnav .bni-ic{width:min(44px,100%);max-width:44px}
+#bnav .bni-lb{font-size:clamp(8.6px,2.45vw,10.5px);letter-spacing:-.15px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+#bnav .bni-bd{right:auto;left:calc(50% + 6px)}
+@media (max-width:430px){ #bnav .bni-sep{display:none} }
+#tb-bc{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:820px){ #tb-bc{font-size:clamp(15px,4.6vw,18px)} }
+html.lay-mob #tb-bc{font-size:clamp(15px,4.6vw,18px)}
+.rte-sel{width:auto!important;flex:none;max-width:130px}
+/* totaux lisibles en clair comme en sombre */
+.tl{color:var(--on-i);opacity:.62}
+.ti.big .tv{color:var(--on-i)}
+.re-add span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
