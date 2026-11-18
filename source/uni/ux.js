@@ -260,7 +260,7 @@
         bon.recs=bon.recs||[];
         var e=bon.recs.find(function(x){ return x.id===r.id; });
         if(e) e.m=Math.round((e.m+m)*1000)/1000; else bon.recs.push({id:r.id,m:m});
-        if(cont===true){ openMod('m-rec'); try{ document.getElementById('rec-mod-s').focus(); }catch(e2){} }
+        if(cont===true&&!(window.BKP&&BKP.on)){ if(typeof beStartPick==='function') beStartPick(); else openMod('m-rec'); }
         if(typeof beRecap==='function') beRecap();
       }
     }catch(e3){ if(window.console) console.error(e3); }

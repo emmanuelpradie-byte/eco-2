@@ -2141,3 +2141,19 @@ html.lay-mob #tb-bc{font-size:clamp(15px,4.6vw,18px)}
 .tl{color:var(--on-i);opacity:.62}
 .ti.big .tv{color:var(--on-i)}
 .re-add span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+
+/* ── livre : ingrédients modifiés directement dans la liste ── */
+.bk-sel.open{border-bottom-color:transparent}
+.bk-chev svg{width:16px;height:16px}
+.bk-inl{margin:0 0 10px;padding:10px 12px 12px;border:1px solid var(--bd);border-radius:14px;background:var(--alt)}
+.bk-inl .ilist{margin:0}
+.bk-inl .bke-sug{background:var(--card,var(--bg));border-radius:10px}
+.bk-inl-f{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px}
+.bk-inl-f .bke-tot{padding-top:0;justify-content:flex-start;flex-wrap:wrap;gap:12px}
+.bk-inl-a{display:flex;gap:6px;flex-wrap:wrap}
+.bk-gone{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;color:var(--i3);margin-left:4px;vertical-align:middle}
+.bk-gone svg{width:12px;height:12px}
+@media(max-width:820px){ .bk-inl{padding:8px 8px 10px} .bk-inl-f{flex-direction:column;align-items:stretch} .bk-inl-a .btn{flex:1;justify-content:center} }
+.bk-inl .ihd,.bk-inl .ir,.bke-modal .ihd,.bke-modal .ir{grid-template-columns:1fr 84px 60px 30px}
+.bk-inl .bke-u,.bke-modal .bke-u{width:100%;min-width:0}
+@media(max-width:820px){ .bk-inl .ihd,.bk-inl .ir,.bke-modal .ihd,.bke-modal .ir{grid-template-columns:1fr 72px 56px 28px;gap:5px} }

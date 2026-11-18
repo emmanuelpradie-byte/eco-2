@@ -107,7 +107,7 @@
           <details class="re-sec" open><summary>Ajouter {{ic:chev-down}}</summary>
             <div class="re-adds">
               <button class="re-add pri" onclick="openMod('m-ing')"><span>Ingrédient</span>{{ic:plus-circle}}</button>
-              <button class="re-add" onclick="openMod('m-rec')"><span>Recette</span>{{ic:book}}</button>
+              <button class="re-add" onclick="beStartPick()"><span>Recette</span>{{ic:book}}</button>
             </div>
           </details>
           <details class="re-sec" open><summary>Notes {{ic:chev-down}}</summary>
@@ -123,12 +123,12 @@
           </div>
           <div id="be-pane-items">
             <section class="re-card">
-              <div class="re-card-t">Articles <span class="re-card-a"><button class="btn btn-ghost btn-sm" onclick="openMod('m-ing')">{{ic:plus}} Ingrédient</button><button class="btn btn-beige btn-sm" onclick="openMod('m-rec')">{{ic:book}} Recette</button></span></div>
+              <div class="re-card-t">Articles <span class="re-card-a"><button class="btn btn-ghost btn-sm" onclick="openMod('m-ing')">{{ic:plus}} Ingrédient</button><button class="btn btn-beige btn-sm" onclick="beStartPick()">{{ic:book}} Recette</button></span></div>
               <div class="ustrip">{{ic:info}} Quantités en kg — liquides inclus</div>
               <div id="e-items"></div>
               <div id="e-items-empty" class="re-empty" style="display:none;">
                 <button class="re-big pri" onclick="openMod('m-ing')">{{ic:plus-circle}} Ajouter un ingrédient</button>
-                <button class="re-big" onclick="openMod('m-rec')">{{ic:book}} Ajouter une recette</button>
+                <button class="re-big" onclick="beStartPick()">{{ic:book}} Ajouter une recette</button>
               </div>
               <div class="tots"><div class="ti"><span class="tv" id="t-l">0</span><div class="tl">Lignes</div></div><div class="ti"><span class="tv" id="t-w">0</span><div class="tl">Poids</div></div><div class="ti big"><span class="tv" id="t-c">0,00 €</span><div class="tl">Total TTC</div></div></div>
             </section>
@@ -163,7 +163,7 @@
       </div>
       <div class="re-dock">
         <button onclick="openMod('m-ing')" title="Ajouter un ingrédient" aria-label="Ajouter un ingrédient">{{ic:plus-circle}}</button>
-        <button onclick="openMod('m-rec')" title="Ajouter une recette" aria-label="Ajouter une recette">{{ic:book}}</button>
+        <button onclick="beStartPick()" title="Ajouter une recette" aria-label="Ajouter une recette">{{ic:book}}</button>
         <span class="re-dock-s"></span>
         <button onclick="beTab(BE_TAB==='prev'?'items':'prev')" title="Aperçu du bon" aria-label="Aperçu du bon">{{ic:eye}}</button>
         <button onclick="printBon()" title="PDF" aria-label="PDF">{{ic:pdf}}</button>
