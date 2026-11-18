@@ -653,9 +653,9 @@ function themeModeRows(){
   var cm=typeof themeCmark==='function'&&themeCmark(), L=typeof themeLock==='function'&&themeLock();
   function yn(k,on){ return '<div class="seg"><button class="'+(on?'on':'')+'" aria-pressed="'+on+'" onclick="setThemeOpt(\''+k+'\',true)">Avec</button><button class="'+(on?'':'on')+'" aria-pressed="'+(!on)+'" onclick="setThemeOpt(\''+k+'\',false)">Sans</button></div>'; }
   return '<div class="th-row"><span class="th-lbl">Mode</span><div class="seg">'+seg+'</div></div>'+
-    (L&&L.logo?'':'<div class="th-row"><span class="th-lbl">Blason</span>'+yn('crest',cr)+'</div><div class="th-row"><span class="th-lbl">« C »</span>'+yn('cmark',cm)+'</div>');
+    (L&&L.logo?'':(permOk('crest')?'<div class="th-row"><span class="th-lbl">Blason</span>'+yn('crest',cr)+'</div>':'')+(permOk('cmark')?'<div class="th-row"><span class="th-lbl">« C »</span>'+yn('cmark',cm)+'</div>':''));
 }
-function setThemeOpt(k,on){ var L=typeof themeLock==='function'&&themeLock(); if(L&&L.logo) return; var t=loadTheme(); t[k]=!!on; saveTheme(t); }
+function setThemeOpt(k,on){ var L=typeof themeLock==='function'&&themeLock(); if(L&&L.logo) return; if(!permOk(k)) return; var t=loadTheme(); t[k]=!!on; saveTheme(t); }
 function setThemeCrest(on){ var L=typeof themeLock==='function'&&themeLock(); if(L&&L.logo) return; var t=loadTheme(); t[typeof themeCrestKey==='function'?themeCrestKey():'crest']=!!on; saveTheme(t); }
 function saveTheme(t){ LS.setItem('v4_theme',JSON.stringify(t)); if(window.themeAnim) themeAnim(); applyTheme(t); var c=document.getElementById('th-card'); if(c) c.outerHTML=themeCardHTML(); }
 function setThemeMode(m){ var L=typeof themeLock==='function'&&themeLock(); if(L&&!L.pals) return; var t=loadTheme(); t.mode=m; saveTheme(t); }

@@ -64,6 +64,7 @@ function renderRec(){
 }
 // vues : vignettes → grandes vignettes → liste
 var RV_NEXT={grid:'big',big:'list',list:'grid'}, RV_LBL={grid:'vignettes',big:'grandes vignettes',list:'liste détaillée'};
+try{ if(LS.getItem('v4_recview')==='fiche'){ LS.removeItem('v4_recview'); LS.setItem('v4_recprev','fiche'); } }catch(e){}
 function recView(){ var v=LS.getItem('v4_recview'); return v==='list'||v==='big'?v:'grid'; }
 function cnCycleView(){ setRecView(RV_NEXT[recView()]); }
 // grandes listes : affichage par paquets, la suite arrive en faisant défiler

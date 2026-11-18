@@ -16,7 +16,7 @@ function admNav(){
 }
 function admLoad(){
   ADM.busy=true; ADM.err='';
-  return clAuthed(function(){ return clFetch('/rest/v1/profiles?select=id,email,display_name,status,is_admin,created_at'); })
+  return clAuthed(function(){ return clFetch('/rest/v1/profiles?select=id,email,display_name,status,is_admin,created_at,perms'); })
     .then(function(r){ ADM.users=(r||[]).sort(function(a,b){ return a.created_at<b.created_at?1:-1; }); CLOUD.pendingN=ADM.users.filter(function(u){ return u.status==='pending'; }).length; admNav(); },
           function(e){ ADM.err=e.message||String(e); })
     .then(function(){ return admLoadCopies(); })
@@ -95,7 +95,7 @@ function renderAdmin(){
       else acts=(u.status==='blocked'?'<button class="btn btn-ghost btn-sm" onclick="admSet(\''+u.id+'\',\'active\')">'+ic('check')+' Débloquer</button>':'<button class="btn btn-ghost btn-sm" onclick="admSet(\''+u.id+'\',\'blocked\')">Bloquer</button>')+
         (u.status==='active'?'<button class="btn btn-ghost btn-sm" onclick="admAdmin(\''+u.id+'\','+(u.is_admin?'false':'true')+')">'+ic('shield')+' '+(u.is_admin?'Retirer admin':'Nommer admin')+'</button>':'')+
         '<button class="icbtn" title="Supprimer le compte" onclick="admDelete(\''+u.id+'\')">'+ic('trash')+'</button>';
-      return '<div class="adm-u">'+admAvatar(u)+'<div class="adm-b"><div class="adm-n">'+esc(admName(u))+' '+admBadge(u)+'</div><div class="adm-s">'+esc(u.email||'')+' · depuis le '+admDate(u.created_at)+'</div></div><div class="adm-acts">'+acts+'</div></div>';
+      return '<div class="adm-u">'+admAvatar(u)+'<div class="adm-b"><div class="adm-n">'+esc(admName(u))+' '+admBadge(u)+'</div><div class="adm-s">'+esc(u.email||'')+' · depuis le '+admDate(u.created_at)+'</div>'+admPermsHTML(u)+'</div><div class="adm-acts">'+acts+'</div></div>';
     }).join(''):'<div class="empty" style="padding:14px"><div class="empty-s">Aucun compte'+(q?' ne correspond':'')+'.</div></div>')+'</div>';
   h+=admSec('accts','Comptes',nAct,accts,!!q&&rest.length>0);
   // Comptes supprimés : rétablissables
@@ -171,6 +171,21 @@ function admThemeTry(key){
 }
 function admShRow(x){
   return '<div class="adm-r"><span onclick="openShared(\''+escJS(x.id)+'\')">'+esc(x.data.name)+'</span><button class="lnk" onclick="admUnshare(\''+escJS(x.id)+'\')">Retirer</button></div>';
+}
+// ── droits par compte : blason, « C », livres ──
+var ADM_PERMS=[['crest','Blason'],['cmark','« C »'],['book','Livres']];
+function admPermsHTML(u){
+  if(u.status!=='active') return '';
+  if(u.is_admin) return '<div class="adm-perms"><span class="adm-pall">'+ic('shield')+' Toutes les options (admin)</span></div>';
+  var p=u.perms||{};
+  return '<div class="adm-perms" role="group" aria-label="Options de '+esc(admName(u))+'"><span class="adm-pl">Options :</span>'+ADM_PERMS.map(function(x){ var on=p[x[0]]===true;
+    return '<button type="button" class="adm-pc'+(on?' on':'')+'" aria-pressed="'+on+'" title="'+(on?'Retirer':'Donner')+' l’option '+esc(x[1])+'" onclick="admPerm(\''+u.id+'\',\''+x[0]+'\','+(!on)+')">'+(on?ic('check'):ic('plus'))+esc(x[1])+'</button>'; }).join('')+'</div>';
+}
+function admPerm(id,k,on){
+  var u=(ADM.users||[]).find(function(x){ return x.id===id; }); if(!u) return;
+  var name=(ADM_PERMS.find(function(x){ return x[0]===k; })||[k,k])[1];
+  u.perms=Object.assign({},u.perms||{}); u.perms[k]=on; renderAdmin();
+  admDo('admin_set_perm',{p_user:id,p_key:k,p_on:on},(on?'Option « ':'Option « ')+name+(on?' » donnée à ':' » retirée à ')+admName(u)).catch(function(){ u.perms[k]=!on; renderAdmin(); });
 }
 function admDo(fn,args,msg){
   return clRpc(fn,args).then(function(r){ if(msg) toast(msg,'ok'); return r; },function(e){ toast(e.message||String(e),'err'); throw e; });

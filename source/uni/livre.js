@@ -6,7 +6,7 @@
 // cliquable (par catégorie, numéros de page), puis une fiche par recette.
 var BK_KEY='v4_book';
 if(window.ALLP&&ALLP.indexOf('livre')<0) ALLP.push('livre');
-function bkAdm(){ try{ return typeof clIsAdmin==='function'&&!!clIsAdmin(); }catch(e){ return false; } }
+function bkAdm(){ try{ return typeof permOk==='function'&&permOk('book'); }catch(e){ return false; } }
 // Plusieurs livres, comme les bons : liste → éditeur
 var BKS_KEY='v4_books';
 function bkAll(){
@@ -240,15 +240,15 @@ function bkiHTML(b,id){
   var rows=items.map(function(x,i){
     if(x.type==='ingredient'){
       var g=bkIng(x.refId), gone=!ingredients.some(function(y){ return y.id===x.refId; });
-      return '<div class="ir"><div class="ir-sw"><div class="ir-n">'+esc(g?g.name:'?')+'</div><div class="ir-c">'+(gone?'Supprimé du catalogue':'Ingrédient')+'</div></div>'+
-        '<input class="iq" type="number" inputmode="decimal" value="'+(Number(x.qty)>0?x.qty:'')+'" placeholder="Q.S." min="0" step="any" aria-label="Quantité de '+esc(g?g.name:'')+'" onchange="bkiQty('+J+','+i+',this.value)">'+
+      return '<div class="ir"><div class="ir-sw"><div class="ir-n">'+esc(g?g.name:'?')+'</div><div class="ir-c">'+(gone?'Supprimé du catalogue':'Ingrédient')+' · <button type="button" class="lnk bk-chg" onclick="bkiSwap('+J+','+i+')" title="Remplacer par un autre ingrédient ou une sous-recette">'+ic('refresh')+' Changer</button></div></div>'+
+        '<input class="iq" type="text" inputmode="decimal" value="'+(Number(x.qty)>0?String(x.qty).replace('.',','):'')+'" placeholder="Q.S." aria-label="Quantité de '+esc(g?g.name:'')+'" onchange="bkiQty('+J+','+i+',this.value)">'+
         '<select class="iu bke-u" aria-label="Unité" onchange="bkiUnit('+J+','+i+',this.value)">'+bkeUnits(g,x.unit).map(function(u){ return '<option'+(u===x.unit?' selected':'')+'>'+esc(u)+'</option>'; }).join('')+'</select>'+
         '<button type="button" class="idel" onclick="bkiDel('+J+','+i+')" aria-label="Retirer">'+ic('x')+'</button></div>';
     }
     var sr=bkR(x.refId), sb=0; try{ sb=bkWith(b,function(){ return recWeight(x.refId); }); }catch(e){}
     var kg=sb*(Number(x.qty)||0);
-    return '<div class="ir" style="border-left:2px solid var(--bl)"><div class="ir-sw"><div class="ir-n" style="color:var(--bl)">⊛ '+esc(sr?sr.name:'?')+'</div><div class="ir-c">Sous-recette · ×'+fQ(Math.round((Number(x.qty)||0)*100)/100)+'</div></div>'+
-      '<input class="iq" type="number" inputmode="decimal" value="'+(kg>0?Math.round(kg*1000)/1000:'')+'" placeholder="Q.S." min="0" step="any" aria-label="Poids de '+esc(sr?sr.name:'')+' en kg" onchange="bkiSubKg('+J+','+i+',this.value)">'+
+    return '<div class="ir" style="border-left:2px solid var(--bl)"><div class="ir-sw"><div class="ir-n" style="color:var(--bl)">⊛ '+esc(sr?sr.name:'?')+'</div><div class="ir-c">Sous-recette · ×'+fQ(Math.round((Number(x.qty)||0)*100)/100)+' · <button type="button" class="lnk bk-chg" onclick="bkiSwap('+J+','+i+')" title="Remplacer par un autre ingrédient ou une sous-recette">'+ic('refresh')+' Changer</button></div></div>'+
+      '<input class="iq" type="text" inputmode="decimal" value="'+(kg>0?String(Math.round(kg*1000)/1000).replace('.',','):'')+'" placeholder="Q.S." aria-label="Poids de '+esc(sr?sr.name:'')+' en kg" onchange="bkiSubKg('+J+','+i+',this.value)">'+
       '<div class="iu">kg</div><button type="button" class="idel" onclick="bkiDel('+J+','+i+')" aria-label="Retirer">'+ic('x')+'</button></div>';
   }).join('');
   return '<div class="ilist">'+(rows?'<div class="ihd"><span>Composant</span><span style="text-align:right">Qté</span><span>Unt</span><span></span></div>'+rows:'<div class="re-empty-t">Aucun ingrédient : ajoute-en avec la recherche ci-dessous.</div>')+'</div>'+
@@ -277,6 +277,38 @@ function bkiAdd(id,type,ref){
   bkiPut(id,l,true);
   var ins=document.querySelectorAll('#bki-'+id+' .iq'); if(ins.length) try{ ins[ins.length-1].focus(); }catch(e){}
 }
+// ── remplacer un ingrédient (même fenêtre « Changer » que l’éditeur de recette) ──
+function bkSwapApply(bookRecId,x,val){
+  if(!val||!x) return false;
+  var p=String(val).split(':'), kind=p[0], ref=p.slice(1).join(':');
+  if(kind==='ing'){
+    var g=ingredients.find(function(z){ return z.id===ref; }); if(!g) return false;
+    var u=String(g.unit||'kg'), units=bkeUnits(g,null);
+    if(x.type!=='ingredient'){ x.qty=0; x.unit=/^(l|ml|cl)$/i.test(u)?'ml':(isCountable(u)?u:'g'); }
+    else if(units.indexOf(x.unit)<0) x.unit=units[0]||x.unit;
+    x.type='ingredient'; x.refId=ref; return g.name;
+  }
+  if(kind==='rec'){
+    if(ref===bookRecId){ toast('Une recette ne peut pas se contenir elle-même','err'); return false; }
+    var r=recipes.find(function(z){ return z.id===ref; }); if(!r) return false;
+    if(x.type!=='recipe'){ x.qty=1; x.unit='x'; }
+    x.type='recipe'; x.refId=ref; return r.name;
+  }
+  return false;
+}
+function bkSwapOpen(bookRecId,x,done){
+  var g=x.type==='ingredient'?bkIng(x.refId):bkR(x.refId);
+  var prev=typeof editRecId!=='undefined'?editRecId:null;
+  try{ editRecId=bookRecId; }catch(e){}
+  swapOpen({cur:{type:x.type,id:x.refId},name:g?g.name:'',allowNew:false,onPick:function(val){
+    try{ editRecId=prev; }catch(e){}
+    var nm=bkSwapApply(bookRecId,x,val); if(nm){ done(); toast('Remplacé par « '+nm+' » dans le livre','ok'); }
+  }});
+  var sw=document.getElementById('m-swap'); if(sw) document.body.appendChild(sw); // devant la fenêtre « Adapter »
+  var _c=swapClose; swapClose=function(){ try{ editRecId=prev; }catch(e){} swapClose=_c; return _c.apply(this,arguments); };
+}
+function bkiSwap(id,i){ var l=bkiItems(id), x=l[i]; if(!x) return; bkSwapOpen(id,x,function(){ bkiPut(id,l,true); }); }
+function bkeSwap(i){ var x=BKE&&BKE.items[i]; if(!x) return; bkSwapOpen(BKE.id,x,function(){ bkeRender(); }); }
 function bkiReset(id){ var b=bkGet(), it=bkItem(b,id); if(!it) return; delete it.ov; bkSave(b); renderLivre(true); toast('Recette d’origine reprise','ok'); }
 function bkSide(){
   var el=document.getElementById('bk-side'); if(!el) return;
@@ -355,14 +387,14 @@ function bkeRender(){
   el.innerHTML='<div class="ilist"><div class="ihd"><span>Composant</span><span style="text-align:right">Qté</span><span>Unt</span><span></span></div>'+BKE.items.map(function(it,i){
     if(it.type==='ingredient'){
       var g=bkIng(it.refId);
-      return '<div class="ir"><div class="ir-sw"><div class="ir-n">'+esc(g?g.name:'?')+'</div><div class="ir-c">Ingrédient</div></div>'+
-        '<input class="iq" type="number" inputmode="decimal" value="'+(Number(it.qty)>0?it.qty:'')+'" placeholder="Q.S." min="0" step="any" aria-label="Quantité de '+esc(g?g.name:'')+'" onchange="bkeQty('+i+',this.value)">'+
+      return '<div class="ir"><div class="ir-sw"><div class="ir-n">'+esc(g?g.name:'?')+'</div><div class="ir-c">Ingrédient · <button type="button" class="lnk bk-chg" onclick="bkeSwap('+i+')" title="Remplacer par un autre ingrédient ou une sous-recette">'+ic('refresh')+' Changer</button></div></div>'+
+        '<input class="iq" type="text" inputmode="decimal" value="'+(Number(it.qty)>0?String(it.qty).replace('.',','):'')+'" placeholder="Q.S." aria-label="Quantité de '+esc(g?g.name:'')+'" onchange="bkeQty('+i+',this.value)">'+
         '<select class="iu bke-u" aria-label="Unité" onchange="bkeUnit('+i+',this.value)">'+bkeUnits(g,it.unit).map(function(u){ return '<option'+(u===it.unit?' selected':'')+'>'+esc(u)+'</option>'; }).join('')+'</select>'+
         '<button class="idel" onclick="bkeDel('+i+')" aria-label="Retirer">✕</button></div>';
     }
     var s=bkR(it.refId), sb=s?recWeight(s.id):0, kg=sb*(Number(it.qty)||0);
-    return '<div class="ir" style="border-left:2px solid var(--bl)"><div class="ir-sw"><div class="ir-n" style="color:var(--bl)">⊛ '+esc(s?s.name:'?')+'</div><div class="ir-c">Sous-recette · ×'+fQ(Math.round((Number(it.qty)||0)*100)/100)+'</div></div>'+
-      '<input class="iq" type="number" inputmode="decimal" value="'+(kg>0?Math.round(kg*1000)/1000:'')+'" placeholder="Q.S." min="0" step="any" aria-label="Poids de '+esc(s?s.name:'')+' en kg" onchange="bkeSubKg('+i+',this.value)">'+
+    return '<div class="ir" style="border-left:2px solid var(--bl)"><div class="ir-sw"><div class="ir-n" style="color:var(--bl)">⊛ '+esc(s?s.name:'?')+'</div><div class="ir-c">Sous-recette · ×'+fQ(Math.round((Number(it.qty)||0)*100)/100)+' · <button type="button" class="lnk bk-chg" onclick="bkeSwap('+i+')" title="Remplacer par un autre ingrédient ou une sous-recette">'+ic('refresh')+' Changer</button></div></div>'+
+      '<input class="iq" type="text" inputmode="decimal" value="'+(kg>0?String(Math.round(kg*1000)/1000).replace('.',','):'')+'" placeholder="Q.S." aria-label="Poids de '+esc(s?s.name:'')+' en kg" onchange="bkeSubKg('+i+',this.value)">'+
       '<div class="iu">kg</div><button class="idel" onclick="bkeDel('+i+')" aria-label="Retirer">✕</button></div>';
   }).join('')+'</div>';
   bkeTot();
@@ -566,7 +598,7 @@ function bkNav(){
 (function(){
   var _g=goPage;
   goPage=function(p){
-    if(p==='livre'&&!bkAdm()){ toast('Réservé aux administrateurs','err'); p='home'; }
+    if(p==='livre'&&!bkAdm()){ toast('Livres : demande l’accès à un administrateur','err'); p='home'; }
     if(p==='livre'&&CUR!=='livre'&&!BK.keep) BK.cur=null;
     var home=BKP.kind==='share'?'partage':(BKP.kind==='bon'?'edit':'livre');
     if(BKP.on&&p!=='recettes'&&p!==home){ BKP.on=false; bkPickBar(); try{ renderRec(); }catch(e){} }

@@ -1,0 +1,48 @@
+# Droits par compte : l'admin choisit qui a le blason, le « C » et les livres
+import json, sys
+exec(open('/tmp/claude-0/-home-claude/68738804-a68f-5f46-9b52-b8b51de84108/scratchpad/cloud/e2e_multidev.py').read().split('def live()')[0])
+def opts(pg):
+    pg.evaluate("goPage('backup')"); pg.wait_for_timeout(300); return pg.inner_text('#th-card')
+with sync_playwright() as p:
+    b=p.chromium.launch()
+    A=newpage(b); A.goto(APP); A.wait_for_timeout(1200)
+    gate_server(A); signup(A,'Emmanuel','emmanuel@test.fr')
+    if 'sont-elles' in A.inner_text('#gate').lower(): A.click("text=Oui, ce sont les miennes")
+    wait_sync(A)
+    ok(A.evaluate("clIsAdmin()") and A.evaluate("permOk('crest')&&permOk('cmark')&&permOk('book')"),'admin : a toutes les options')
+    t=opts(A); ok('Blason' in t and '« C »' in t,'admin : options Blason et C visibles')
+    N=newpage(b,True); N.goto(APP); N.wait_for_timeout(1200); gate_server(N); signup(N,'Paul','paul@test.fr')
+    db("update public.profiles set status='active' where email='paul@test.fr'")
+    N.reload(); N.wait_for_timeout(2500); N.evaluate("clMe()"); N.wait_for_timeout(800)
+    ok(not gated(N),'Paul : compte actif')
+    ok(not N.evaluate("permOk('crest')||permOk('cmark')||permOk('book')"),'Paul : aucune option au départ')
+    t=opts(N); ok('Blason' not in t and '« C »' not in t,'Paul : pas d’options Blason / C dans les réglages')
+    ok(not N.is_visible('#bn-livre'),'Paul : pas de Livre dans la barre du bas')
+    N.evaluate("goPage('livre')"); N.wait_for_timeout(300); ok(N.evaluate("CUR")!='livre','Paul : page Livre refusée')
+    # tentative de contourner : réglage forcé en local
+    N.evaluate("localStorage.setItem('v4_theme',JSON.stringify(Object.assign(loadTheme(),{crest:true,cmark:true}))); applyTheme()"); N.wait_for_timeout(200)
+    ok(N.evaluate("BON_CREST")=='' and N.evaluate("BON_CMARK")=='','Paul : blason / C restent masqués sans le droit')
+    # l'admin donne blason + livres
+    A.evaluate("goPage('admin')"); A.wait_for_timeout(1500); A.evaluate("ADM.open.accts=true; renderAdmin()"); A.wait_for_timeout(300)
+    row=A.locator('.adm-u:has-text("Paul")')
+    ok(row.locator('.adm-pc').count()==3,'Admin : 3 options sur le compte de Paul')
+    row.locator('.adm-pc:has-text("Blason")').click(); A.wait_for_timeout(700)
+    A.locator('.adm-u:has-text("Paul") .adm-pc:has-text("Livres")').click(); A.wait_for_timeout(700)
+    A.locator('.adm-u:has-text("Paul")').screenshot(path=OUT+'adm_perms.png')
+    ok(json.loads(db("select perms from public.profiles where email='paul@test.fr'"))=={'crest':True,'book':True},'serveur : droits enregistrés')
+    ok(A.locator('.adm-u:has-text("Emmanuel")').count()==0 or 'admin' in A.inner_text('.adm-u:has-text("Emmanuel")').lower(),'admin : marqué « toutes les options »')
+    N.evaluate("clMe()"); N.wait_for_timeout(900)
+    ok(N.evaluate("permOk('crest')&&permOk('book')&&!permOk('cmark')"),'Paul : reçoit blason + livres, pas le C')
+    t=opts(N); ok('Blason' in t and '« C »' not in t,'Paul : option Blason visible, C absente')
+    ok(len(N.evaluate("BON_CREST"))>100 and N.evaluate("BON_CMARK")=='','Paul : blason affiché (réglage déjà sur « Avec »), C toujours masqué')
+    N.evaluate("goPage('livre')"); N.wait_for_timeout(400); ok(N.evaluate("CUR")=='livre','Paul : accès aux livres')
+    # un compte ne peut pas se donner un droit lui-même
+    r=N.evaluate("clRpc('admin_set_perm',{p_user:CLOUD.sess.user.id,p_key:'cmark',p_on:true}).then(()=> 'ok',e=>'refusé')")
+    ok(r=='refusé' and not N.evaluate("(clMe(),false)"),'Paul : ne peut pas se donner le C lui-même')
+    # l'admin retire le blason
+    A.locator('.adm-u:has-text("Paul") .adm-pc:has-text("Blason")').click(); A.wait_for_timeout(700)
+    N.evaluate("clMe()"); N.wait_for_timeout(900)
+    ok(N.evaluate("BON_CREST")=='' and 'Blason' not in opts(N),'Paul : blason retiré par l’admin')
+    ok(not A.errs and not N.errs,'pas d’erreur JS '+str((A.errs+N.errs)[:2]))
+    b.close()
+print('%d PASS %d FAIL'%(res.count(True),res.count(False)))

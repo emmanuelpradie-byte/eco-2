@@ -109,8 +109,18 @@
   // Blason : option à cocher (comme clair / sombre). Par défaut affiché sur le
   // thème de base, masqué sur Épuré ; le thème Compagnons garde son logo.
   // Blason et « C » : options à cocher (comme clair / sombre), masqués par défaut.
-  function crestOn(t){ t=t||get(); return LOCK==='compagnons'||t.crest===true; }
-  window.themeCmark=function(){ return get().cmark===true; };
+  // Droits donnés par l’administrateur (blason, « C », livres) : un admin a tout.
+  window.permOk=function(k){
+    try{
+      if(typeof clIsAdmin==='function'&&clIsAdmin()) return true;
+      var me=null;
+      if(typeof CLOUD!=='undefined'&&CLOUD){ if(!CLOUD.sess) return false; me=CLOUD.me; }
+      else me=JSON.parse(localStorage.getItem('v4_cloud_me')||'null');
+      return !!(me&&me.status==='active'&&(me.admin||(me.perms&&me.perms[k]===true)));
+    }catch(e){ return false; }
+  };
+  function crestOn(t){ t=t||get(); return LOCK==='compagnons'||(t.crest===true&&permOk('crest')); }
+  window.themeCmark=function(){ return get().cmark===true&&permOk('cmark'); };
   window.themeCrest=function(){ return crestOn(); };
   window.themeCrestKey=function(){ return LOCK?'crest_'+LOCK:'crest'; };
   window.THEME_PAL=PAL;

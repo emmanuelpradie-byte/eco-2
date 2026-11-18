@@ -183,8 +183,9 @@
 (function(){
   function adm(){ try{ return typeof clIsAdmin==='function'&&!!clIsAdmin(); }catch(e){ return false; } }
   window.uxAdmin=adm;
-  function view(){ try{ return localStorage.getItem('v4_recview')==='fiche'?'fiche':'list'; }catch(e){ return 'list'; } }
-  window.recView=function(v){ try{ localStorage.setItem('v4_recview',v); }catch(e){} refreshRecPrev(); };
+  // aperçu de la fenêtre « Ajouter une recette » au bon (distinct de l’affichage de la page Recettes)
+  function view(){ try{ return localStorage.getItem('v4_recprev')==='fiche'?'fiche':'list'; }catch(e){ return 'list'; } }
+  window.recPrevView=function(v){ try{ localStorage.setItem('v4_recprev',v); }catch(e){} refreshRecPrev(); };
 
   // Sections d'une recette : quantité de la recette et quantité « mise en œuvre »
   function sections(rec,mult){
@@ -284,7 +285,7 @@
       if(box&&adm()&&curBon&&(curBon.recs||[]).length){
         box.insertAdjacentHTML('beforeend','<div class="be-fj"><label class="be-fj-ck"><input type="checkbox" id="be-fj-ck"'+(curBon.fiches?' checked':'')+' onchange="bonFichesSet(this.checked)"><span><b>Joindre les fiches à la suite du bon</b><small>Dans le PDF, chaque recette ajoutée a sa fiche (colonne « mise en œuvre »).</small></span></label>'+
           '<div class="be-recs">'+curBon.recs.map(function(x){ var rec=recipes.find(function(y){ return y.id===x.id; }); if(!rec) return '';
-            return '<span>'+ic('book')+esc(rec.name)+(Math.abs(x.m-1)>1e-9?' ×'+fQ(x.m):'')+'<button type="button" class="be-fj-x" aria-label="Retirer la fiche de '+esc(rec.name)+'" onclick="bonFichesDel(\''+x.id+'\')">'+ic('x')+'</button></span>'; }).join('')+'</div><button type="button" class="btn btn-ghost btn-sm be-bk" onclick="bonRecsToBook()">'+ic('list')+' Mettre ces recettes dans le livre</button></div>');
+            return '<span>'+ic('book')+esc(rec.name)+(Math.abs(x.m-1)>1e-9?' ×'+fQ(x.m):'')+'<button type="button" class="be-fj-x" aria-label="Retirer la fiche de '+esc(rec.name)+'" onclick="bonFichesDel(\''+x.id+'\')">'+ic('x')+'</button></span>'; }).join('')+'</div>'+(typeof permOk==='function'&&permOk('book')?'<button type="button" class="btn btn-ghost btn-sm be-bk" onclick="bonRecsToBook()">'+ic('list')+' Mettre ces recettes dans le livre</button>':'')+'</div>');
       }
     }catch(e){ if(window.console) console.error(e); }
     return r;

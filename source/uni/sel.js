@@ -39,7 +39,7 @@ function selPaint(){
   if(!SEL.on){ if(bar) bar.remove(); return; }
   if(!bar){ bar=document.createElement('div'); bar.id='sel-bar'; bar.className='sel-bar'; bar.setAttribute('role','toolbar'); document.body.appendChild(bar); }
   var n=selIds().length, rec=SEL.kind==='rec', vis=selTiles(SEL.kind).map(selIdOf).filter(Boolean), all=vis.length&&vis.every(function(i){ return SEL.ids[i]; });
-  var adm=typeof clIsAdmin==='function'&&clIsAdmin(), chat=typeof chReady==='function'&&chReady();
+  var adm=typeof permOk==='function'&&permOk('book'), chat=typeof chReady==='function'&&chReady();
   function A(fn,icn,lb,cls){ return '<button type="button" class="sel-a'+(cls?' '+cls:'')+'" onclick="'+fn+'"'+(n?'':' disabled')+'>'+ic(icn)+'<span>'+lb+'</span></button>'; }
   bar.innerHTML='<div class="sel-top"><button type="button" class="sel-x" onclick="selEnd()" aria-label="Quitter la sélection">'+ic('x')+'</button>'+
     '<b>'+(n?n+' '+(rec?'recette':'ingrédient')+(n>1?'s':'')+' sélectionné'+(rec?'e':'')+(n>1?'s':''):'Touche pour sélectionner')+'</b>'+

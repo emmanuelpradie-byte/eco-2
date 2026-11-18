@@ -127,10 +127,18 @@ function clFetchAtt(id){
 }
 
 // ── Statut du compte (validation par l'administrateur) ──
+// droits changés (ou chargés) : blason / « C » / livres réappliqués partout
+function clPermsChanged(){
+  try{ applyTheme(); }catch(e){}
+  try{ var c=document.getElementById('th-card'); if(c&&typeof themeCardHTML==='function') c.outerHTML=themeCardHTML(); }catch(e){}
+  try{ if(typeof bkNav==='function') bkNav(); }catch(e){}
+  try{ if(typeof CUR!=='undefined'&&CUR==='edit'&&typeof beRecap==='function') beRecap(); }catch(e){}
+}
 function clMe(){
   return clFetch('/rest/v1/rpc/me',{method:'POST',body:{}}).then(function(j){
     var was=CLOUD.me; CLOUD.me=j||{status:'active'}; clSave('v4_cloud_me',CLOUD.me);
     if(typeof admNav==='function') admNav();
+    if(JSON.stringify((was||{}).perms||{})+!!(was&&was.admin)!==JSON.stringify(CLOUD.me.perms||{})+!!CLOUD.me.admin) clPermsChanged();
     return CLOUD.me;
   },function(e){
     // serveur installé avant l'administration : tout le monde est actif
@@ -358,7 +366,7 @@ function clSignUp(email,pw,name){
     .then(function(j){ if(j&&j.access_token) return clSetSession(j); var e=new Error('Compte créé. Ouvre le lien reçu par email pour le confirmer, puis connecte-toi.'); e.confirm=true; throw e; });
 }
 function clSignedOut(msg){
-  CLOUD.sess=null; CLOUD.st=clFreshState(); CLOUD.shared={}; CLOUD.me=null; CLOUD.inv=null; CLOUD.pendingN=0;
+  CLOUD.sess=null; CLOUD.st=clFreshState(); CLOUD.shared={}; CLOUD.me=null; CLOUD.inv=null; CLOUD.pendingN=0; setTimeout(function(){ try{ clPermsChanged(); }catch(e){} },0);
   clSave('v4_cloud_sess',null); clSave('v4_shared_cache',null); clSave('v4_cloud_me',null); clSave('v4_cloud_inv',null); clSaveState();
   CLOUD.status='off'; if(msg) toast(msg,'info'); clUI(); if(typeof updSharedCount==='function') updSharedCount();
 }
@@ -652,7 +660,7 @@ function cloudInit(){
   if(!CLOUD.st.since) CLOUD.st.since={user:null,shared:null};
   if(CLOUD.sess&&CLOUD.st.ready===undefined) CLOUD.st.ready=false;
   CLOUD.shared=clLoad('v4_shared_cache',{})||{};
-  CLOUD.me=clLoad('v4_cloud_me',null); CLOUD.inv=clLoad('v4_cloud_inv',null);
+  CLOUD.me=clLoad('v4_cloud_me',null); CLOUD.inv=clLoad('v4_cloud_inv',null); setTimeout(function(){ try{ clPermsChanged(); }catch(e){} },0);
   // appareil déjà connecté avant les espaces séparés : ses données sont celles de ce compte
   if(CLOUD.sess&&CLOUD.sess.user&&!acctOwner()&&!LS.getItem('v4_acctv')) LS.setItem('v4_owner',CLOUD.sess.user.id);
   LS.setItem('v4_acctv','1');
