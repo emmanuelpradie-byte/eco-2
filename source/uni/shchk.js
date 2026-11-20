@@ -45,6 +45,7 @@ function chkModal(){
   document.body.appendChild(d.firstChild);
 }
 function chkMapLabel(m){
+  if(m.rec){ var r=recipes.find(function(x){ return x.id===m.rec; }); return {cls:'ok',t:ic('sub')+' '+esc(r?r.name:'?'),s:'Sous-recette de tes recettes'}; }
   if(m.id){ var g=ingredients.find(function(i){ return i.id===m.id; }); return {cls:'ok',t:ic('check')+' '+esc(g?g.name:'?'),s:'Dans ton catalogue'+(g&&g.price?' · '+fEur(g.price)+'/'+esc(g.unit||'kg'):'')}; }
   return {cls:'new',t:ic('plus')+' '+esc(m.name),s:'Nouveau · '+(m.price?fEur(m.price)+'/'+esc(m.u||'kg'):'sans prix')};
 }
@@ -77,8 +78,7 @@ function chkRender(){
   b.innerHTML='<div class="ck-head"><div class="ck-intro">'+(CHK.title?'<b>'+esc(CHK.title)+'</b><br>':'')+'Vérifie chaque ingrédient avant l’ajout : tu peux changer la quantité et choisir l’ingrédient de ton catalogue qui correspond. Si tu ne veux pas vérifier, touche « Tout valider ».</div>'+
     '<div class="ck-stats"><span><b>'+keys.length+'</b> ingrédients différents</span><span class="ok"><b>'+(keys.length-nNew)+'</b> déjà dans ton catalogue</span><span class="new"><b>'+nNew+'</b> nouveaux</span></div>'+
     '<button type="button" class="btn btn-gold ck-all" onclick="chkAll()">'+ic('check-circle')+' Tout valider</button></div>'+
-    CHK.secs.map(function(s,i){ return chkSecHTML(s,i===0&&CHK.secs.length<=12||CHK.secs.length<=3); }).join('')+
-    '<div id="ck-pick" class="ck-pick" style="display:none"></div>';
+    CHK.secs.map(function(s,i){ return chkSecHTML(s,i===0&&CHK.secs.length<=12||CHK.secs.length<=3); }).join('');
   chkFoot();
 }
 function chkFoot(){
@@ -107,41 +107,26 @@ function chkSecAll(secId){
 function chkAll(){ CHK.occ.forEach(function(o){ o.ok=true; }); CHK.secs.forEach(function(s){ var el=document.getElementById('ck-in-'+s.id); if(el&&el.innerHTML) el.innerHTML=chkSecInner(s); chkUpdSec(s.id); }); chkFoot(); }
 function chkQty(id,v){ var o=CHK.occ.find(function(x){ return x.id===id; }); if(!o) return; var n=parseFloat(String(v).replace(',','.')); o.it.qty=n>0?n:0; if(!o.ok) chkTick(id,true); }
 
-// ── choisir l’ingrédient du catalogue (s’applique partout où il apparaît) ──
+// ── changer l’ingrédient : même fenêtre « Changer » que dans l’éditeur de recette ──
+// (s’applique partout où l’ingrédient apparaît dans les recettes copiées)
 function chkPick(oid){
   var o=CHK.occ.find(function(x){ return x.id===oid; }); if(!o) return;
-  CHK.pick=o; CHK.pq=''; chkPickRender();
+  var m=CHK.map[o.k], cur=m.id?{type:'ingredient',id:m.id}:(m.rec?{type:'recipe',id:m.rec}:{type:'new'});
+  swapOpen({cur:cur,name:o.it.n,allowNew:true,onPick:function(val){ chkSwapPick(o.k,val); }});
+  var sw=document.getElementById('m-swap'); if(sw) document.body.appendChild(sw); // devant la fenêtre de vérification
 }
-function chkPickRender(keep){
-  var el=document.getElementById('ck-pick'); if(!el) return; var o=CHK.pick;
-  if(!o){ el.style.display='none'; el.innerHTML=''; return; }
-  var m=CHK.map[o.k], q=normTxt(CHK.pq||''), words=normTxt(o.it.n).split(/[^a-z0-9]+/).filter(function(w){ return w.length>=3; });
-  var list=ingredients.slice();
-  if(q) list=list.filter(function(g){ return normTxt(g.name).indexOf(q)>=0; });
-  else list=list.map(function(g){ var n=normTxt(g.name), sc=words.reduce(function(s,w){ return s+(n.indexOf(w)>=0?1:0); },0); return {g:g,sc:sc}; }).filter(function(x){ return x.sc>0; }).sort(function(a,b){ return b.sc-a.sc||a.g.name.localeCompare(b.g.name,'fr'); }).map(function(x){ return x.g; });
-  list=list.slice(0,40);
-  var nw=m.isNew?m:{name:o.it.n,price:o.it.price||0,u:o.it.u||'kg'};
-  el.style.display='block';
-  el.innerHTML='<div class="ck-pk"><div class="ck-pk-h"><b>« '+esc(o.it.n)+' »</b> correspond à…<button type="button" class="m-x" onclick="CHK.pick=null;chkPickRender()" aria-label="Fermer">'+ic('x')+'</button></div>'+
-    '<div class="ck-pk-new'+(m.isNew?' on':'')+'"><button type="button" class="ck-pk-o" onclick="chkSetNew()">'+ic('plus')+'<span><b>Nouvel ingrédient</b><small>Créé dans ton catalogue</small></span>'+(m.isNew?ic('check'):'')+'</button>'+
-      '<div class="ck-pk-f"><input class="fi" id="ck-nn" value="'+esc(nw.name)+'" aria-label="Nom du nouvel ingrédient" placeholder="Nom"><label class="ck-pr"><input class="fi" id="ck-np" type="number" inputmode="decimal" min="0" step="any" value="'+(nw.price||'')+'" aria-label="Prix"><span>€/'+esc(nw.u||'kg')+'</span></label></div></div>'+
-    '<label class="cn-srch bp-srch ck-pk-s"><input id="ck-pq" type="search" placeholder="Chercher dans mon catalogue…" value="'+esc(CHK.pq)+'" oninput="CHK.pq=this.value;chkPickRender(true)" autocomplete="off">'+ic('search')+'</label>'+
-    '<div class="ck-pk-l">'+(list.length?list.map(function(g){ var on=m.id===g.id; return '<button type="button" class="ck-pk-o'+(on?' on':'')+'" onclick="chkSetIng(\''+g.id+'\')">'+ic('box')+'<span><b>'+esc(g.name)+'</b><small>'+esc(g.cat||'')+(g.price?' · '+fEur(g.price)+'/'+esc(g.unit||'kg'):'')+'</small></span>'+(on?ic('check'):'')+'</button>'; }).join(''):'<div class="pk-none">'+(q?'Rien trouvé':'Aucun ingrédient proche : cherche-le, ou garde « Nouvel ingrédient ».')+'</div>')+'</div>'+
-    '<div class="ck-pk-foot"><button type="button" class="btn btn-gold btn-sm" onclick="chkPickOk()">'+ic('check')+' Valider</button></div></div>';
-  if(keep){ var i=document.getElementById('ck-pq'); if(i){ i.focus(); try{ i.setSelectionRange(i.value.length,i.value.length); }catch(e){} } }
-  else el.scrollIntoView&&el.scrollIntoView({block:'nearest',behavior:'smooth'});
+function chkSwapPick(k,val){
+  var occ=CHK.occ.filter(function(x){ return x.k===k; }), it=occ[0]&&occ[0].it; if(!it) return;
+  var v=String(val||''), name='';
+  if(/^ing:/.test(v)){ var g=ingredients.find(function(x){ return x.id===v.slice(4); }); if(!g) return; CHK.map[k]={id:g.id}; name=g.name; }
+  else if(/^rec:/.test(v)){ var r=recipes.find(function(x){ return x.id===v.slice(4); }); if(!r) return; CHK.map[k]={rec:r.id}; name=r.name; }
+  else { var nm=/^new:/.test(v)?decodeURIComponent(v.slice(4)):it.n; CHK.map[k]={isNew:true,name:nm||it.n,price:it.price||0,u:it.u||'kg',cat:it.cat||''}; name=nm||it.n; }
+  chkApply(k);
+  occ.forEach(function(x){ if(!x.ok) chkTick(x.id,true); });
+  toast('« '+it.n+' » → « '+name+' »','ok');
 }
 function chkApply(k){
   CHK.occ.forEach(function(o){ if(o.k!==k) return; var r=document.getElementById('ck-'+o.id); if(r) r.outerHTML=chkRowHTML(o); });
-}
-function chkSetIng(id){ var o=CHK.pick; if(!o) return; CHK.map[o.k]={id:id}; chkApply(o.k); chkPickRender(); }
-function chkSetNew(){ var o=CHK.pick; if(!o) return; var m=CHK.map[o.k]; if(!m.isNew) CHK.map[o.k]={isNew:true,name:o.it.n,price:o.it.price||0,u:o.it.u||'kg',cat:o.it.cat||''}; chkApply(o.k); chkPickRender(); }
-function chkPickOk(){
-  var o=CHK.pick; if(!o) return; var m=CHK.map[o.k];
-  if(m.isNew){ var n=document.getElementById('ck-nn'), p=document.getElementById('ck-np'); if(n&&n.value.trim()) m.name=n.value.trim(); if(p) m.price=Math.max(0,parseFloat(String(p.value).replace(',','.'))||0); }
-  chkApply(o.k);
-  CHK.occ.forEach(function(x){ if(x.k===o.k&&!x.ok) chkTick(x.id,true); });
-  CHK.pick=null; chkPickRender();
 }
 
 // ── lancer la copie avec les choix ──

@@ -2167,3 +2167,4 @@ html.lay-mob #tb-bc{font-size:clamp(15px,4.6vw,18px)}
 .adm-pall svg{width:13px;height:13px}
 .bk-chg{font-size:11.5px;font-weight:600;color:var(--i3);display:inline-flex;align-items:center;gap:3px;padding:6px 2px;margin:-6px 0;vertical-align:middle;min-height:30px}
 .bk-chg svg{width:11px;height:11px}
+.swp-s .fi:focus,.swp-s .fi:focus-visible{outline:none!important}.swp-s:focus-within{box-shadow:0 0 0 1px var(--i)}

@@ -650,7 +650,16 @@ function shrCopyRow(x,cat,opt){
   }
   function recFrom(s,top){
     var items=(s.items||[]).map(function(it){
-      if(it.t==='i') return {id:uid(),type:'ingredient',refId:ingFor(it),qty:it.qty,unit:it.unit};
+      if(it.t==='i'){
+        // remplacé à la vérification par une de MES recettes (sous-recette) : même poids
+        var mr=MAP&&MAP[normTxt(it.n)];
+        if(mr&&mr.rec&&recipes.some(function(r){ return r.id===mr.rec; })){
+          var kg=0; try{ kg=toKg(it.qty,it.unit,{unit:it.u||'kg',unitWeight:it.unitWeight||null}); }catch(e){}
+          var base=recWeight(mr.rec);
+          return {id:uid(),type:'recipe',refId:mr.rec,qty:(base>0&&kg>0)?Math.round(kg/base*1e6)/1e6:1,unit:'x'};
+        }
+        return {id:uid(),type:'ingredient',refId:ingFor(it),qty:it.qty,unit:it.unit};
+      }
       var nm=normTxt(it.sub&&it.sub.name), ex=recipes.find(function(r){ return normTxt(r.name)===nm; });
       var sid=ex?ex.id:recFrom(it.sub,false).id;
       return {id:uid(),type:'recipe',refId:sid,qty:it.qty,unit:it.unit||'x'};
